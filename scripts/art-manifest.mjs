@@ -82,12 +82,28 @@ const BASE_PIECES = [
     // a photograph pasted into it.
     id: 'ellie',
     aspect: '1:1',
+    size: '1K',
+    // Four of her in one image rather than four calls, for the same reason the
+    // walk cycles are one image: the model holds a character together within a
+    // picture far better than across separate ones, and four slightly different
+    // girls would be much worse than four expressions of one.
+    sheet: { cols: 2, rows: 2, align: 'center' },
     subject:
-      'a happy little girl about five years old sitting cross-legged on the floor facing the ' +
-      'viewer, long wavy dark brown hair past her shoulders, warm honey-tan skin, big brown eyes, ' +
-      'a bright coral-pink sleeveless sundress with white trim at the neck and hem. She is smiling ' +
-      'and one arm is raised in a small wave. Calm and comfortable, sitting still, at home. ' +
+      'a little girl about five years old sitting cross-legged on the floor facing the viewer, ' +
+      'long wavy dark brown hair past her shoulders, warm honey-tan skin, big brown eyes, ' +
+      'a bright coral-pink sleeveless sundress with white trim at the neck and hem. ' +
       'Silhouette: a seated child, wider at the bottom where the dress spreads on the floor.',
+    // POSTURE carries these, not eyebrows. She is drawn about forty pixels tall,
+    // where a face is a handful of pixels and a mouth shape is nearly invisible,
+    // but "arms up" versus "knees hugged" reads instantly at any size.
+    faces:
+      'the same girl in four moods, told apart by her WHOLE BODY and not only her face. ' +
+      'Frame 1, happy and relaxed: sitting comfortably, big smile, one arm raised in a friendly ' +
+      'wave. Frame 2, a little worried: sitting up straighter, both hands together in her lap, ' +
+      'small uncertain mouth, eyebrows raised, glancing sideways. Frame 3, frightened: knees ' +
+      'pulled right up to her chest and hugged tightly with both arms, shoulders hunched up, eyes ' +
+      'wide, a small worried frown — curled up small. Frame 4, delighted: BOTH arms thrown high ' +
+      'in the air above her head, eyes squeezed shut with joy, an enormous open grin, cheering.',
   },
 
   // --- Toys. All facing RIGHT, because they shoot towards the door. ---------
@@ -555,6 +571,24 @@ const FACING_RIGHT = [
   'on the LEFT. All four frames face the same way.',
 ].join(' ');
 
+/**
+ * A grid of expressions rather than a grid of walk poses.
+ *
+ * Shares the slicer with the walk sheets and almost nothing else: there is no
+ * cycle, no facing to enforce, and the frames are chosen by game state rather
+ * than played in order. Bending SHEET_RULES to cover both would mean a prompt
+ * full of instructions about legs for a character who is sitting down.
+ */
+const FACE_SHEET_RULES = [
+  'FOUR drawings of the SAME single character arranged in a 2x2 grid, two on the top row and two',
+  'on the bottom, read left-to-right then top-to-bottom as moods 1, 2, 3 and 4.',
+  'The character is IDENTICAL in all four — same face, same hair, same clothes, same colours,',
+  'same size, seen from the same angle, facing the viewer. ONLY HER EXPRESSION AND POSE CHANGE.',
+  'Centre each figure in its own quadrant. No grid lines, no boxes, no borders, no frame numbers:',
+  'one single continuous flat #00FF00 background behind and between all four figures.',
+  'Nothing else in the picture: no floor, no shadow, no furniture, no props.',
+].join(' ');
+
 const WALK_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => ({
   // The id the renderer looks up: `crawler.walk`, alongside the still `crawler`.
   id: `${piece.id}.walk`,
@@ -594,6 +628,9 @@ function look(piece) {
 }
 
 export function promptFor(piece) {
+  if (piece.faces) {
+    return `${KEY_BACKGROUND} ${FACE_SHEET_RULES} The character: ${piece.subject} The four moods: ${piece.faces} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00.`;
+  }
   if (piece.sheet) {
     return `${KEY_BACKGROUND} ${SHEET_RULES} The character: ${piece.subject}${look(piece)} The four poses: ${piece.poses} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
   }

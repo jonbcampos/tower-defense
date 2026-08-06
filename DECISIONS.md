@@ -689,3 +689,29 @@ records the one time the split was not available.
 prompt. The manifest entry says NO LEAN in capitals and names `ROLLED_BY_HAND`;
 the two halves only work as a pair, and a leaning sheet plus the rotation is
 worse than either alone.
+
+## 34. Ellie's face is a second readout of the hearts
+
+Three drawings of her, picked by lives remaining, plus a fourth for winning:
+waving at three hearts, hands clasped and uneasy at two, curled up hugging her
+knees at one, both arms in the air on a win.
+
+**Posture, not eyebrows.** She is drawn about forty pixels tall, where a face is
+six pixels across and a mouth shape is invisible. "Arms up" against "knees
+hugged" reads instantly at any size, and the prompt says so in capitals, because
+the obvious way to write this brief — four facial expressions — produces four
+identical figures at the size the game actually uses.
+
+**A second readout, never the only one.** The hearts are unchanged and still say
+it plainly. This says the same thing in a way a five-year-old reads faster than
+three small icons in a corner, and someone who never notices it loses nothing.
+
+Generated as one 2x2 sheet like the walk cycles and for the same reason — four
+calls would give four subtly different girls — but through its own prompt
+branch. A sheet of expressions shares the slicer with a sheet of walk poses and
+almost nothing else: no cycle, no facing to enforce, frames chosen by game state
+rather than played in order. Bending the walk rules to cover it would have meant
+a prompt full of instructions about legs for a character who is sitting down.
+
+**Revisit if:** the heart count ever changes from three. The mapping in
+`ellieMood` is written against 3/2/1 and would silently pin to one drawing.

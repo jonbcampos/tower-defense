@@ -23,7 +23,7 @@ import {
   laneY,
 } from '../game/config';
 import { PALETTE, alpha } from './palette';
-import { drawSprite, sprite } from './sprites';
+import { drawSprite, sprite, spriteFrames } from './sprites';
 
 /**
  * Wall, wainscot and the floor's lane stripes. Drawn before anything else.
@@ -284,7 +284,7 @@ export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: n
  * It also has to stay visibly UNPLACEABLE. No straight edges, no cell-sized
  * anything, nothing that could be mistaken for a square you could build on.
  */
-export function drawNook(ctx: CanvasRenderingContext2D): void {
+export function drawNook(ctx: CanvasRenderingContext2D, mood: EllieMood): void {
   const cx = bedX() + 26;
   const cy = (BOARD_TOP + BOARD_BOTTOM) / 2;
 
@@ -321,7 +321,29 @@ export function drawNook(ctx: CanvasRenderingContext2D): void {
   ctx.arc(cx - 15, cy + 56, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  drawEllie(ctx, cx - 4, cy - 52);
+  drawEllie(ctx, cx - 4, cy - 52, mood);
+}
+
+/**
+ * Which of Ellie's four drawings to show. Index into her sprite sheet.
+ *
+ * 0 happy, 1 uneasy, 2 frightened, 3 cheering.
+ */
+export type EllieMood = 0 | 1 | 2 | 3;
+
+/**
+ * Her mood, from the only two things that should drive it.
+ *
+ * Tied to the hearts because the hearts are the one number a five-year-old is
+ * already tracking, and a face is a far more legible readout of it than three
+ * small icons in a corner. It is a SECOND way to read the same state, never the
+ * only way — the hearts stay exactly as they were.
+ */
+export function ellieMood(lives: number, won: boolean): EllieMood {
+  if (won) return 3;
+  if (lives >= 3) return 0;
+  if (lives === 2) return 1;
+  return 2;
 }
 
 /**
@@ -341,43 +363,62 @@ export function drawNook(ctx: CanvasRenderingContext2D): void {
  * animates or reacts, because she is not a mechanic and a player who thought
  * she was would be looking for a button that isn't there.
  */
-function drawEllie(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-  const art = sprite('ellie');
-  if (art) {
-    drawSprite(ctx, art, x, y, 46, 46);
+function drawEllie(ctx: CanvasRenderingContext2D, x: number, y: number, mood: EllieMood): void {
+  const moods = spriteFrames('ellie');
+  if (moods) {
+    drawSprite(ctx, moods[Math.min(mood, moods.length - 1)] ?? moods[0]!, x, y, 46, 46);
     return;
   }
 
   // Hand-drawn fallback, in the same shapes the kid painters use: a seated
   // girl, wide at the hem. Plain, but she should be there whether or not
-  // anybody ever ran the art script.
+  // anybody ever ran the art script — and she should still change with the
+  // hearts, because that is the point of her rather than a flourish on top.
   ctx.fillStyle = alpha(PALETTE.kidOutline, 0.22);
   ctx.beginPath();
   ctx.ellipse(x, y + 15, 15, 4, 0, 0, Math.PI * 2);
   ctx.fill();
 
+  // Frightened, she curls up: narrower, shorter, lower.
+  const small = mood === 2;
+  const hem = small ? 10 : 14;
+  const top = small ? y - 2 : y - 6;
+
   ctx.fillStyle = ELLIE_DRESS;
   ctx.beginPath();
-  ctx.moveTo(x - 14, y + 15);
-  ctx.quadraticCurveTo(x, y + 6, x + 14, y + 15);
-  ctx.lineTo(x + 7, y - 6);
-  ctx.lineTo(x - 7, y - 6);
+  ctx.moveTo(x - hem, y + 15);
+  ctx.quadraticCurveTo(x, y + 6, x + hem, y + 15);
+  ctx.lineTo(x + 7, top);
+  ctx.lineTo(x - 7, top);
   ctx.closePath();
   ctx.fill();
 
+  const headY = small ? y - 7 : y - 11;
   ctx.fillStyle = ELLIE_HAIR;
   ctx.beginPath();
-  ctx.ellipse(x, y - 12, 11, 12, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, headY - 1, 11, 12, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = ELLIE_SKIN;
   ctx.beginPath();
-  ctx.arc(x, y - 11, 8, 0, Math.PI * 2);
+  ctx.arc(x, headY, 8, 0, Math.PI * 2);
   ctx.fill();
-  // The raised hand, so she is waving rather than just sitting there.
-  ctx.fillRect(x + 8, y - 6, 4, 6);
+
+  // Arms say the mood, because at this size they are the only part big enough
+  // to. A face here is about six pixels across.
+  if (mood === 0) {
+    ctx.fillRect(x + 8, headY + 5, 4, 6); // waving
+  } else if (mood === 1) {
+    ctx.fillRect(x - 5, y + 2, 10, 4); // hands together in her lap
+  } else if (mood === 2) {
+    ctx.fillRect(x - 9, y + 1, 18, 4); // arms wrapped round her knees
+  } else {
+    ctx.fillRect(x - 12, headY - 6, 4, 8); // both thrown up, cheering
+    ctx.fillRect(x + 8, headY - 6, 4, 8);
+  }
+
   ctx.fillStyle = PALETTE.kidOutline;
-  ctx.fillRect(x - 4, y - 12, 1.5, 2);
-  ctx.fillRect(x + 2, y - 12, 1.5, 2);
+  ctx.fillRect(x - 4, headY - 1, 1.5, 2);
+  ctx.fillRect(x + 2, headY - 1, 1.5, 2);
 }
 
 /** Her colours, matching the generated sprite so the fallback is the same girl. */
