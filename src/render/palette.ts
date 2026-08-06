@@ -67,6 +67,9 @@ export interface Palette {
   unicornBlush: string;
 
   /** Generic kid parts. Clothing colour comes from the EnemyDef. */
+  water: string;
+  waterShine: string;
+  waterRim: string;
   kidSkin: string;
   kidSkinShade: string;
   kidHair: string;
@@ -169,6 +172,9 @@ export const BEDROOM_PALETTE: Palette = {
   unicornEye: '#3a2a52',
   unicornBlush: '#ffb3d1',
 
+  water: '#5fb6d9',
+  waterShine: '#d8f4ff',
+  waterRim: '#9fe0f5',
   kidSkin: '#f2c396',
   kidSkinShade: '#d6a074',
   kidHair: '#5b3a2e',

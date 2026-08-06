@@ -110,6 +110,12 @@ export function drawToyArt(
     case 'slime':
       drawSlime(ctx, body, def.accent, t);
       break;
+    case 'ring':
+      drawRing(ctx, body, def.accent, t);
+      break;
+    case 'castle':
+      drawCastle(ctx, body, def.accent);
+      break;
     case 'powder':
       drawPowder(ctx, body, def.accent);
       break;
@@ -396,6 +402,78 @@ function drawNightlight(ctx: CanvasRenderingContext2D, body: string, accent: str
   ctx.fillStyle = accent;
   star(ctx, 0, -5, 5, 2, 5);
   ctx.fill();
+}
+
+/**
+ * A duck-shaped swim ring, bobbing.
+ *
+ * Drawn as a flat ellipse rather than a circle because it lies ON the water and
+ * everything else in the cell will be standing on top of it — a ring in
+ * perspective reads as a hoop stood on its edge, and then the Water Gun above
+ * it looks like it is falling through.
+ */
+/** A sandcastle: three towers and a wall, squat and obviously solid. */
+function drawCastle(ctx: CanvasRenderingContext2D, body: string, accent: string): void {
+  ctx.fillStyle = body;
+  ctx.fillRect(-15, -2, 30, 15);
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(-15, -2, 30, 15);
+  for (const x of [-15, -4, 7]) {
+    ctx.fillStyle = body;
+    ctx.fillRect(x, -12, 8, 12);
+    ctx.strokeRect(x, -12, 8, 12);
+    // Crenellations, which is what makes a lump of sand read as a castle.
+    ctx.fillStyle = accent;
+    ctx.fillRect(x, -14, 3, 3);
+    ctx.fillRect(x + 5, -14, 3, 3);
+  }
+  ctx.fillStyle = accent;
+  ctx.fillRect(-13, 2, 26, 1.5);
+}
+
+function drawRing(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  accent: string,
+  t: number,
+): void {
+  const bob = Math.sin(t * 1.6) * 0.8;
+  ctx.save();
+  ctx.translate(0, bob);
+
+  // The ring itself, and the hole, so it reads as a ring and not a disc.
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 15, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.fillStyle = alpha(PALETTE.water, 0.85);
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 7, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // A duck head on the far side, which is the whole reason a five-year-old
+  // will want to put one down.
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.ellipse(-11, -2, 4.5, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.stroke();
+  ctx.fillStyle = '#ff9f43';
+  ctx.beginPath();
+  ctx.moveTo(-15, -1);
+  ctx.lineTo(-19, 0.5);
+  ctx.lineTo(-15, 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = PALETTE.kidOutline;
+  ctx.fillRect(-12.5, -3.5, 1.4, 1.6);
+
+  ctx.restore();
 }
 
 function drawSlime(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {

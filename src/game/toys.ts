@@ -23,6 +23,8 @@ export type ToyId =
   | 'powder'
   | 'fountain'
   | 'machine'
+  | 'ring'
+  | 'castle'
   | 'sweeper';
 
 /**
@@ -46,7 +48,15 @@ export type ToyRole = 'producer' | 'shooter' | 'wall' | 'floor' | 'instant';
  * one cell. That's the whole reason the layer exists: a slowing tile that costs
  * you a shooting slot is a tile nobody ever places.
  */
-export type ToyLayer = 'ground' | 'floor';
+/**
+ * Which of a cell's three stacked slots a toy occupies.
+ *
+ * `floor` goes under everything, so Sticky Slime and a Water Gun can share a
+ * cell — a slowing tile that costs you a shooting slot is a tile nobody places.
+ * `float` is the paddling pool's prerequisite: a cell of water holds nothing at
+ * all until a Duck Ring is in it, and then it behaves like dry ground.
+ */
+export type ToyLayer = 'ground' | 'floor' | 'float';
 
 export interface ToyDef {
   id: ToyId;
@@ -304,6 +314,46 @@ export const TOYS: Record<ToyId, ToyDef> = {
    * path. Giving it its own bespoke branch would be one more place for a rule
    * like "immunities don't apply here" to be forgotten.
    */
+  castle: {
+    id: 'castle',
+    name: 'Sand Castle',
+    blurb: 'A really strong wall. Takes ages to knock down.',
+    role: 'wall',
+    layer: 'ground',
+    // Three times a Pillow Fort's health for two and a half times the price.
+    // Deliberately a worse deal per sparkle: the thing you are buying is the
+    // number of SECONDS one cell holds, and in the backyard's pool lanes a cell
+    // costs a Duck Ring before it costs anything else, so cells are the scarce
+    // resource rather than sparkles.
+    cost: 125,
+    recharge: 0,
+    hp: 1200,
+    hitsAir: false,
+    color: '#e8c98a',
+    accent: '#c9a666',
+  },
+
+  ring: {
+    id: 'ring',
+    name: 'Duck Ring',
+    blurb: 'Float it on the water, then you can build on top of it.',
+    role: 'wall',
+    layer: 'float',
+    // Cheap on purpose. It does nothing by itself, and a prerequisite you have
+    // to save up for reads as a tax rather than as a move — the interesting
+    // decision is which water cells are worth opening, not whether you can
+    // afford to open any.
+    cost: 25,
+    recharge: 0,
+    // Tougher than a Pillow Fort. A kid who stops to pull the ring apart also
+    // destroys whatever was standing on it, so it losing quickly would make the
+    // pool lanes feel like a trap rather than a cost.
+    hp: 300,
+    hitsAir: false,
+    color: '#ffd94d',
+    accent: '#fff3c4',
+  },
+
   sweeper: {
     id: 'sweeper',
     name: 'Guard Bear',
@@ -334,6 +384,11 @@ export const TOY_ORDER: readonly ToyId[] = [
   'powder',
   'fountain',
   'machine',
+  // Backyard. The Guard Bear is deliberately absent from this list — it is not
+  // a card, it never appears in the tray, and putting it here would give it a
+  // slot in the loadout picker that nobody can use.
+  'ring',
+  'castle',
 ];
 
 /** Damage per second a shooter lands on a single kid standing in front of it. */
@@ -392,16 +447,27 @@ export interface Toy {
 export class ToyGrid {
   readonly ground: Toy[] = [];
   readonly floor: Toy[] = [];
+  readonly float: Toy[] = [];
 
   constructor() {
     for (let i = 0; i < CELL_COUNT; i++) {
       this.ground.push(blankToy(i));
       this.floor.push(blankToy(i));
+      this.float.push(blankToy(i));
     }
   }
 
   layerFor(id: ToyId): Toy[] {
-    return TOYS[id].layer === 'floor' ? this.floor : this.ground;
+    const layer = TOYS[id].layer;
+    if (layer === 'floor') return this.floor;
+    if (layer === 'float') return this.float;
+    return this.ground;
+  }
+
+  /** The float in a cell, if any. The prerequisite for building on water. */
+  floatAt(lane: number, col: number): Toy | null {
+    const toy = this.float[cellIndex(lane, col)]!;
+    return toy.active ? toy : null;
   }
 
   at(lane: number, col: number): Toy | null {
@@ -446,6 +512,7 @@ export class ToyGrid {
   reset(): void {
     for (const toy of this.ground) toy.active = false;
     for (const toy of this.floor) toy.active = false;
+    for (const toy of this.float) toy.active = false;
   }
 }
 

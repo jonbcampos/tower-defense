@@ -11,7 +11,7 @@ import {
   type Save,
 } from './core/save';
 import { DIFFICULTIES, cellAt, type DifficultyId } from './game/config';
-import { LEVELS, levelById, unlockedBy } from './game/levels';
+import { LEVELS, levelById, unlockedBy, type WorldId } from './game/levels';
 import { GameState, validateDesignContracts, type GameEvent } from './game/state';
 import { TOYS, type ToyId } from './game/toys';
 import { Particles } from './render/particles';
@@ -20,6 +20,7 @@ import {
   advanceScene,
   sceneRenderer,
   setGuideDisplay,
+  setSelectWorld,
   setLoadoutDisplay,
   setSaveForDisplay,
   setUnlockBanner,
@@ -80,6 +81,8 @@ setMutedDisplay(audio.muted);
 let currentLevelId = 1;
 /** Cards chosen on the loadout screen. Unused on EASY. */
 let picked: ToyId[] = [];
+/** Which world's levels the picker is showing. */
+let selectWorld: WorldId = 'bedroom';
 /** Where the guide is open, if it is. Reset every time it opens. */
 let guideTab: GuideTab = 'toys';
 let guidePage = 0;
@@ -113,6 +116,11 @@ function routeMenuTap(tap: Tap): void {
     audio.play('select');
     save.difficulty = hit.id.slice('diff:'.length) as DifficultyId;
     writeSave(save);
+    // Open on the world she has reached, not always on the first one. Making a
+    // child page forward to where she left off every single time is the kind of
+    // small tax that turns into "I don't want to play it".
+    selectWorld = levelById(Math.min(save.unlocked, LEVELS.length)).world;
+    setSelectWorld(selectWorld);
     state.phase = 'select';
     return;
   }
@@ -140,11 +148,16 @@ function routeMenuTap(tap: Tap): void {
   }
 
   if (state.phase === 'select') {
-    const hit = hitTestMenu(levelMenu(save), tap.x, tap.y);
+    const hit = hitTestMenu(levelMenu(save, selectWorld), tap.x, tap.y);
     if (!hit) return;
     audio.play('select');
     if (hit.id === 'back') {
       state.phase = 'title';
+      return;
+    }
+    if (hit.id.startsWith('world:')) {
+      selectWorld = hit.id.slice('world:'.length) as WorldId;
+      setSelectWorld(selectWorld);
       return;
     }
     currentLevelId = Number(hit.id.slice('level:'.length));
@@ -483,6 +496,9 @@ if (import.meta.env.DEV) {
       save,
       startRun,
       verify: v.verify,
+      /** Re-run the design contracts on demand, rather than reading them out of
+       *  a console buffer that also holds every previous page load's. */
+      contracts: () => [...validateDesignContracts(), ...validateTrayContracts()],
       tune: t.tune,
       showTuning: t.showTuning,
       // Lets a test drive the real loop body when rAF is unavailable — e.g. a

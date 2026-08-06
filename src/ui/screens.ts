@@ -15,7 +15,7 @@ import {
   type DifficultyId,
 } from '../game/config';
 import { ENEMIES, ENEMY_ORDER } from '../game/enemies';
-import { LEVELS, LEVEL_COUNT } from '../game/levels';
+import { LEVELS, LEVEL_COUNT, WORLDS, WORLD_ORDER, type WorldId } from '../game/levels';
 import { TOYS, TOY_ORDER, type ToyId } from '../game/toys';
 import { PALETTE, alpha } from '../render/palette';
 import { drawToyArt } from '../render/toys';
@@ -122,17 +122,31 @@ const CARD_W = 62;
 const CARD_H = 56;
 const CARD_GAP = 8;
 
-export function levelMenu(save: Save): MenuRect[] {
+/**
+ * Level select, one world at a time.
+ *
+ * It used to be every level in one grid, which fitted exactly as long as there
+ * were ten of them: fifteen spilled into a third row that overlapped the BACK
+ * button, and twenty would have run off the bottom of the screen. Paging by
+ * world fixes that permanently — a world is ten levels by construction, so this
+ * is two rows of five however many worlds get added.
+ *
+ * It also happens to be the honest grouping. "The Bedroom" and "The Backyard"
+ * are different places with different rules, and a flat run of numbers from 1
+ * to 20 hides the one thing a player most wants to know about level 11.
+ */
+export function levelMenu(save: Save, world: WorldId): MenuRect[] {
   const perRow = 5;
+  const inWorld = LEVELS.filter((level) => level.world === world);
   const total = perRow * CARD_W + (perRow - 1) * CARD_GAP;
   const startX = Math.round((SCREEN.w - total) / 2);
-  const rects: MenuRect[] = LEVELS.map((level, index) => {
+  const rects: MenuRect[] = inWorld.map((level, index) => {
     const row = Math.floor(index / perRow);
     const col = index % perRow;
     return {
       id: `level:${level.id}`,
       x: startX + col * (CARD_W + CARD_GAP),
-      y: 62 + row * (CARD_H + 10),
+      y: 74 + row * (CARD_H + 10),
       w: CARD_W,
       h: CARD_H,
       label: String(level.id),
@@ -140,6 +154,26 @@ export function levelMenu(save: Save): MenuRect[] {
       enabled: level.id <= save.unlocked,
       icon: 'none',
     };
+  });
+
+  // One tab per world, and a world you have not reached yet is visibly shut
+  // rather than absent — "there is more after this" is worth showing a child.
+  const ids = WORLD_ORDER;
+  const tabW = 96;
+  const tabTotal = ids.length * tabW + (ids.length - 1) * 8;
+  const tabX = Math.round((SCREEN.w - tabTotal) / 2);
+  ids.forEach((id, index) => {
+    rects.push({
+      id: `world:${id}`,
+      x: tabX + index * (tabW + 8),
+      y: 44,
+      w: tabW,
+      h: 22,
+      label: WORLDS[id].name,
+      sub: '',
+      enabled: LEVELS.some((level) => level.world === id && level.id <= save.unlocked),
+      icon: 'none',
+    });
   });
   rects.push({
     id: 'back',
@@ -369,6 +403,7 @@ export function drawLevelSelect(
   ctx: CanvasRenderingContext2D,
   save: Save,
   difficulty: DifficultyId,
+  world: WorldId,
   time: number,
 ): void {
   drawScrim(ctx, 0.82);
@@ -384,9 +419,14 @@ export function drawLevelSelect(
     color: PALETTE.hudAccent,
   });
 
-  for (const rect of levelMenu(save)) {
+  for (const rect of levelMenu(save, world)) {
     if (rect.id === 'back') {
       drawButton(ctx, rect, false);
+      continue;
+    }
+    if (rect.id.startsWith('world:')) {
+      const id = rect.id.slice('world:'.length) as WorldId;
+      drawButton(ctx, rect, id === world, !rect.enabled);
       continue;
     }
     const id = Number(rect.id.slice('level:'.length));

@@ -127,8 +127,28 @@ function placementCol(state: GameState, lane: number, targetCol: number): number
   return firstFreeCol(state, lane, 2, COL_COUNT - 1);
 }
 
+/**
+ * Place a card, laying a Duck Ring first if the cell is water.
+ *
+ * Every bot placement goes through here, which is the only reason the backyard
+ * did not need two more policies written. The terrain rule is not strategy — a
+ * bot that does not know it simply cannot build in three lanes of five, and the
+ * trial would report "this level is unwinnable" when what it had actually found
+ * was a bot that cannot swim.
+ *
+ * Note it does NOT teach the bots to value the pool lanes, decide whether a
+ * lane is worth the ring, or hold cells back. Those are judgements, and the
+ * whole point of a deliberately mediocre bot is that it makes none of them.
+ */
 function tryPlace(state: GameState, id: ToyId, lane: number, col: number): boolean {
   if (col < 0) return false;
+  if (state.isWater(lane, col) && TOYS[id].layer !== 'float') {
+    if (!state.toys.floatAt(lane, col) && !placeCard(state, 'ring', lane, col)) return false;
+  }
+  return placeCard(state, id, lane, col);
+}
+
+function placeCard(state: GameState, id: ToyId, lane: number, col: number): boolean {
   state.selectCard(null);
   state.selectCard(id);
   const placed = state.tryPlace(lane, col);

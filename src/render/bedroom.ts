@@ -161,6 +161,85 @@ export function drawBlocked(ctx: CanvasRenderingContext2D, blocked: readonly num
 }
 
 /**
+ * The paddling pool.
+ *
+ * Drawn like `drawBlocked`'s opposite number and deliberately not like it. A
+ * blocked cell is sunk into shadow with a hard border, because the message is
+ * "this is not your floor". Water is bright, moving and open, because the
+ * message is "this IS your floor once you put a ring on it" — a cell that
+ * looked forbidden would teach the wrong thing about a cell you are meant to
+ * want.
+ *
+ * Continuous across neighbours: a pool is one body of water, and five squares
+ * of blue with gaps between them reads as five puddles.
+ */
+export function drawWater(
+  ctx: CanvasRenderingContext2D,
+  water: readonly number[],
+  time: number,
+): void {
+  if (water.length === 0) return;
+  const wet = new Set(water);
+
+  for (const index of wet) {
+    const lane = Math.floor(index / COL_COUNT);
+    const col = index % COL_COUNT;
+    const x = cellX(col);
+    const y = laneY(lane);
+    // Overdraw by a pixel into any neighbour that is also water, so the seams
+    // between cells disappear and the pool reads as one shape.
+    const left = wet.has(index - 1) && col > 0 ? 1 : 0;
+    const right = wet.has(index + 1) && col < COL_COUNT - 1 ? 1 : 0;
+    const up = wet.has(index - COL_COUNT) ? 1 : 0;
+    const down = wet.has(index + COL_COUNT) ? 1 : 0;
+    ctx.fillStyle = PALETTE.water;
+    ctx.fillRect(x - left, y - up, CELL_W + left + right, CELL_H + up + down);
+  }
+
+  // Ripples, drawn over the whole pool rather than per cell so they cross the
+  // seams too. Slow: this is a paddling pool, not a sea.
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = PALETTE.waterShine;
+  ctx.lineWidth = 1;
+  for (const index of wet) {
+    const lane = Math.floor(index / COL_COUNT);
+    const col = index % COL_COUNT;
+    const x = cellX(col);
+    const y = laneY(lane);
+    for (let i = 0; i < 2; i++) {
+      const drift = ((time * 6 + i * 21 + col * 13 + lane * 7) % (CELL_W + 16)) - 8;
+      ctx.beginPath();
+      ctx.moveTo(x + drift, y + 12 + i * 15);
+      ctx.quadraticCurveTo(x + drift + 5, y + 9 + i * 15, x + drift + 10, y + 12 + i * 15);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // A rim, so the edge of the pool is a line rather than a colour change.
+  ctx.strokeStyle = alpha(PALETTE.waterRim, 0.9);
+  ctx.lineWidth = 2;
+  for (const index of wet) {
+    const lane = Math.floor(index / COL_COUNT);
+    const col = index % COL_COUNT;
+    const x = cellX(col);
+    const y = laneY(lane);
+    if (!wet.has(index - COL_COUNT)) line(ctx, x, y + 1, x + CELL_W, y + 1);
+    if (!wet.has(index + COL_COUNT)) line(ctx, x, y + CELL_H - 1, x + CELL_W, y + CELL_H - 1);
+    if (!wet.has(index - 1) || col === 0) line(ctx, x + 1, y, x + 1, y + CELL_H);
+    if (!wet.has(index + 1) || col === COL_COUNT - 1) line(ctx, x + CELL_W - 1, y, x + CELL_W - 1, y + CELL_H);
+  }
+}
+
+function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number): void {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+}
+
+/**
  * The cushion and the unicorn, on the left.
  *
  * `hurt` is 0-1: how recently a kid got a squeeze in. The unicorn squashes and

@@ -29,7 +29,7 @@ import { TOYS, type ToyId } from '../game/toys';
 import type { Input } from '../core/input';
 import type { Renderer } from './renderer';
 import { PALETTE, alpha } from './palette';
-import { drawBlocked, drawGuards, drawNook, drawRoom, drawUnicorn, ellieMood } from './bedroom';
+import { drawBlocked, drawGuards, drawNook, drawRoom, drawUnicorn, drawWater, ellieMood } from './bedroom';
 import { drawKid } from './kids';
 import { drawPlacedToy, drawToyArt } from './toys';
 import { drawFooter, drawPopups } from '../ui/hud';
@@ -45,7 +45,7 @@ import {
   type GuideTab,
 } from '../ui/screens';
 import { freshSave, type Save } from '../core/save';
-import { LEVELS } from '../game/levels';
+import { LEVELS, type WorldId } from '../game/levels';
 
 /**
  * Presentation-only state, mirrored here rather than read from storage or the
@@ -90,6 +90,11 @@ export function setLoadoutDisplay(
 /** Mirrored from main.ts, like the loadout: the guide's page is UI state. */
 let guideTab: GuideTab = 'toys';
 let guidePage = 0;
+let selectWorld: WorldId = 'bedroom';
+
+export function setSelectWorld(world: WorldId): void {
+  selectWorld = world;
+}
 
 export function setGuideDisplay(tab: GuideTab, page: number): void {
   guideTab = tab;
@@ -119,8 +124,12 @@ export const sceneRenderer: Renderer = {
     // The door goes down before the kids, so a kid at the doorway is walking
     // OUT of it rather than standing on top of it.
     if (inPlay) drawNook(ctx, ellieMood(state.lives, state.phase === 'won'));
+    // Water under the furniture: a level could in principle put a rug at the
+    // pool's edge, and a rug half-submerged is a mistake either way round.
+    if (inPlay) drawWater(ctx, state.level.water ?? [], clock);
     if (inPlay) drawBlocked(ctx, state.level.blocked);
     drawLaneFlashes(ctx, state);
+    drawFloatToys(ctx, state);
     drawFloorToys(ctx, state);
     drawPlacementHints(ctx, state, input);
     // Ground toys and kids together, one row at a time. See drawRows.
@@ -160,6 +169,14 @@ function drawLaneFlashes(ctx: CanvasRenderingContext2D, state: GameState): void 
     const strength = (flash / WAVE.flashSeconds) * 0.3;
     ctx.fillStyle = alpha(PALETTE.hudWarn, strength);
     ctx.fillRect(0, laneY(lane), SCREEN.w, CELL_H);
+  }
+}
+
+/** Duck Rings, under everything: they are what the rest is standing on. */
+function drawFloatToys(ctx: CanvasRenderingContext2D, state: GameState): void {
+  for (const toy of state.toys.float) {
+    if (!toy.active) continue;
+    drawPlacedToy(ctx, toy, cellCentreX(toy.col), laneCentreY(toy.lane), clock);
   }
 }
 
@@ -443,7 +460,7 @@ function drawOverlays(ctx: CanvasRenderingContext2D, state: GameState): void {
       drawTitle(ctx, save, clock);
       break;
     case 'select':
-      drawLevelSelect(ctx, save, save.difficulty, clock);
+      drawLevelSelect(ctx, save, save.difficulty, selectWorld, clock);
       break;
     case 'loadout':
       drawLoadout(ctx, loadoutAvailable, loadoutPicked, loadoutMax, clock);

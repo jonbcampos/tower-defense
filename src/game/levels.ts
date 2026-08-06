@@ -31,7 +31,7 @@ import type { ToyId } from './toys';
  * v1 ships one world. This type exists now, with the fields the sketched worlds
  * would need, because retrofitting it later means touching every level.
  */
-export type WorldId = 'bedroom';
+export type WorldId = 'bedroom' | 'backyard';
 
 export interface World {
   id: WorldId;
@@ -43,11 +43,29 @@ export interface World {
    * would set this to 0 and make a producer mandatory rather than obvious.
    */
   trickleScale: number;
+  /**
+   * The terrain rule. This is what makes a world a world rather than a
+   * repaint — see decision 19 and the reason PvZ's fifty levels don't feel
+   * like ten repeated: each area changed what the BOARD does, invalidating the
+   * build that worked in the last one.
+   *
+   * `dry` is the bedroom: every unblocked cell takes any toy.
+   * `pool` is the backyard: cells listed in a level's `water` hold nothing at
+   * all until a Duck Ring floats there, and then behave like dry ground.
+   */
+  terrain: 'dry' | 'pool';
 }
 
 export const WORLDS: Record<WorldId, World> = {
-  bedroom: { id: 'bedroom', name: 'The Bedroom', lanes: LANE_COUNT, trickleScale: 1 },
+  bedroom: { id: 'bedroom', name: 'The Bedroom', lanes: LANE_COUNT, trickleScale: 1, terrain: 'dry' },
+  // Outdoors, in the sun, with the paddling pool out. The trickle is a touch
+  // higher because there is daylight rather than one bedside lamp — a small
+  // nudge that pays for the Duck Rings the terrain forces you to buy.
+  backyard: { id: 'backyard', name: 'The Backyard', lanes: LANE_COUNT, trickleScale: 1.15, terrain: 'pool' },
 };
+
+/** Worlds in the order they are played. Also the order of the level-select tabs. */
+export const WORLD_ORDER: readonly WorldId[] = ['bedroom', 'backyard'];
 
 // --- Waves ------------------------------------------------------------------
 
@@ -133,6 +151,16 @@ export interface Level {
    */
   recommended: readonly ToyId[];
   blocked: readonly number[];
+  /**
+   * Cells that are paddling pool, as `lane * COL_COUNT + col`.
+   *
+   * Only meaningful in a `pool` world; a contract rejects water in a dry one
+   * rather than silently ignoring it. Water is NOT blocked — a kid wades
+   * through it exactly as she walks anywhere else. It restricts what YOU can
+   * build, which is one rule rather than two, and it means the pool reads as an
+   * obstacle for the player without needing a second set of swimming kids.
+   */
+  water?: readonly number[];
   startSparkles: number;
   waves: readonly Wave[];
 }
@@ -398,7 +426,11 @@ export const LEVELS: readonly Level[] = [
     world: 'bedroom',
     name: 'The Big Kid',
     teaches: 'Everything you know, at once.',
-    unlocks: [],
+    // Clearing the bedroom is what gets you outside, and the Duck Ring comes
+    // with the change of scene rather than being handed out in the backyard's
+    // own first level — the pool is unusable without it, and a level that opens
+    // with a locked prerequisite reads as broken.
+    unlocks: ['ring'],
     recommended: ['jar', 'wand', 'watergun', 'sprinkler', 'machine'],
     // The boss's lane has its back two columns gone, so he can't be intercepted
     // at the door and has to be fought with guns stacked behind him.
@@ -425,6 +457,110 @@ export const LEVELS: readonly Level[] = [
       ),
     ],
   },
+  // --- World 2: The Backyard --------------------------------------------------
+  //
+  // The terrain rule is the paddling pool: a water cell holds nothing until a
+  // Duck Ring floats on it. That is the whole world, and it is deliberately ONE
+  // rule — the bedroom's ten levels taught a vocabulary of toys, and a second
+  // area that also changed the toys would be a sequel rather than a new place.
+  // What changes is where you are allowed to stand, which invalidates the build
+  // that worked indoors without invalidating anything she learned.
+  {
+    id: 11,
+    world: 'backyard',
+    name: 'Splash Time',
+    teaches: 'Put a ring on the water, then build on the ring.',
+    unlocks: ['castle'],
+    recommended: ['jar', 'wand', 'ring', 'fort', 'watergun'],
+    blocked: [],
+    // One puddle, in the middle lane, well forward. Small enough to walk round
+    // and obvious enough to experiment with: the lesson is the ring, and a
+    // first pool that split the board would teach panic instead.
+    water: rect(2, 2, 4, 6),
+    startSparkles: 175,
+    waves: [
+      w([k('toddler', 2)], 24),
+      w([k('toddler', 1), k('crawler', 2, 3)], 24),
+      w([k('toddler', 2), k('toddler', 3, 3), o(k('crawler', 1, 3))], 24),
+      wBig([k('toddler', 0), k('toddler', 2, 2), k('toddler', 4, 2), k('crawler', 2, 4), o(k('runner', 3, 3))], 26),
+    ],
+  },
+  {
+    id: 12,
+    world: 'backyard',
+    name: 'Two Puddles',
+    teaches: 'Two wet rows. Rings cost cells, not just sparkles.',
+    unlocks: [],
+    recommended: ['jar', 'wand', 'ring', 'powder', 'sprinkler'],
+    blocked: [],
+    water: merge(rect(1, 1, 3, 7), rect(3, 3, 3, 7)),
+    startSparkles: 200,
+    waves: [
+      w([k('toddler', 1), k('runner', 3, 3)]),
+      w([k('runner', 1), k('toddler', 3, 2), k('crawler', 2, 3), o(k('runner', 0, 3))]),
+      w([k('runner', 1), k('runner', 3, 1), k('toddler', 2, 3), o(k('toddler', 4, 3))]),
+      wBig([k('runner', 1), k('runner', 3, 1), k('raincoat', 2, 3), k('toddler', 0, 3), o(k('runner', 4, 3))]),
+    ],
+  },
+  {
+    id: 13,
+    world: 'backyard',
+    name: 'The Deep End',
+    teaches: 'Raincoats love the pool. Bubbles still work.',
+    unlocks: [],
+    recommended: ['jar', 'wand', 'ring', 'machine', 'fort'],
+    blocked: [],
+    // The right half of three lanes. You cannot meet these kids at the far end
+    // without paying for rings first, so the fight happens closer to home.
+    water: rect(1, 3, 5, 8),
+    startSparkles: 200,
+    waves: [
+      w([k('raincoat', 2), k('toddler', 0, 3)]),
+      w([k('raincoat', 1), k('raincoat', 3, 2), o(k('runner', 2, 3))]),
+      w([k('raincoat', 2), k('toddler', 4, 2), k('runner', 0, 2), o(k('raincoat', 1, 3))]),
+      wBig([k('raincoat', 1), k('raincoat', 2, 1), k('raincoat', 3, 1), k('runner', 0, 3), o(k('toddler', 4, 3))]),
+    ],
+  },
+  {
+    id: 14,
+    world: 'backyard',
+    name: 'Pool Party',
+    teaches: 'Only the edges are dry.',
+    unlocks: [],
+    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'powder'],
+    blocked: [],
+    // Three whole lanes of water. The two dry lanes are the outer ones, so the
+    // cheap build is a wall of rings across the middle or a decision to give
+    // the middle up and hold the edges — which is the first time this game has
+    // asked whether a lane is worth defending at all.
+    water: merge(rect(1, 3, 1, 8)),
+    startSparkles: 250,
+    waves: [
+      w([k('toddler', 0), k('toddler', 4, 2), k('runner', 2, 3)]),
+      w([k('balloon', 2), k('runner', 0, 2), k('runner', 4, 2), o(k('toddler', 1, 3))]),
+      w([k('balloon', 1), k('balloon', 3, 2), k('raincoat', 2, 3), o(k('runner', 0, 3))]),
+      wBig([k('puffy', 0), k('puffy', 4, 1), k('balloon', 2, 2), k('runner', 1, 3), o(k('runner', 3, 3))]),
+    ],
+  },
+  {
+    id: 15,
+    world: 'backyard',
+    name: 'Sock Soup',
+    teaches: 'She slides over slime. She does not slide over a wall.',
+    unlocks: [],
+    recommended: ['jar', 'ring', 'castle', 'watergun', 'machine'],
+    // A patio table in the corner, and the pool wrapped round it.
+    blocked: rect(0, 1, 6, 7),
+    water: merge(rect(2, 4, 2, 5), rect(3, 3, 6, 8)),
+    startSparkles: 250,
+    waves: [
+      w([k('slider', 3), k('toddler', 0, 3)]),
+      w([k('slider', 2), k('slider', 4, 2), k('wagon', 3, 3), o(k('runner', 1, 3))]),
+      w([k('wagon', 2), k('slider', 0, 2), k('puffy', 4, 2), o(k('slider', 3, 3))]),
+      wBig([k('slider', 2), k('slider', 3, 1), k('slider', 4, 1), k('wagon', 0, 3), k('puffy', 1, 3), o(k('bigkid', 3, 5))], 30),
+    ],
+  },
+
 ];
 
 export const LEVEL_COUNT = LEVELS.length;

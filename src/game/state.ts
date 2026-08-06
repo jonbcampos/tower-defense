@@ -149,6 +149,8 @@ export class GameState {
 
   /** Cells this level's furniture covers. */
   private blocked = new Set<number>();
+  /** Paddling-pool cells. Empty outside a `pool` world. See `isWater`. */
+  private water = new Set<number>();
 
   /** Star bookkeeping. */
   toysLost = 0;
@@ -186,6 +188,7 @@ export class GameState {
     this.sparkles.reset();
 
     this.blocked = new Set(level.blocked);
+    this.water = new Set(WORLDS[level.world].terrain === 'pool' ? (level.water ?? []) : []);
     this.purse = level.startSparkles + this.difficulty.startSparkleBonus;
     this.lives = SQUEEZE_LIVES;
     this.elapsed = 0;
@@ -252,6 +255,11 @@ export class GameState {
     return this.blocked.has(cellIndex(lane, col));
   }
 
+  /** Paddling pool. Buildable, but only on top of a Duck Ring. */
+  isWater(lane: number, col: number): boolean {
+    return this.water.has(cellIndex(lane, col));
+  }
+
   /**
    * Can the held card go here?
    *
@@ -267,6 +275,7 @@ export class GameState {
     if (!this.isReady(id)) return false;
     if (!this.canAfford(id)) return false;
     if (TOYS[id].role === 'instant') return true;
+    if (!this.terrainAllows(id, lane, col)) return false;
     return this.toys.canPlace(id, lane, col);
   }
 
@@ -279,6 +288,22 @@ export class GameState {
    * silence tells a five-year-old the game has stopped working, and she will
    * keep tapping the same wrong cell rather than trying a different one.
    */
+  /**
+   * The paddling pool rule, and the only thing that makes the backyard a
+   * different game rather than a different picture.
+   *
+   * Water holds nothing until a Duck Ring floats on it; a ring is the one thing
+   * that CAN go there and the one thing that cannot go anywhere else. Stated as
+   * two symmetric refusals rather than one, because "you may not build here"
+   * and "this belongs in the water" are different mistakes and the player has
+   * to be able to tell which one she made.
+   */
+  private terrainAllows(id: ToyId, lane: number, col: number): boolean {
+    const wet = this.isWater(lane, col);
+    if (TOYS[id].layer === 'float') return wet;
+    return !wet || this.toys.floatAt(lane, col) !== null;
+  }
+
   tryPlace(lane: number, col: number): boolean {
     const id = this.selected;
     if (!id || !this.canPlaceAt(lane, col)) {
@@ -434,6 +459,12 @@ export class GameState {
       }
     }
 
+    for (const toy of this.toys.float) {
+      if (!toy.active) continue;
+      toy.age += dt;
+      if (toy.hurt > 0) toy.hurt = Math.max(0, toy.hurt - dt);
+    }
+
     for (const toy of this.toys.floor) {
       if (!toy.active) continue;
       toy.age += dt;
@@ -550,7 +581,9 @@ export class GameState {
       if (!def.aerial) {
         const frontCol = colAtX(enemy.x - enemyHalfWidth(enemy));
         if (frontCol >= 0 && frontCol < COL_COUNT) {
-          const toy = this.toys.at(enemy.lane, frontCol);
+          // The ring counts as something to pull at, so a lone Duck Ring is not
+          // an invisible wall a kid walks straight through.
+          const toy = this.toys.at(enemy.lane, frontCol) ?? this.toys.floatAt(enemy.lane, frontCol);
           if (toy) {
             enemy.grabbing = true;
             toy.hp -= def.grabDps * dt;
@@ -684,9 +717,24 @@ export class GameState {
   }
 
   private destroyToy(toy: Toy): void {
+    const lane = toy.lane;
+    const col = toy.col;
+    const wasFloat = TOYS[toy.id].layer === 'float';
     this.toys.remove(toy);
     this.toysLost += 1;
-    this.emit('toy-lost', cellCentreX(toy.col), laneCentreY(toy.lane), 0, toy.lane);
+    this.emit('toy-lost', cellCentreX(col), laneCentreY(lane), 0, lane);
+
+    // A ring going under takes whatever was standing on it. Leaving a Water Gun
+    // hovering over open water would be the one place in the game where a toy
+    // sits somewhere it could never have been placed, and the alternative —
+    // making the ring indestructible — turns the pool lanes into the safest
+    // ones on the board rather than the most expensive.
+    if (wasFloat) {
+      const above = this.toys.at(lane, col);
+      if (above) this.destroyToy(above);
+      const below = this.toys.floorAt(lane, col);
+      if (below) this.destroyToy(below);
+    }
   }
 
   private dropSparkle(x: number, y: number, value: number): void {
