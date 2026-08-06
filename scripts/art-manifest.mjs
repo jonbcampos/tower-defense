@@ -22,15 +22,32 @@
  * the slime and the vacuum are yellow-greens, a long way from #00FF00.
  */
 
-export const STYLE = [
-  "children's picture book illustration, soft rounded shapes, thick clean dark outlines,",
-  'flat pastel colours with simple soft shading, cheerful and cosy,',
-  'palette of dusty purple, blush pink, cream, mint and warm gold,',
-  'a single centred subject filling most of the frame,',
-  'flat solid pure green (#00FF00) background, absolutely no background details,',
-  'no text, no letters, no watermark, no drop shadow on the background,',
-  'clean edges suitable for cutting out as a game sprite',
+/**
+ * The chroma-key demand, for every piece that is a cut-out sprite.
+ *
+ * First and loudest, because it is the one instruction that has to be obeyed.
+ * In the first full run the model quietly gave the raincoat a white background
+ * instead — which the load-time cut-out survived, but only because it keys on
+ * whatever colour it finds rather than on green. White is genuinely dangerous
+ * here: half the cast is pale, and a cream boot touching the frame edge would
+ * be eaten along with the backdrop.
+ */
+const KEY_BACKGROUND = [
+  'THE BACKGROUND MUST BE FLAT SOLID CHROMA-KEY GREEN, hex #00FF00, pure saturated green,',
+  'covering every pixel that is not the subject. No white, no gradient, no vignette,',
+  'no shadow cast onto the background, no floor, no scenery, no border.',
 ].join(' ');
+
+/** How everything is drawn. Shared by sprites and backgrounds alike. */
+const DRAW_STYLE = [
+  "children's picture book illustration, soft rounded shapes,",
+  'thick clean dark outlines, flat pastel colours with simple soft shading, cheerful and cosy,',
+  'palette of dusty purple, blush pink, cream, mint and warm gold,',
+  'no text, no letters, no watermark',
+].join(' ');
+
+/** Kept as one string for anything that wants to read the whole style at once. */
+export const STYLE = `${KEY_BACKGROUND} ${DRAW_STYLE}`;
 
 /**
  * `id` must match the ToyId / EnemyKind / scenery name the renderer looks up.
@@ -216,36 +233,68 @@ export const PIECES = [
     id: 'rug',
     aspect: '1:1',
     subject:
-      'a small square blue patterned childrens rug lying flat on the floor, seen from a low angle, ' +
-      'soft fringed edges.',
+      'a square patterned childrens rug seen from DIRECTLY OVERHEAD, perfectly flat and top-down, ' +
+      'filling the whole square frame edge to edge like a floor tile. Deep blue and teal with a ' +
+      'simple repeating pattern. No perspective, no thickness, no visible edges lifting up, no ' +
+      'fringe sticking out, no shadow. It must read as part of the floor, not as an object sitting ' +
+      'on top of the floor.',
   },
   {
-    id: 'door',
-    aspect: '9:16',
+    // The pretty one, shown behind the menus only.
+    //
+    // A detailed perspective bedroom is lovely to look at and actively bad to
+    // play on: it competes with the characters, and its horizon sits nowhere
+    // near where a flat five-lane grid starts. So it gets its own piece and its
+    // own job. This is the postcard; `room` below is the pitch.
+    id: 'menu',
+    aspect: '16:9',
+    background: 'none',
+    size: '2K',
     subject:
-      'an open bedroom doorway seen straight on, warm golden hallway light spilling through from ' +
-      'behind, wooden door frame. Dark inviting opening.',
+      'The cosy interior of a little girls bedroom at dusk, seen straight on from across the room ' +
+      'in gentle perspective: dusty purple walls with pale cream wainscot panelling, a warm glowing ' +
+      'wall lamp, two small framed pictures, a soft carpet floor, and a plush toy unicorn sitting ' +
+      'on a pink floor cushion on the left. Warm, inviting and detailed. No people, no text.',
   },
   {
     // The only piece with no green screen: it IS the background.
     id: 'room',
     aspect: '16:9',
     background: 'none',
+    // The one piece that needs resolution. Everything else is drawn ~30px tall
+    // and downscales from 512; this is stretched across the whole 640px frame
+    // at up to 2x device pixel ratio, so 512 would visibly soften.
+    size: '2K',
+    // Composition, not decoration. The board is a flat grid of five lanes, and
+    // the first attempt came back as a lovely PERSPECTIVE room — converging
+    // side walls, a ceiling, a horizon two-thirds down — which fights a flat
+    // grid badly and put the wall/floor join nowhere near where the board
+    // starts. This version specifies the layout in proportions instead:
+    // a wall strip across the top sixth, plain carpet for the rest.
     subject:
-      'the empty interior of a cosy little girls bedroom at dusk, seen straight on from across the ' +
-      'room: a dusty purple wall with pale wainscot panelling along the bottom, and a plain warm ' +
-      'purple-grey carpet floor filling the lower two thirds. Completely empty — no furniture, no ' +
-      'toys, no people, no door. Soft warm lamplight. Wide and uncluttered, meant to be a background.',
+      'A FLAT ORTHOGRAPHIC GAME BACKGROUND with NO PERSPECTIVE and NO VANISHING POINT. ' +
+      'The TOP ONE SIXTH of the image is a dusty purple bedroom wall with a pale cream skirting ' +
+      'board running horizontally along its bottom edge. The REMAINING FIVE SIXTHS below it is ' +
+      'plain, even, slightly textured warm purple-grey carpet, flat and uniform, filling the whole ' +
+      'width. Straight-on and perfectly horizontal: no ceiling, no side walls, no corners, no ' +
+      'horizon line, no furniture, no toys, no people, no door, no rug. Rich and slightly dark so ' +
+      'that pale characters placed on top of it stand out. Soft even lighting, no hotspots.',
   },
 ];
 
-/** The full prompt for one piece. */
+/**
+ * The full prompt for one piece.
+ *
+ * Composed from named parts rather than by editing a finished string. The
+ * previous version deleted the chroma-key sentence out of `STYLE` with a
+ * literal `.replace()` for the two full-bleed backgrounds — and then the
+ * sentence was reworded, the replace silently matched nothing, and both
+ * backgrounds came back as a small room floating in a field of pure green.
+ * String surgery on a prompt fails quietly and looks like a model problem.
+ */
 export function promptFor(piece) {
   if (piece.background === 'none') {
-    return `${piece.subject} ${STYLE.replace(
-      'flat solid pure green (#00FF00) background, absolutely no background details,',
-      '',
-    )}`;
+    return `${piece.subject} ${DRAW_STYLE}. This is a full-bleed background image: it must fill the entire frame edge to edge, with no border and no chroma-key colour anywhere.`;
   }
-  return `${piece.subject} ${STYLE}`;
+  return `${KEY_BACKGROUND} Subject: ${piece.subject} A single centred subject filling most of the frame. ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00.`;
 }

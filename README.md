@@ -160,7 +160,7 @@ Budget roughly 26 images. At the time of writing `gemini-3.1-flash-image` is the
 `gemini-3-pro-image-preview` is several times the price; check current rates before doing a
 `--force` run of the whole set.
 
-Consider `npm run art -- --size=512px` for the first pass. The sprites are drawn at about 30
+Consider `npm run art -- --size=512` for the first pass. The sprites are drawn at about 30
 pixels tall, so 1K is far more detail than the game can show, and every one of them is a file a
 phone has to download.
 
@@ -188,7 +188,7 @@ npm run art -- --only=raincoat --force
 | `--dry-run` | Print the prompts, call nothing, spend nothing |
 | `--only=jar,wand` | Just those pieces |
 | `--force` | Redo pieces that already exist |
-| `--size=512px` | Smaller images — **worth doing**, since a phone downloads all of these |
+| `--size=512` | Smaller images — **worth doing**, since a phone downloads all of these. Valid sizes are `512`, `1K`, `2K`, `4K` |
 | `--model=gemini-3-pro-image-preview` | The pricier, better model |
 | `--list` | What has been generated so far |
 
@@ -199,7 +199,7 @@ npm run art -- --only=raincoat --force
   half-painted game rather than a broken one. The fairness contracts and the 91 trials never look
   at any of it. If you hate the result, `rm -rf public/sprites` puts everything back.
 - **The generated JPEGs get committed**, because GitHub Pages builds from the repo. At `1K` each
-  is around half a megabyte, so the full set is over 10 MB; `--size=512px` is much kinder to both
+  is around half a megabyte, so the full set is over 10 MB; `--size=512` is much kinder to both
   the repo and the phone downloading it.
 - **JPEG, not PNG** — the API rejects PNG outright. That means no transparency, which is why the
   prompts ask for a flat green background and the game cuts it out at load time with a flood fill

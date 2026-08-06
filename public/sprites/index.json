@@ -1,7 +1,35 @@
 {
-  "generated": [],
+  "generated": [
+    "unicorn",
+    "jar",
+    "wand",
+    "fort",
+    "sprinkler",
+    "watergun",
+    "nightlight",
+    "slime",
+    "powder",
+    "fountain",
+    "machine",
+    "vacuum",
+    "crawler",
+    "toddler",
+    "runner",
+    "raincoat",
+    "blanket",
+    "balloon",
+    "puffy",
+    "slider",
+    "wagon",
+    "bigkid",
+    "cushion",
+    "rug",
+    "menu",
+    "room"
+  ],
   "ext": "jpg",
   "opaque": [
+    "menu",
     "room"
   ]
 }

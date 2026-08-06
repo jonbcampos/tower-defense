@@ -33,6 +33,7 @@ export function drawToyArt(
   scale: number,
   t: number,
   hurt = 0,
+  fired = 0,
 ): void {
   const def = TOYS[id];
 
@@ -46,7 +47,21 @@ export function drawToyArt(
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(scale, scale);
+    // A slow breath. Every toy on the board shares one clock but is offset by
+    // its own cell in the caller, so five jars don't pulse in unison like a
+    // heartbeat — which looks far more artificial than not moving at all.
+    const breath = Math.sin(t * 1.6);
+    ctx.translate(0, breath * 0.7);
+    ctx.scale(1 - breath * 0.012, 1 + breath * 0.018);
+    // Recoil: a shooter that has just fired kicks back and squashes. `fired`
+    // is DERIVED from the reload timer rather than stored, so the animation
+    // cannot drift out of step with the thing it is animating.
+    if (fired > 0) {
+      ctx.translate(-fired * 2.5, 0);
+      ctx.scale(1 + fired * 0.06, 1 - fired * 0.05);
+    }
     drawSprite(ctx, image, 0, 0, CELL_W - 2, CELL_H - 2);
+    drawFlourish(ctx, id, t, fired);
     if (hurt > 0) {
       // A wash rather than a colour mix: we can't recolour a painting the way
       // we can swap a fill, and a flash of red over the top reads the same.
@@ -112,9 +127,26 @@ export function drawToyArt(
   ctx.restore();
 }
 
+/**
+ * How recently this toy fired, 0-1, derived rather than stored.
+ *
+ * `toy.timer` is reset to the full reload interval the instant a shot goes out,
+ * so a timer near its maximum means "just fired". Reading it back beats adding
+ * a `firedAt` field: there is no second piece of state to keep in sync, and the
+ * simulation stays unaware that anything is being animated at all.
+ */
+const RECOIL_SECONDS = 0.16;
+function firedRecently(toy: Toy): number {
+  const shoot = TOYS[toy.id].shoot;
+  if (!shoot) return 0;
+  const since = shoot.interval - toy.timer;
+  if (since < 0 || since > RECOIL_SECONDS) return 0;
+  return 1 - since / RECOIL_SECONDS;
+}
+
 /** A placed toy on the board, with its health bar once it has been chewed on. */
 export function drawPlacedToy(ctx: CanvasRenderingContext2D, toy: Toy, x: number, y: number, t: number): void {
-  drawToyArt(ctx, toy.id, x, y, 1, t + toy.lane * 0.7 + toy.col * 0.3, toy.hurt);
+  drawToyArt(ctx, toy.id, x, y, 1, t + toy.lane * 0.7 + toy.col * 0.3, toy.hurt, firedRecently(toy));
   if (toy.maxHp <= 0 || toy.hp >= toy.maxHp) return;
   const share = Math.max(0, toy.hp / toy.maxHp);
   const w = CELL_W - 14;
@@ -122,6 +154,143 @@ export function drawPlacedToy(ctx: CanvasRenderingContext2D, toy: Toy, x: number
   ctx.fillRect(x - w / 2, y + CELL_H / 2 - 6, w, 3);
   ctx.fillStyle = share > 0.35 ? PALETTE.cardReady : PALETTE.toyDamaged;
   ctx.fillRect(x - w / 2, y + CELL_H / 2 - 6, w * share, 3);
+}
+
+/**
+ * The moving part of each toy, drawn over its still image.
+ *
+ * A generated sprite is one frame forever, and a board of them sits there like
+ * a sticker album. Generating three or four frames each would cost thirty more
+ * billed images and would not hold the character consistent between them, so
+ * instead each toy gets a small procedural flourish on top: the thing it is
+ * visibly DOING. The sprinkler's spray sweeps, the wand's bubbles rise, the
+ * fountain throws sparkles.
+ *
+ * Two rules. It must be the toy's own idea — bubbles for bubble things, water
+ * for water things — so the animation reinforces which toy this is rather than
+ * being generic sparkle. And it must be cheap: this runs for up to 45 toys
+ * every frame.
+ */
+function drawFlourish(ctx: CanvasRenderingContext2D, id: ToyId, t: number, fired: number): void {
+  switch (id) {
+    case 'jar': {
+      // Glitter motes rising and winking out.
+      for (let i = 0; i < 3; i++) {
+        const phase = (t * 0.55 + i * 0.37) % 1;
+        ctx.fillStyle = alpha(PALETTE.sparkle, (1 - phase) * 0.85);
+        const size = 2 - phase;
+        ctx.fillRect(-5 + i * 4 + Math.sin(t * 2 + i) * 1.5, -8 - phase * 12, size, size);
+      }
+      break;
+    }
+
+    case 'wand':
+    case 'machine': {
+      // Bubbles drifting up and to the right, out of the hoop or the spouts.
+      const rows = id === 'machine' ? [-6, 0, 6] : [-4];
+      ctx.strokeStyle = alpha(PALETTE.shotBubble, 0.9);
+      ctx.lineWidth = 1;
+      for (const row of rows) {
+        for (let i = 0; i < 2; i++) {
+          const phase = (t * 0.7 + i * 0.5 + row * 0.11) % 1;
+          const radius = 1.5 + phase * 2.5;
+          ctx.globalAlpha = 1 - phase;
+          ctx.beginPath();
+          ctx.arc(6 + phase * 12, row - phase * 6, radius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+      break;
+    }
+
+    case 'sprinkler': {
+      // A spray that sweeps side to side, so the head reads as turning even
+      // though the painting of it cannot.
+      const sweep = Math.sin(t * 2.2);
+      ctx.strokeStyle = alpha(PALETTE.shotWater, 0.75);
+      ctx.lineWidth = 1.5;
+      for (const dir of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(dir * 2, -6);
+        ctx.quadraticCurveTo(dir * (9 + sweep * dir * 3), -14, dir * (15 + sweep * dir * 4), -6);
+        ctx.stroke();
+      }
+      for (let i = 0; i < 3; i++) {
+        const phase = (t * 1.1 + i * 0.33) % 1;
+        ctx.fillStyle = alpha(PALETTE.shotWater, 1 - phase);
+        const dir = i % 2 === 0 ? 1 : -1;
+        ctx.fillRect(dir * (14 + phase * 5), -6 + phase * 10, 1.5, 1.5);
+      }
+      break;
+    }
+
+    case 'watergun': {
+      // A drip at the nozzle between shots, and a splash on the shot itself.
+      const drip = (t * 0.8) % 1;
+      ctx.fillStyle = alpha(PALETTE.shotWater, (1 - drip) * 0.8);
+      ctx.beginPath();
+      ctx.arc(15, -1 + drip * 5, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      if (fired > 0) {
+        ctx.fillStyle = alpha(PALETTE.shotCore, fired);
+        ctx.beginPath();
+        ctx.arc(17, 0, 2 + fired * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+
+    case 'nightlight': {
+      // A halo that breathes. Nothing moves; the light does.
+      const pulse = 0.14 + Math.sin(t * 2.4) * 0.07;
+      const glow = ctx.createRadialGradient(0, -2, 2, 0, -2, 20);
+      glow.addColorStop(0, alpha(PALETTE.shotLight, pulse * 1.6));
+      glow.addColorStop(1, alpha(PALETTE.shotLight, 0));
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, -2, 20, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    case 'slime': {
+      // Bubbles surfacing in the goo and popping.
+      for (let i = 0; i < 3; i++) {
+        const phase = (t * 0.5 + i * 0.34) % 1;
+        ctx.fillStyle = alpha('#ffffff', (1 - phase) * 0.5);
+        ctx.beginPath();
+        ctx.arc(-9 + i * 9, 6 - phase * 3, 1 + phase * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+
+    case 'fountain': {
+      // Sparkles thrown up and falling back, on their own little arcs.
+      for (let i = 0; i < 5; i++) {
+        const phase = (t * 0.9 + i * 0.2) % 1;
+        const rise = Math.sin(phase * Math.PI);
+        ctx.fillStyle = alpha(PALETTE.sparkle, 0.9 - phase * 0.6);
+        ctx.fillRect((i - 2) * 3.2, -8 - rise * 9, 1.8, 1.8);
+      }
+      break;
+    }
+
+    case 'powder': {
+      const phase = (t * 0.45) % 1;
+      ctx.fillStyle = alpha(PALETTE.shotPowder, (1 - phase) * 0.55);
+      ctx.beginPath();
+      ctx.arc(2, -9 - phase * 6, 2 + phase * 4, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+
+    // Pillow forts and vacuums do not do anything. A wall that shimmers is a
+    // wall that looks like it is about to do something, and it isn't.
+    default:
+      break;
+  }
 }
 
 // --- The painters -----------------------------------------------------------

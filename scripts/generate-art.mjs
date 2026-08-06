@@ -163,6 +163,29 @@ MODEL = MODEL || fileEnv.GEMINI_MODEL || 'gemini-3.1-flash-image';
 SIZE = SIZE || fileEnv.GEMINI_IMAGE_SIZE || '1K';
 
 /**
+ * Validate the size BEFORE spending anything.
+ *
+ * A bad value here is rejected identically by all 26 calls, so without this
+ * check a typo costs 26 round trips and a wall of identical red text. Asking
+ * for '512px' — which is what the documentation calls it — did exactly that.
+ * The `px` suffix is accepted and normalised rather than rejected, because
+ * being right about the concept and wrong about the spelling should not be
+ * a failure mode.
+ */
+const SIZES = ['512', '1K', '2K', '4K'];
+SIZE = String(SIZE).replace(/px$/i, '').replace(/^(\d)k$/i, '$1K');
+if (!SIZES.includes(SIZE)) {
+  console.error(`\nimage_size "${SIZE}" is not valid. Use one of: ${SIZES.join(', ')}\n`);
+  process.exit(1);
+}
+for (const piece of PIECES) {
+  if (piece.size && !SIZES.includes(piece.size)) {
+    console.error(`\nPiece "${piece.id}" has size "${piece.size}"; use one of: ${SIZES.join(', ')}\n`);
+    process.exit(1);
+  }
+}
+
+/**
  * One image.
  *
  * Retries on 429 and 5xx with exponential backoff, because a rate limit part
@@ -183,7 +206,7 @@ async function generate(piece, attempt = 1) {
       type: 'image',
       mime_type: 'image/jpeg',
       aspect_ratio: piece.aspect ?? '1:1',
-      image_size: SIZE,
+      image_size: piece.size ?? SIZE,
     },
   };
 

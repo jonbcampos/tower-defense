@@ -15,30 +15,49 @@ import {
   CELL_H,
   CELL_W,
   COL_COUNT,
-  DOOR_W,
   LANE_COUNT,
   SCREEN,
   bedX,
   boardLeft,
   cellX,
-  doorX,
   laneY,
 } from '../game/config';
 import { PALETTE, alpha } from './palette';
 import { drawSprite, sprite } from './sprites';
 
-/** Wall, wainscot and the floor's lane stripes. Drawn before anything else. */
-export function drawRoom(ctx: CanvasRenderingContext2D): void {
+/**
+ * Wall, wainscot and the floor's lane stripes. Drawn before anything else.
+ *
+ * `inPlay` picks which generated backdrop to use. The menus get the pretty
+ * detailed bedroom; the board gets a deliberately quiet flat floor. They are
+ * different jobs — one is a postcard, the other is a surface you have to read
+ * five rows of gameplay off — and trying to make one image do both makes a
+ * lovely title screen and an unplayable board.
+ */
+export function drawRoom(ctx: CanvasRenderingContext2D, inPlay = true): void {
   // A generated room replaces the wall and floor wholesale, but the lane lines
   // are drawn over it either way — they are the grid, not decoration, and a
   // painting of a carpet does not tell you where a cell ends.
-  const room = sprite('room');
+  const room = inPlay ? sprite('room') : (sprite('menu') ?? sprite('room'));
   if (room) {
     const smoothing = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(room, 0, 0, SCREEN.w, SCREEN.h);
     ctx.imageSmoothingEnabled = smoothing;
-    drawLaneGrid(ctx);
+
+    // Knock the painting back before anything is placed on it.
+    //
+    // A generated background is the one asset that competes with the game
+    // rather than serving it: it is detailed, it is the same pastel palette as
+    // the characters, and it covers the entire screen. Without this the kids
+    // and toys sit ON a picture instead of IN a room, and the first full art
+    // run made the board genuinely harder to read than the flat colours it
+    // replaced. The scrim costs nothing and is not negotiable.
+    if (inPlay) {
+      ctx.fillStyle = alpha(PALETTE.scrim, 0.3);
+      ctx.fillRect(0, BOARD_TOP, SCREEN.w, BOARD_BOTTOM - BOARD_TOP);
+      drawLaneGrid(ctx, true);
+    }
     return;
   }
 
@@ -76,69 +95,69 @@ export function drawRoom(ctx: CanvasRenderingContext2D): void {
  * Lane separators, only across the board itself. Extending them into the
  * margins would imply the margins are playable.
  */
-function drawLaneGrid(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = alpha(PALETTE.laneLine, 0.5);
+function drawLaneGrid(ctx: CanvasRenderingContext2D, overArt = false): void {
+  // Over generated art the grid has to shout, because the art underneath it is
+  // busy. Over the flat floor it can whisper. Which lane a kid is in and which
+  // cell a toy will land in are the two things the player reads constantly, so
+  // the grid is the last thing allowed to become decorative.
+  ctx.fillStyle = alpha(PALETTE.laneLine, overArt ? 0.85 : 0.5);
   for (let lane = 1; lane < LANE_COUNT; lane++) {
     ctx.fillRect(boardLeft(), laneY(lane), BOARD_W, 1);
   }
-  ctx.fillStyle = alpha(PALETTE.laneLine, 0.22);
+  ctx.fillStyle = alpha(PALETTE.laneLine, overArt ? 0.4 : 0.22);
   for (let col = 1; col < COL_COUNT; col++) {
     ctx.fillRect(cellX(col), BOARD_TOP, 1, BOARD_BOTTOM - BOARD_TOP);
   }
 }
 
-/** Furniture over the cells a level has blocked. */
+/**
+ * Furniture over the cells a level has blocked.
+ *
+ * The art alone is not enough and never was. A pretty rug drawn in a cell reads
+ * as "there is a rug here", which is true and useless — the thing the player
+ * has to know is "you cannot build here", and the first person to play the
+ * illustrated version said exactly that: the carpet doesn't read as
+ * non-playable.
+ *
+ * So every blocked cell gets the same three-part treatment regardless of what
+ * is drawn in it: the furniture, then a DARKENING so it is visibly not floor,
+ * then a hard inset border so the boundary is a line rather than a vibe. The
+ * board should look like it has holes cut in it.
+ */
 export function drawBlocked(ctx: CanvasRenderingContext2D, blocked: readonly number[]): void {
   const seen = new Set(blocked);
+  const art = sprite('rug');
   for (const index of seen) {
     const lane = Math.floor(index / COL_COUNT);
     const col = index % COL_COUNT;
     const x = cellX(col);
     const y = laneY(lane);
-    const art = sprite('rug');
+
     if (art) {
       drawSprite(ctx, art, x + CELL_W / 2, y + CELL_H / 2, CELL_W, CELL_H);
-      continue;
+    } else {
+      // A rug: soft edges, low contrast, obviously not a place you build.
+      ctx.fillStyle = PALETTE.rug;
+      ctx.fillRect(x + 1, y + 1, CELL_W - 2, CELL_H - 2);
+      ctx.fillStyle = alpha(PALETTE.rugEdge, 0.6);
+      ctx.fillRect(x + 1, y + 1, CELL_W - 2, 2);
+      ctx.fillRect(x + 1, y + CELL_H - 3, CELL_W - 2, 2);
+      ctx.fillStyle = alpha(PALETTE.rugEdge, 0.25);
+      for (let i = 4; i < CELL_W - 4; i += 8) ctx.fillRect(x + i, y + 6, 3, CELL_H - 12);
     }
-    // A rug: soft edges, low contrast, obviously not a place you build.
-    ctx.fillStyle = PALETTE.rug;
+
+    // Sunk into shadow. This is what turns "a rug" into "not your floor".
+    ctx.fillStyle = alpha(PALETTE.scrim, 0.42);
     ctx.fillRect(x + 1, y + 1, CELL_W - 2, CELL_H - 2);
-    ctx.fillStyle = alpha(PALETTE.rugEdge, 0.6);
-    ctx.fillRect(x + 1, y + 1, CELL_W - 2, 2);
-    ctx.fillRect(x + 1, y + CELL_H - 3, CELL_W - 2, 2);
-    ctx.fillStyle = alpha(PALETTE.rugEdge, 0.25);
-    for (let i = 4; i < CELL_W - 4; i += 8) ctx.fillRect(x + i, y + 6, 3, CELL_H - 12);
+
+    // And a hard edge, so where it stops is unambiguous.
+    ctx.strokeStyle = alpha(PALETTE.scrim, 0.75);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 2, y + 2, CELL_W - 4, CELL_H - 4);
+    ctx.strokeStyle = alpha(PALETTE.laneLine, 0.35);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 3.5, y + 3.5, CELL_W - 7, CELL_H - 7);
   }
-}
-
-/** The doorway on the right. Kids walk out of it, so it stays lit. */
-export function drawDoor(ctx: CanvasRenderingContext2D, time: number): void {
-  const x = doorX();
-  const art = sprite('door');
-  if (art) {
-    const top = BOARD_TOP - 20;
-    const height = BOARD_BOTTOM - top;
-    const smoothing = ctx.imageSmoothingEnabled;
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(art, x - 2, top, DOOR_W + 4, height);
-    ctx.imageSmoothingEnabled = smoothing;
-    return;
-  }
-  ctx.fillStyle = PALETTE.doorDark;
-  ctx.fillRect(x + 4, BOARD_TOP - 18, DOOR_W - 8, BOARD_BOTTOM - BOARD_TOP + 18);
-
-  // Warm landing light spilling in. Breathes very slightly, so a static board
-  // still has something alive on it between waves.
-  const glow = 0.16 + Math.sin(time * 1.4) * 0.03;
-  ctx.fillStyle = alpha(PALETTE.doorGlow, glow);
-  ctx.fillRect(x + 6, BOARD_TOP - 16, DOOR_W - 12, BOARD_BOTTOM - BOARD_TOP + 14);
-
-  ctx.fillStyle = PALETTE.doorFrame;
-  ctx.fillRect(x, BOARD_TOP - 20, 5, BOARD_BOTTOM - BOARD_TOP + 20);
-  ctx.fillRect(x + DOOR_W - 5, BOARD_TOP - 20, 5, BOARD_BOTTOM - BOARD_TOP + 20);
-  ctx.fillRect(x, BOARD_TOP - 20, DOOR_W, 5);
-  ctx.fillStyle = PALETTE.doorSill;
-  ctx.fillRect(x, BOARD_BOTTOM - 2, DOOR_W, 3);
 }
 
 /**
@@ -149,22 +168,25 @@ export function drawDoor(ctx: CanvasRenderingContext2D, time: number): void {
  * hearts. A five-year-old reads the face long before she reads the counter.
  */
 export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: number): void {
-  const x = bedX() + 2;
+  const x = bedX() + 6;
   const cy = (BOARD_TOP + BOARD_BOTTOM) / 2;
   const bob = Math.sin(time * 1.8) * 1.5;
 
   const cushionArt = sprite('cushion');
   const unicornArt = sprite('unicorn');
   if (unicornArt) {
-    if (cushionArt) drawSprite(ctx, cushionArt, x + 18, cy + 30, 40, 22);
+    if (cushionArt) drawSprite(ctx, cushionArt, x + 30, cy + 34, 62, 30);
     ctx.save();
     // She squashes down and forward when squeezed. The pose can't change on a
     // painting, so the SCALE carries it — and the eyes-shut face the painter
     // drew is replaced by the whole toy flinching, which reads fine at this size.
     const squash = 1 - hurt * 0.16;
-    ctx.translate(x + 18, cy + bob + hurt * 5);
+    ctx.translate(x + 30, cy + bob + hurt * 5);
     ctx.scale(1 + hurt * 0.08, squash);
-    drawSprite(ctx, unicornArt, 0, 0, 44, 62);
+    // Bigger now that the doorway's 44px went to this side. She is the thing
+    // the whole game is about and she was previously a thumbnail wedged behind
+    // a row of vacuum cleaners.
+    drawSprite(ctx, unicornArt, 0, 0, 66, 88);
     ctx.restore();
     return;
   }
@@ -255,7 +277,7 @@ export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: n
  */
 export function drawMowers(ctx: CanvasRenderingContext2D, ready: readonly boolean[], time: number): void {
   for (let lane = 0; lane < ready.length; lane++) {
-    const x = bedX() + BED_W - 8;
+    const x = bedX() + BED_W - 11;
     const y = laneY(lane) + CELL_H / 2 + 6;
 
     if (!ready[lane]) {

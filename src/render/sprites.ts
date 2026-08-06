@@ -103,16 +103,32 @@ export function loadSprites(baseUrl: string): void {
     }
 
     const opaque = new Set(index.opaque ?? []);
-    await Promise.all(
-      index.generated.map(async (id) => {
-        try {
-          const image = await loadImage(`${baseUrl}sprites/${id}.${index.ext ?? 'jpg'}`);
-          sprites.set(id, opaque.has(id) ? toCanvas(image) : cutOutBackground(image));
-        } catch {
-          // One bad file loses one sprite, not the set.
-        }
-      }),
-    );
+    const ext = index.ext ?? 'jpg';
+
+    // Downloads run in parallel; the CUT-OUTS run one at a time with a yield
+    // between them.
+    //
+    // Each cut-out is a flood fill over a 512x512 image on the main thread, and
+    // doing all twenty-six back to back froze the game for long enough that
+    // taps queued during startup were still being processed a second later.
+    // Yielding turns one long stall into twenty-six short ones the loop can
+    // interleave with, and the art simply appears piece by piece — which is
+    // exactly the behaviour this module already promises.
+    const downloads = index.generated.map(async (id) => ({
+      id,
+      image: await loadImage(`${baseUrl}sprites/${id}.${ext}`).catch(() => null),
+    }));
+
+    for (const pending of downloads) {
+      const { id, image } = await pending;
+      if (!image) continue; // One bad file loses one sprite, not the set.
+      try {
+        sprites.set(id, opaque.has(id) ? toCanvas(image) : cutOutBackground(image));
+      } catch {
+        // A cut-out that throws leaves the hand-drawn version in place.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
     loaded = true;
   })();
 }

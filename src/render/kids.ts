@@ -71,6 +71,7 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
       // going briefly translucent. Same read at a glance: "that one just got hit".
       ctx.globalAlpha = 1 - Math.min(0.45, enemy.hurt * 3);
     }
+    applyGait(ctx, enemy, def, walk);
     drawSprite(ctx, image, 0, 0, def.width * 1.7, def.height * 1.7);
     ctx.restore();
     drawStatusMarkers(ctx, enemy, def);
@@ -113,6 +114,75 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
 
   drawStatusMarkers(ctx, enemy, def);
   ctx.restore();
+}
+
+/**
+ * Fake a walk cycle out of one still image.
+ *
+ * A sprite that only slides along x reads as a sticker being dragged, which is
+ * exactly what it looked like on the first art run. Generating three or four
+ * poses per kid would be the "proper" fix and is a bad trade: thirty more
+ * billed images, and image models will not hold a character consistent across
+ * frames, so you get four slightly different children per enemy.
+ *
+ * Instead the transform does the work, driven by `walk` — which is derived from
+ * the kid's POSITION, not from a clock. That is the load-bearing detail: a kid
+ * in Sticky Slime covers less ground per second, so her stride slows down with
+ * her, for free. A time-based cycle would have her moonwalking.
+ *
+ * Four components, which is enough for the eye to accept it as walking:
+ *  - **bob**: two rises per stride, because you go up on each foot.
+ *  - **squash**: at the bottom of the bob, where the weight lands.
+ *  - **lean**: a small rock about the feet, opposite phase to the bob.
+ *  - **drift**: a hair of horizontal sway, so it isn't a piston.
+ */
+function applyGait(
+  ctx: CanvasRenderingContext2D,
+  enemy: Enemy,
+  def: (typeof ENEMIES)[EnemyKind],
+  walk: number,
+): void {
+  // Standing still to chew on a toy is not walking. The gait freezes and a
+  // small shove-rhythm takes over, so a kid eating a pillow fort is visibly
+  // doing something rather than paused mid-step.
+  if (enemy.grabbing) {
+    const tug = Math.sin(walk * 3) * 1.2;
+    ctx.translate(tug, 0);
+    return;
+  }
+
+  if (def.aerial) {
+    // Floating: a slow lazy rise and fall, no footfall, no lean.
+    ctx.translate(0, Math.sin(walk * 0.45) * 2.2);
+    return;
+  }
+
+  if (def.kind === 'slider') {
+    // Sliding on her front. No bob at all — the whole joke is that she is the
+    // one kid not on her feet — just a shiver from the friction.
+    ctx.translate(0, Math.sin(walk * 4) * 0.6);
+    ctx.rotate(Math.sin(walk * 2) * 0.02);
+    return;
+  }
+
+  if (def.kind === 'wagon') {
+    // Wheels on carpet: a bumpy jitter rather than a stride.
+    ctx.translate(0, Math.abs(Math.sin(walk * 2)) * -1.4);
+    ctx.rotate(Math.sin(walk * 2) * 0.03);
+    return;
+  }
+
+  const bob = Math.abs(Math.sin(walk));
+  const footfall = 1 - bob;
+  const height = def.height;
+
+  ctx.translate(Math.sin(walk * 0.5) * 0.7, -bob * (height * 0.06));
+  ctx.rotate(Math.cos(walk) * 0.035);
+  // Squash about the FEET, not the centre, or the kid sinks into the floor
+  // instead of compressing onto it.
+  ctx.translate(0, height * 0.5);
+  ctx.scale(1 + footfall * 0.035, 1 - footfall * 0.045);
+  ctx.translate(0, -height * 0.5);
 }
 
 /** Shield, soaked and slowed. Drawn over the body, sprite or not. */

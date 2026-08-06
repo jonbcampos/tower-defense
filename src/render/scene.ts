@@ -28,7 +28,7 @@ import { TOYS, type ToyId } from '../game/toys';
 import type { Input } from '../core/input';
 import type { Renderer } from './renderer';
 import { PALETTE, alpha } from './palette';
-import { drawBlocked, drawDoor, drawMowers, drawRoom, drawUnicorn } from './bedroom';
+import { drawBlocked, drawMowers, drawRoom, drawUnicorn } from './bedroom';
 import { drawKid } from './kids';
 import { drawPlacedToy, drawToyArt } from './toys';
 import { drawFooter, drawPopups } from '../ui/hud';
@@ -103,10 +103,9 @@ export const sceneRenderer: Renderer = {
     // as a bedroom.
     const inPlay = state.phase === 'playing' || state.phase === 'won' || state.phase === 'lost';
 
-    drawRoom(ctx);
+    drawRoom(ctx, inPlay);
     // The door goes down before the kids, so a kid at the doorway is walking
     // OUT of it rather than standing on top of it.
-    drawDoor(ctx, clock);
     if (inPlay) drawBlocked(ctx, state.level.blocked);
     drawLaneFlashes(ctx, state);
     drawFloorToys(ctx, state);
@@ -184,13 +183,32 @@ function drawPlacementHints(ctx: CanvasRenderingContext2D, state: GameState, inp
   for (let lane = 0; lane < LANE_COUNT; lane++) {
     for (let col = 0; col < COL_COUNT; col++) {
       const legal = state.canPlaceAt(lane, col);
-      if (!legal && !state.isBlocked(lane, col)) continue;
-      ctx.fillStyle = legal ? alpha(PALETTE.cellFree, pulse) : alpha(PALETTE.cellBusy, 0.2);
-      ctx.fillRect(cellX(col) + 1, laneY(lane) + 1, CELL_W - 2, CELL_H - 2);
-      if (!legal) continue;
-      ctx.strokeStyle = alpha(PALETTE.cellFreeEdge, 0.5);
-      ctx.lineWidth = 1;
-      ctx.strokeRect(cellX(col) + 1.5, laneY(lane) + 1.5, CELL_W - 3, CELL_H - 3);
+      const blocked = state.isBlocked(lane, col);
+      if (!legal && !blocked) continue;
+
+      if (legal) {
+        ctx.fillStyle = alpha(PALETTE.cellFree, pulse);
+        ctx.fillRect(cellX(col) + 1, laneY(lane) + 1, CELL_W - 2, CELL_H - 2);
+        ctx.strokeStyle = alpha(PALETTE.cellFreeEdge, 0.6);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cellX(col) + 1.5, laneY(lane) + 1.5, CELL_W - 3, CELL_H - 3);
+        continue;
+      }
+
+      // Blocked, and a card is in hand: say so plainly. Green means yes and
+      // grey-with-a-line-through-it means no, and the two must be different
+      // SHAPES rather than two shades of tint — a five-year-old is scanning
+      // five rows at speed, not comparing swatches.
+      const cx = cellX(col);
+      const cy = laneY(lane);
+      ctx.fillStyle = alpha(PALETTE.cellBusy, 0.45);
+      ctx.fillRect(cx + 1, cy + 1, CELL_W - 2, CELL_H - 2);
+      ctx.strokeStyle = alpha(PALETTE.scrim, 0.6);
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx + 12, cy + 10);
+      ctx.lineTo(cx + CELL_W - 12, cy + CELL_H - 10);
+      ctx.stroke();
     }
   }
 

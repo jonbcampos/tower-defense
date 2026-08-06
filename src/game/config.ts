@@ -85,13 +85,31 @@ export const BOARD_BOTTOM = BOARD_TOP + BOARD_H; // 244
 /** The strip under the board: level name and wave progress. */
 export const FOOTER_H = VIRTUAL_H - BOARD_BOTTOM; // 26
 
-/** The unicorn's cushion, left of column 0. Not placeable. */
-export const BED_W = 40;
-/** The doorway kids walk in through. Not placeable. */
-export const DOOR_W = 44;
+/**
+ * The unicorn's cushion, left of column 0. Not placeable.
+ *
+ * 84px, which is the old 40 plus the 44 that used to be a drawn doorway on the
+ * right. The door was cut because it did not read as a door — it was a bright
+ * vertical bar at the edge of the screen — and because the unicorn was jammed
+ * up against the row of Toy Vacuums with nowhere to be. One of those was
+ * decoration and the other is the thing you are protecting.
+ */
+export const BED_W = 84;
 
-/** 40 + 396 + 44 = 480. The design width is this sum, not the other way round. */
-export const BOARD_SPAN = BED_W + BOARD_W + DOOR_W;
+/** 84 + 396 = 480. The design width is this sum, not the other way round. */
+export const BOARD_SPAN = BED_W + BOARD_W;
+
+/**
+ * How far right of the board a kid appears.
+ *
+ * Fixed, and measured from the BOARD rather than from the screen edge, so the
+ * walk is exactly the same length on every device — the rule from decision 5.
+ * On a narrow frame this is off-screen; on a wide one a kid is briefly visible
+ * in the side margin before reaching column eight, which looks like walking in
+ * from the side of the room and costs nothing, because the distance to the
+ * cushion is identical either way.
+ */
+export const SPAWN_RUN = 24;
 
 /**
  * The extra width a wide phone gets, split evenly outside the play area.
@@ -108,10 +126,6 @@ export function bedX(): number {
 export function boardLeft(): number {
   return sideMargin() + BED_W;
 }
-export function doorX(): number {
-  return boardLeft() + BOARD_W;
-}
-
 export function cellX(col: number): number {
   return boardLeft() + col * CELL_W;
 }
@@ -148,18 +162,9 @@ export function cellCol(index: number): number {
   return index % COL_COUNT;
 }
 
-/**
- * Kids enter at the middle of the drawn doorway.
- *
- * The runner game forbids anything entering inside the frame, because a
- * scrolling world has no legible spawn point — a hazard appearing at x=400
- * looks like it popped into existence. A static board with a door drawn on it
- * is the opposite case: the door IS the warning, and it's on screen the whole
- * time. Spawning off-frame instead would mean a kid's first second of approach
- * happens where nobody can see it.
- */
+/** Kids walk on from beyond the right-hand end of the board. */
 export function spawnX(): number {
-  return doorX() + DOOR_W / 2;
+  return boardLeft() + BOARD_W + SPAWN_RUN;
 }
 
 /**
@@ -188,7 +193,7 @@ export function cellAt(x: number, y: number): { lane: number; col: number } | nu
  * construction — every enemy's `crossSeconds` is measured against this, so a
  * wide phone cannot make the game easier.
  */
-export const CROSS_DISTANCE = BOARD_W + DOOR_W / 2; // 418
+export const CROSS_DISTANCE = BOARD_W + SPAWN_RUN + CELL_W / 2; // 442
 
 /** Halfway across the board. The 2-star line: no kid may get past it. */
 export const HALFWAY_COL = 4;

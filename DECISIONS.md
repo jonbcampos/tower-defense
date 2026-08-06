@@ -324,3 +324,80 @@ turns a downscaled painting into aliased mush.
 legible in the painting, the fallback has silently become a broken game rather
 than a plainer one. The test is to delete `public/sprites/` and check the game
 is still readable, not merely still running.
+
+## 21. The doorway is gone; kids walk on from off-board
+
+Decision 5 argued that a drawn door is a legible spawn point and therefore
+better than entering off-frame. That was right in principle and wrong in
+practice: illustrated, the door was a bright vertical bar at the edge of the
+screen that the first player did not read as a door at all. It was also holding
+44 pixels hostage next to the unicorn, who was consequently jammed against the
+column of Toy Vacuums with nowhere to sit.
+
+So the door is cut, its 44px went to the cushion, and kids walk on from
+`SPAWN_RUN` past the end of the board.
+
+The part of decision 5 that survives intact is the reason it existed: the run-up
+is measured from the BOARD, not from the screen edge, so it is the same distance
+on every device. A wide phone shows a kid a moment earlier in the side margin —
+it does not give her further to walk. `CROSS_DISTANCE` went from 418 to 442,
+which moves every speed in the game, so the contracts and all 91 trials were
+re-run before this was committed.
+
+**Revisit if:** a world wants a real entrance. It would need to be big and
+central enough to read as one, which means designing the board around it rather
+than giving it the last 44 pixels.
+
+## 22. Animation is procedural, layered over still art
+
+Generated sprites are one frame each, forever, and a board of them reads as a
+sticker album — the first illustrated build had kids sliding along x like
+dragged cursors. Generating three or four frames per character would cost
+thirty-odd more billed images and would not hold a character consistent between
+frames, so you would get four slightly different children per enemy.
+
+Everything moves procedurally on top instead:
+
+- **A gait**, driven by the kid's POSITION rather than a clock — bob, squash on
+  the footfall, a small lean and a hair of sway. Position-driven is the
+  load-bearing detail: a kid slowed by Sticky Slime takes visibly slower steps
+  for free, where a time-driven cycle would have her moonwalking. Floaters,
+  sliders and wagons get their own variants, and a kid chewing a toy stops
+  walking and tugs instead.
+- **A flourish per toy** — the sprinkler's spray sweeps, the wand and machine
+  blow bubbles, the fountain throws sparkles, the nightlight breathes. Each is
+  the thing that toy is *for*, so the animation reinforces which toy it is
+  rather than adding generic shimmer. The pillow fort deliberately gets nothing:
+  a wall that shimmers looks like it is about to do something, and it isn't.
+- **Recoil on firing**, derived from the reload timer rather than stored. There
+  is no second piece of state to fall out of sync, and `src/game/` still has no
+  idea anything is being animated.
+
+**Revisit if:** a character needs a pose the transform cannot fake — a thrown
+punch, a turn to face the other way. That is the point to generate real frames,
+for that character only.
+
+## 23. Two backgrounds, because a background has two incompatible jobs
+
+The first generated room was a detailed perspective bedroom. It made a
+genuinely lovely title screen and a bad board: it competed with the characters,
+and its horizon sat two-thirds down where a flat five-lane grid needs a wall
+strip at one sixth.
+
+So there are two. `menu` is the postcard — furniture, lamp, curtains, the
+unicorn painted into it — and is shown behind the title, level select and
+loadout. `room` is the pitch: a flat orthographic wall strip over plain carpet,
+prompted explicitly for no perspective and no vanishing point, and deliberately
+quiet.
+
+Even then the play background is knocked back with a scrim and the lane grid is
+redrawn over it at nearly double strength. Which lane a kid is in and which cell
+a toy will land in are the two things the player reads constantly, and the grid
+is the last thing allowed to become decorative.
+
+The same lesson applies to blocked cells: the rug art alone reads as "there is a
+rug here", which is true and useless. Every blocked cell gets a darkening and a
+hard inset border on top, so the board looks like it has holes cut in it.
+
+**Revisit if:** a world's terrain rule needs the floor itself to carry
+information. At that point the scrim is hiding the thing it needs to show.
