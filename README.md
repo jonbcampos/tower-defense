@@ -22,7 +22,7 @@ enough that whatever your toys are doing is more interesting than you are.
 | **Wagon Kid** | A cardboard shield comes off first | Sustained damage |
 | **The Big Kid** | Throws a stuffie that destroys a toy; half damage from bubbles | Everything you know |
 
-Ten levels, a new toy every level or two, and a **Guard Bear** sitting at the end of every lane —
+Fifteen levels across two worlds, a new toy every level or two, and a **Guard Bear** sitting at the end of every lane —
 the first kid to reach the cushion in a lane gets swept into an enormous hug by the bear instead
 of squeezing you, and the two of them wander off together. One bear per lane, once each.
 
@@ -38,6 +38,10 @@ npm install && npm run dev
 
 Open the printed Network URL on a phone to play it on a real touchscreen. Hold the phone either
 way — the game rotates itself. On desktop, `1`–`5` pick a card and `Esc` puts it back.
+
+Where it goes next — an equivalent of Plants vs Zombies' 49 plants, 26 zombies
+and 50 levels, with the engineering cost written beside each entry — is in
+[ROSTER.md](ROSTER.md).
 
 ## Why it's built this way
 
