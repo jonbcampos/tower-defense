@@ -175,8 +175,13 @@ async function generate(piece, attempt = 1) {
     model: MODEL,
     input: [{ type: 'text', text: promptFor(piece) }],
     response_format: {
+      // JPEG, not PNG: the image endpoint rejects 'image/png' outright with
+      // "Supported values: 'image/jpeg'". That is also why the prompts ask for
+      // a flat green background instead of transparency — JPEG has no alpha
+      // channel to ask for, so the cut-out has to happen at load time. See
+      // `cutOutBackground` in src/render/sprites.ts.
       type: 'image',
-      mime_type: 'image/png',
+      mime_type: 'image/jpeg',
       aspect_ratio: piece.aspect ?? '1:1',
       image_size: SIZE,
     },
@@ -269,7 +274,7 @@ async function main() {
   const failed = [];
 
   for (const piece of wanted) {
-    const file = join(OUT_DIR, `${piece.id}.png`);
+    const file = join(OUT_DIR, `${piece.id}.jpg`);
     if (existsSync(file) && !FORCE) {
       console.log(`  skip  ${piece.id} (already exists — pass --force to redo)`);
       done.push(piece.id);
@@ -290,9 +295,12 @@ async function main() {
   // The index is what the game loads. Only pieces that exist on disk go in it,
   // so a partial run gives a partly-illustrated game rather than a broken one:
   // anything absent simply keeps its hand-drawn version.
-  const present = PIECES.map((p) => p.id).filter((id) => existsSync(join(OUT_DIR, `${id}.png`)));
+  const present = PIECES.map((p) => p.id).filter((id) => existsSync(join(OUT_DIR, `${id}.jpg`)));
   const index = {
     generated: present,
+    /** Extension is recorded rather than assumed, so a future model that can
+     *  return PNG doesn't need a matching change in the loader. */
+    ext: 'jpg',
     // `keyed` pieces get their flat background removed at load time. The room
     // background is a full-bleed image and must not be touched.
     opaque: PIECES.filter((p) => p.background === 'none').map((p) => p.id),
@@ -311,7 +319,12 @@ async function main() {
 /** Show what's on disk without calling anything. */
 if (has('list')) {
   const index = existsSync(INDEX_FILE) ? JSON.parse(readFileSync(INDEX_FILE, 'utf8')) : null;
-  console.log(index ? index.generated.join('\n') : 'nothing generated yet');
+  const generated = index?.generated ?? [];
+  console.log(
+    generated.length
+      ? `${generated.length} of ${PIECES.length} generated:\n  ${generated.join('\n  ')}`
+      : `nothing generated yet (${PIECES.length} pieces available) — run: npm run art`,
+  );
 } else {
   await main();
 }

@@ -30,6 +30,8 @@
 
 interface SpriteIndex {
   generated: string[];
+  /** File extension the generator wrote. JPEG today; see generate-art.mjs. */
+  ext?: string;
   /** Pieces whose background must NOT be removed — full-bleed images. */
   opaque: string[];
 }
@@ -37,10 +39,16 @@ interface SpriteIndex {
 const sprites = new Map<string, HTMLCanvasElement>();
 let loaded = false;
 
-/** How close a pixel must be to the corner colour to count as background. */
-const KEY_TOLERANCE = 72;
+/**
+ * How close a pixel must be to the corner colour to count as background.
+ *
+ * Generous, because the source is JPEG. Lossy compression puts ringing and
+ * colour noise along every edge that meets the flat background, so a tolerance
+ * tuned for a clean PNG leaves a speckled green halo around every character.
+ */
+const KEY_TOLERANCE = 96;
 /** Pixels within this of the edge of the key get a soft alpha, to avoid fringing. */
-const KEY_FEATHER = 40;
+const KEY_FEATHER = 56;
 
 export function spritesReady(): boolean {
   return loaded;
@@ -98,7 +106,7 @@ export function loadSprites(baseUrl: string): void {
     await Promise.all(
       index.generated.map(async (id) => {
         try {
-          const image = await loadImage(`${baseUrl}sprites/${id}.png`);
+          const image = await loadImage(`${baseUrl}sprites/${id}.${index.ext ?? 'jpg'}`);
           sprites.set(id, opaque.has(id) ? toCanvas(image) : cutOutBackground(image));
         } catch {
           // One bad file loses one sprite, not the set.

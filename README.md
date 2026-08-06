@@ -111,36 +111,103 @@ constraints are the same numbers.
 
 ## Painted art (optional)
 
-The game ships with everything drawn in code — a few hundred rectangles and
-arcs. That reads well and costs nothing, but it is deliberately plain. If you
-want it to look painted instead, there is a generator:
+The game ships with everything drawn in code — a few hundred rectangles and arcs. That reads
+clearly and costs nothing, but it is deliberately plain. `npm run art` repaints the whole cast
+using the Gemini image API.
+
+### 1. Get a key
+
+<https://aistudio.google.com/apikey>. Image generation needs billing enabled on the Google Cloud
+project behind the key.
+
+### 2. Put it in `.env.local`
 
 ```bash
-cp .env.example .env.local     # then paste your Gemini API key into it
+cp .env.example .env.local
+```
+
+Open `.env.local` and replace the placeholder:
+
+```
+GEMINI_API_KEY=AIza...your-real-key...
+```
+
+`.env.local` is gitignored, and the script **refuses to run** if that file ever stops being
+ignored or turns out to be tracked by git. There is deliberately no `--key=` flag: a key on the
+command line ends up in your shell history.
+
+### 3. Look at the prompts first (free)
+
+```bash
+npm run art -- --dry-run
+```
+
+Prints all 26 prompts and calls nothing. Worth a skim — this is the art direction, and it is
+much cheaper to fix a description here than after 26 billed calls.
+
+### 4. Generate
+
+```bash
 npm run art
 ```
 
-That's it. Reload the game and the generated art appears.
+One API call per piece, 26 in total, printing `ok` / `skip` / `FAIL` as it goes. Finished pieces
+are written straight to `public/sprites/` as JPEGs, so if it dies half way through — rate limit,
+network, Ctrl-C — just run it again and it picks up where it stopped. Nothing already done is
+paid for twice.
 
-- **Your key never touches the repo.** It lives in `.env.local`, which is
-  gitignored, and the script *refuses to run* if that file ever stops being
-  ignored or turns out to be tracked. There is no `--key=` flag on purpose: a
-  key on the command line goes into your shell history.
-- **`scripts/art-manifest.mjs` is the art direction.** One shared style
-  paragraph plus one sentence of subject per piece, 26 in all. Edit a
-  description, run `npm run art --  --only=raincoat --force`, look at it, edit
-  again. To change the whole look, change `STYLE` once and regenerate.
-- **It is resumable and per-piece.** Finished pieces are skipped, so an
-  interrupted run costs nothing to restart. `--only=jar,wand` redoes two.
-  `--dry-run` prints every prompt and calls nothing.
-- **Nothing here can break the game.** Every sprite is optional and independent.
-  A missing, failed or malformed piece just keeps its hand-drawn version, so a
-  half-finished art run gives you a half-painted game rather than a broken one.
-  The fairness contracts and the 91 trials never look at any of it.
+Budget roughly 26 images. At the time of writing `gemini-3.1-flash-image` is the cheap one and
+`gemini-3-pro-image-preview` is several times the price; check current rates before doing a
+`--force` run of the whole set.
 
-Other flags: `--model=gemini-3-pro-image-preview` for the pricier model,
-`--size=512px` to cut the download (the sprites are served to a phone, so this
-is worth doing), `--force` to redo what already exists.
+Consider `npm run art -- --size=512px` for the first pass. The sprites are drawn at about 30
+pixels tall, so 1K is far more detail than the game can show, and every one of them is a file a
+phone has to download.
+
+### 5. Reload the game
+
+That's it. No build step, no import to add. Anything in `public/sprites/` is picked up on the
+next page load, and anything missing keeps its hand-drawn version.
+
+### Fixing one piece you don't like
+
+Descriptions live in [`scripts/art-manifest.mjs`](scripts/art-manifest.mjs) — one shared `STYLE`
+paragraph, then a sentence of subject per piece. Edit the sentence, then redo just that piece:
+
+```bash
+npm run art -- --only=raincoat --force
+```
+
+`--force` is required to overwrite something that already exists. To change the whole look, edit
+`STYLE` once and run `npm run art -- --force`.
+
+### The flags
+
+| Flag | What it does |
+| --- | --- |
+| `--dry-run` | Print the prompts, call nothing, spend nothing |
+| `--only=jar,wand` | Just those pieces |
+| `--force` | Redo pieces that already exist |
+| `--size=512px` | Smaller images — **worth doing**, since a phone downloads all of these |
+| `--model=gemini-3-pro-image-preview` | The pricier, better model |
+| `--list` | What has been generated so far |
+
+### Things worth knowing
+
+- **Nothing here can break the game.** Every sprite is optional and independent. A missing,
+  failed or corrupt piece just keeps its hand-drawn version, so a half-finished run gives you a
+  half-painted game rather than a broken one. The fairness contracts and the 91 trials never look
+  at any of it. If you hate the result, `rm -rf public/sprites` puts everything back.
+- **The generated JPEGs get committed**, because GitHub Pages builds from the repo. At `1K` each
+  is around half a megabyte, so the full set is over 10 MB; `--size=512px` is much kinder to both
+  the repo and the phone downloading it.
+- **JPEG, not PNG** — the API rejects PNG outright. That means no transparency, which is why the
+  prompts ask for a flat green background and the game cuts it out at load time with a flood fill
+  from the edges. If a piece comes back with something behind the subject, that background will
+  survive; regenerate it rather than trying to fix it downstream.
+- **Facing matters.** Kids are prompted facing left because they walk left; toys face right
+  because they shoot right. If you rewrite a description, keep its direction — a lovely sprite
+  facing the wrong way is a bug, because which way a thing points is how the player reads it.
 
 ## Status
 
