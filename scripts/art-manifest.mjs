@@ -52,8 +52,11 @@ export const STYLE = `${KEY_BACKGROUND} ${DRAW_STYLE}`;
 /**
  * `id` must match the ToyId / EnemyKind / scenery name the renderer looks up.
  * Adding a new toy means adding its entry here as well as in `toys.ts`.
+ *
+ * A piece with a `cycle` also gets a second, derived piece — a 2x2 sprite sheet
+ * of that character mid-move — built at the bottom of this file. See SHEET.
  */
-export const PIECES = [
+const BASE_PIECES = [
   // --- The star -------------------------------------------------------------
   {
     id: 'unicorn',
@@ -156,6 +159,11 @@ export const PIECES = [
     subject:
       'a happy baby in a green romper crawling on hands and knees, facing LEFT, seen from the side, ' +
       'arms reaching forward eagerly. Silhouette: low and wide, close to the ground.',
+    cycle:
+      'a crawl. Frame 1: left hand and right knee reaching forward, body stretched long. ' +
+      'Frame 2: gathered up, both hands under the shoulders, bottom raised highest. ' +
+      'Frame 3: right hand and left knee reaching forward, body stretched long. ' +
+      'Frame 4: gathered up again, the mirror of frame 2.',
   },
   {
     id: 'toddler',
@@ -163,6 +171,11 @@ export const PIECES = [
     subject:
       'a cheerful toddler in an orange t-shirt walking to the LEFT, seen from the side, ' +
       'both arms stretched out in front wanting a hug, big head, stubby legs mid-step.',
+    cycle:
+      'a toddling walk. Frame 1: the NEAR leg is forward and planted, the FAR leg trails behind, ' +
+      'body at its lowest. Frame 2: the legs pass and overlap, up on the toes, body at its ' +
+      'highest. Frame 3: THE OPPOSITE OF FRAME 1 — the FAR leg is now forward and planted and the ' +
+      'NEAR leg trails behind. Frame 4: the legs pass and overlap again, body at its highest.',
   },
   {
     id: 'runner',
@@ -170,6 +183,13 @@ export const PIECES = [
     subject:
       'an excited child in a pink top running fast to the LEFT, body leaning forward, ' +
       'one arm trailing behind, hair blown back. Silhouette: tilted forward, clearly sprinting.',
+    cycle:
+      'a full run. Frame 1: the NEAR leg reaches far forward and the FAR leg stretches far back, ' +
+      'both feet off the ground, fully extended. Frame 2: the NEAR foot is planted underneath and ' +
+      'the FAR knee drives up in front, body compressed and lowest. Frame 3: THE OPPOSITE OF ' +
+      'FRAME 1 — the FAR leg reaches far forward and the NEAR leg stretches far back. Frame 4: ' +
+      'THE OPPOSITE OF FRAME 2 — the FAR foot is planted underneath and the NEAR knee drives up. ' +
+      'Arms swing opposite the legs throughout.',
   },
   {
     id: 'raincoat',
@@ -178,6 +198,11 @@ export const PIECES = [
       'a child in a bright yellow hooded raincoat walking to the LEFT, the hood UP and clearly ' +
       'pointed, water droplets visibly bouncing off the shiny coat. Silhouette: a bell-shaped coat ' +
       'with a sharp pointed hood — the most distinctive outline in the set.',
+    cycle:
+      'a walk in a stiff plastic coat. Frame 1: left welly boot forward and planted, the coat hem ' +
+      'swung back. Frame 2: boots together, the coat hanging straight and still. Frame 3: right ' +
+      'welly boot forward and planted, the coat hem swung the other way. Frame 4: boots together, ' +
+      'coat hanging straight. The hood stays UP and pointed in all four frames.',
   },
   {
     id: 'blanket',
@@ -185,13 +210,43 @@ export const PIECES = [
     subject:
       'a child completely hidden under a draped lilac blanket, like a little ghost, shuffling to ' +
       'the LEFT with only bare feet showing at the bottom. No face at all. Silhouette: a soft mound.',
+    cycle:
+      'a blind shuffle. Frame 1: leaning left, the left bare foot poking out from under the hem. ' +
+      'Frame 2: upright and gathered, the blanket settling, both feet hidden. Frame 3: leaning ' +
+      'right, the right bare foot poking out. Frame 4: upright and gathered again. Short steps ' +
+      'and a lot of side-to-side rocking. Still no face in any frame.',
   },
   {
     id: 'balloon',
     aspect: '1:1',
+    // The only one that is not standing on anything. Lining her frames up on
+    // their lowest pixel would pin her dangling feet to a floor she never
+    // touches and cancel the float; her frames line up on their centres instead.
+    align: 'center',
+    // READ THIS BEFORE EDITING. The first version said "held up by a balloon
+    // above their head, legs dangling" and the model drew exactly that: the
+    // string running to the top of the child's head, arms at their sides, body
+    // hanging straight and perfectly limp. It looks like a hanging. In a game
+    // for a five-year-old.
+    //
+    // Two things prevent it and both must stay: the string ends AT THE HANDS
+    // and never touches the head or neck, and the body is bent and active in
+    // every single frame. "Dangling" and "hanging" are banned words here —
+    // they are accurate about the physics and catastrophic about the picture.
     subject:
-      'a delighted small child floating in the air, held up by a big pink helium balloon above ' +
-      'their head, legs dangling, drifting to the LEFT. Silhouette: a balloon above a hanging child.',
+      'a delighted small child in dungarees flying through the air, GRIPPING the string of a big ' +
+      'pink helium balloon TIGHTLY IN BOTH RAISED HANDS above their head. The string ends AT THE ' +
+      "CHILD'S HANDS and must NEVER touch or attach to their head, neck, face or back. Both arms " +
+      'are stretched up holding on. Knees pulled up and legs kicking cheerfully. Laughing, having ' +
+      'enormous fun, like a child on a rope swing. Silhouette: a balloon, a string, then a child ' +
+      'holding on by both hands with bent kicking legs.',
+    cycle:
+      'a lively kicking float — the child is holding on and having fun, and is NEVER limp. In all ' +
+      'four frames BOTH HANDS grip the string above the head and the arms stay raised. Frame 1: ' +
+      'both knees tucked right up to the chest. Frame 2: legs kicked out forward, body leaning ' +
+      'back. Frame 3: legs swung back behind, body leaning forward. Frame 4: legs apart mid-kick, ' +
+      'one up and one down. NEVER draw the body hanging straight down, NEVER draw the arms at the ' +
+      "sides, and NEVER attach the string to the child's head or neck.",
   },
   {
     id: 'puffy',
@@ -199,6 +254,11 @@ export const PIECES = [
     subject:
       'a child in an enormous puffy quilted blue winter coat walking to the LEFT, so padded they ' +
       'look almost round, tiny head poking out of the top. Silhouette: a big soft ball.',
+    cycle:
+      'a waddle — too padded to bend, so they roll from foot to foot rather than stride. Frame 1: ' +
+      'tipped over onto the left foot, whole body leaning left. Frame 2: upright and level between ' +
+      'steps. Frame 3: tipped over onto the right foot, leaning right. Frame 4: upright and level. ' +
+      'The arms stay stuck out sideways by the padding in every frame.',
   },
   {
     id: 'slider',
@@ -207,6 +267,11 @@ export const PIECES = [
       'a laughing child in stripey socks sliding along the floor on their front, arms forward, ' +
       'moving fast to the LEFT, with little speed lines behind. Silhouette: horizontal, low, unlike ' +
       'every other child in the set who is upright.',
+    cycle:
+      'a belly slide, horizontal in all four frames — this child never stands up. Frame 1: both ' +
+      'legs kicked wide apart behind. Frame 2: legs together and trailing straight. Frame 3: legs ' +
+      'kicked wide apart again, the other one leading. Frame 4: legs together, arms stretched ' +
+      'furthest forward. The body stays low and flat to the floor throughout.',
   },
   {
     id: 'wagon',
@@ -214,6 +279,11 @@ export const PIECES = [
     subject:
       'a happy child riding in a little red toy wagon rolling to the LEFT, with a cardboard box lid ' +
       'held up in front of them like a shield. Silhouette: wide, with two round wheels.',
+    cycle:
+      'a roll over carpet — wheels, not steps. The wheel spokes are rotated a quarter turn further ' +
+      'in each successive frame. Frame 1: the wagon level. Frame 2: the front wheel up on a bump, ' +
+      'nose tipped up, the child jolted upward. Frame 3: the wagon level again. Frame 4: the back ' +
+      'wheel up on a bump, nose tipped down. The cardboard shield stays held out front throughout.',
   },
   {
     id: 'bigkid',
@@ -222,6 +292,12 @@ export const PIECES = [
       'a big grinning older child, much larger than the others, striding to the LEFT with both arms ' +
       'flung wide open for an enormous hug, a plush toy tucked under one arm. Friendly and boisterous, ' +
       'never scary. Silhouette: tall and very wide.',
+    cycle:
+      'a slow heavy stride. Frame 1: the NEAR leg planted far forward, the whole body dropped low ' +
+      'onto it, landing hard. Frame 2: pushing off, legs passing, body at its highest. Frame 3: ' +
+      'THE OPPOSITE OF FRAME 1 — the FAR leg planted far forward, body dropped low, landing hard. ' +
+      'Frame 4: pushing off, legs passing, body at its highest. ' +
+      'Both arms stay flung wide open for a hug in every frame, the plush toy under one of them.',
   },
 
   // --- Scenery --------------------------------------------------------------
@@ -286,6 +362,94 @@ export const PIECES = [
 ];
 
 /**
+ * Walk cycles: one 2x2 sheet per character that has a `cycle`.
+ *
+ * ### Why a sheet and not four separate calls
+ *
+ * Four calls give you four slightly different children. Image models hold a
+ * character consistent WITHIN one image far better than across several, so the
+ * whole cycle is asked for as a single picture divided into quadrants, and the
+ * loader slices it. One billed call per character, and all four poses come out
+ * of the same act of drawing.
+ *
+ * ### Why 2x2 and not a 1x4 strip
+ *
+ * A strip needs a 4:1 aspect ratio, which is not in the API's supported list,
+ * and squeezing four frames into 16:9 leaves each one about 400px wide against
+ * 1000 tall — the model then draws four tiny figures with enormous margins. A
+ * square divided into quadrants keeps each frame square, which is the shape
+ * every other piece in this set is already drawn at.
+ *
+ * ### What still has to be fixed at load time
+ *
+ * Registration. Even in one image the model will not put all four figures at
+ * exactly the same size or height in their cells, and a walk cycle whose feet
+ * jump around is worse than no cycle at all. `sliceSheet` in
+ * `src/render/sprites.ts` trims each frame to its own contents and aligns them
+ * on a shared floor line. Do not try to solve that here by asking harder — it
+ * is a measurement problem and the loader can measure.
+ */
+const SHEET_RULES = [
+  'A SPRITE SHEET containing EXACTLY FOUR drawings of the SAME single character,',
+  'arranged in a 2x2 grid: two frames on the top row, two on the bottom row,',
+  'read left-to-right then top-to-bottom as frames 1, 2, 3 and 4 of one looping cycle.',
+  'The character is IDENTICAL in all four frames — same size, same colours, same clothes,',
+  'same side-on camera. ONLY THE POSE CHANGES between frames.',
+  'Centre each figure in its own quadrant with its feet at the same height in all four.',
+  'All four poses must be DIFFERENT from each other. In particular frame 3 must not repeat frame 1',
+  'and frame 4 must not repeat frame 2: where a pose leads with one limb, its opposite frame leads',
+  'with the other. A walking figure must use BOTH legs across the cycle, not the same leg twice.',
+  // Do NOT reintroduce a "shade the far limbs darker" rule here. It is correct
+  // animation practice and it made things worse: asked for it, the model started
+  // recolouring rather than shading — a bare arm went orange, a pink top washed
+  // out to skin tone, and one frame's hair came back a different colour, which
+  // is the exact per-frame drift the single-image approach exists to avoid.
+  'The clothing and hair colours are FIXED: use exactly the colours named in the character',
+  'description, identical in all four frames. Never change a colour between frames.',
+  'No grid lines, no boxes, no borders, no frame numbers, no dividing lines of any kind:',
+  'one single continuous flat #00FF00 background behind and between all four figures.',
+].join(' ');
+
+/**
+ * Sheets are drawn facing RIGHT and mirrored at load. Everything else in this
+ * file faces the way it is meant to face; this is the one exception, and it is
+ * deliberate rather than an oversight.
+ *
+ * The kids walk left, so the first run of sheets asked for left. All ten came
+ * back facing right. Asked again with the direction pulled out of the style
+ * block, described physically ("nose and hands point LEFT, the back of the head
+ * is on the RIGHT") and moved to the very end of the prompt where nothing
+ * follows it — still right. The pose text is unavoidably full of "left leg" and
+ * "right leg", and the direction drowns in it every time.
+ *
+ * So: ask for the direction the model is going to draw anyway, and flip the
+ * frames in the loader. The request and the correction now point the same way,
+ * which makes it deterministic instead of a coin toss — and a mirrored drawing
+ * of a child is just a drawing of a child. The single-subject pieces above are
+ * left alone; they have no pose text to drown in and they obey.
+ */
+const FACING_RIGHT = [
+  'DIRECTION, most important of all: every figure must FACE RIGHT, moving towards the RIGHT EDGE',
+  'of the picture. Their nose, face and outstretched hands point RIGHT; the back of their head is',
+  'on the LEFT. All four frames face the same way.',
+].join(' ');
+
+const WALK_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => ({
+  // The id the renderer looks up: `crawler.walk`, alongside the still `crawler`.
+  id: `${piece.id}.walk`,
+  aspect: '1:1',
+  // Four frames in one image, so 1K gives each frame 512 — the same resolution
+  // every other sprite gets. 512 here would be 256 a frame, visibly softer.
+  size: '1K',
+  // `mirrored` is why the game gets left-facing kids out of right-facing art.
+  sheet: { cols: 2, rows: 2, align: piece.align ?? 'floor', mirrored: true },
+  subject: piece.subject,
+  poses: piece.cycle,
+}));
+
+export const PIECES = [...BASE_PIECES, ...WALK_SHEETS];
+
+/**
  * The full prompt for one piece.
  *
  * Composed from named parts rather than by editing a finished string. The
@@ -296,6 +460,9 @@ export const PIECES = [
  * String surgery on a prompt fails quietly and looks like a model problem.
  */
 export function promptFor(piece) {
+  if (piece.sheet) {
+    return `${KEY_BACKGROUND} ${SHEET_RULES} The character: ${piece.subject} The four poses: ${piece.poses} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
+  }
   if (piece.background === 'none') {
     return `${piece.subject} ${DRAW_STYLE}. This is a full-bleed background image: it must fill the entire frame edge to edge, with no border and no chroma-key colour anywhere.`;
   }

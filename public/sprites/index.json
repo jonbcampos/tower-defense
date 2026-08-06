@@ -25,11 +25,83 @@
     "cushion",
     "rug",
     "menu",
-    "room"
+    "room",
+    "crawler.walk",
+    "toddler.walk",
+    "runner.walk",
+    "raincoat.walk",
+    "blanket.walk",
+    "balloon.walk",
+    "puffy.walk",
+    "slider.walk",
+    "wagon.walk",
+    "bigkid.walk"
   ],
   "ext": "jpg",
   "opaque": [
     "menu",
     "room"
-  ]
+  ],
+  "sheets": {
+    "crawler.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "toddler.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "runner.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "raincoat.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "blanket.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "balloon.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "center",
+      "mirrored": true
+    },
+    "puffy.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "slider.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "wagon.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "bigkid.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    }
+  }
 }

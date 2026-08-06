@@ -143,8 +143,8 @@ command line ends up in your shell history.
 npm run art -- --dry-run
 ```
 
-Prints all 26 prompts and calls nothing. Worth a skim — this is the art direction, and it is
-much cheaper to fix a description here than after 26 billed calls.
+Prints all 36 prompts and calls nothing. Worth a skim — this is the art direction, and it is
+much cheaper to fix a description here than after 36 billed calls.
 
 ### 4. Generate
 
@@ -152,12 +152,12 @@ much cheaper to fix a description here than after 26 billed calls.
 npm run art
 ```
 
-One API call per piece, 26 in total, printing `ok` / `skip` / `FAIL` as it goes. Finished pieces
+One API call per piece, 36 in total, printing `ok` / `skip` / `FAIL` as it goes. Finished pieces
 are written straight to `public/sprites/` as JPEGs, so if it dies half way through — rate limit,
 network, Ctrl-C — just run it again and it picks up where it stopped. Nothing already done is
 paid for twice.
 
-Budget roughly 26 images. At the time of writing `gemini-3.1-flash-image` is the cheap one and
+Budget roughly 36 images. At the time of writing `gemini-3.1-flash-image` is the cheap one and
 `gemini-3-pro-image-preview` is several times the price; check current rates before doing a
 `--force` run of the whole set.
 
@@ -200,7 +200,9 @@ npm run art -- --only=raincoat --force
   half-painted game rather than a broken one. The fairness contracts and the 91 trials never look
   at any of it. If you hate the result, `rm -rf public/sprites` puts everything back.
 - **The generated JPEGs get committed**, because GitHub Pages builds from the repo. At `1K` each
-  is around half a megabyte, so the full set is over 10 MB; `--size=512` is much kinder to both
+  is around half a megabyte, so the full set is about **13 MB** — which is a lot to hand to a
+  phone, and the main thing worth improving about the art pipeline; `--size=512` is much kinder to
+  both
   the repo and the phone downloading it.
 - **JPEG, not PNG** — the API rejects PNG outright. That means no transparency, which is why the
   prompts ask for a flat green background and the game cuts it out at load time with a flood fill
@@ -209,6 +211,30 @@ npm run art -- --only=raincoat --force
 - **Facing matters.** Kids are prompted facing left because they walk left; toys face right
   because they shoot right. If you rewrite a description, keep its direction — a lovely sprite
   facing the wrong way is a bug, because which way a thing points is how the player reads it.
+  The one exception is the walk sheets, which are asked for facing **right** and mirrored at load;
+  see below.
+
+### Walk cycles
+
+Ten of the 36 pieces are `<kid>.walk` — a 2x2 grid of four poses of one child, asked for in a
+single call because an image model holds a character together within one picture far better than
+across four. `src/render/kids.ts` picks a frame from how far the kid has walked, not from a
+clock, so a child slowed by Sticky Slime plods instead of moonwalking.
+
+Two things about them are not obvious and are both deliberate:
+
+- **The frames are re-registered at load.** The model puts the four figures at slightly different
+  sizes and heights in their cells, which played back is a child who grows and hops. `sliceSheet`
+  trims each frame to its contents, pulls it most of the way to the median height, and plants them
+  all on one floor line. Judge a cycle with `__game.sprites.frames('runner.walk')` rather than by
+  watching a 20-pixel figure cross the board.
+- **They are drawn facing right and mirrored.** Asked for left, all ten came back right — the pose
+  text is full of "left leg" and "right leg" and the direction drowns in it, however forcefully it
+  is stated. So the prompt asks for the direction the model is going to draw anyway and the loader
+  flips it, which is deterministic where arguing with it was not.
+
+A sheet that fails to generate, or comes back as three figures and a gap, simply isn't registered:
+that kid keeps its still image and the procedural gait. Nothing has to be true for the game to run.
 
 ## Status
 

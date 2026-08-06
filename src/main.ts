@@ -14,7 +14,7 @@ import { LEVELS, levelById, unlockedBy } from './game/levels';
 import { GameState, validateDesignContracts, type GameEvent } from './game/state';
 import { TOYS, type ToyId } from './game/toys';
 import { Particles } from './render/particles';
-import { loadSprites } from './render/sprites';
+import { loadSprites, sprite, spriteFrames } from './render/sprites';
 import {
   advanceScene,
   sceneRenderer,
@@ -449,6 +449,16 @@ if (import.meta.env.DEV) {
         currentLevelId = id;
         startRun(levelById(id).recommended);
       },
+      /**
+       * The generated art, as the renderer sees it.
+       *
+       * `frames('toddler.walk')` returns the sliced, re-registered, mirrored
+       * canvases — which is the only way to check a walk cycle honestly. Judging
+       * one by watching a 20-pixel character cross the board means judging the
+       * slicer, the sheet and the cadence all at once, and every problem in that
+       * stack looks the same from there.
+       */
+      sprites: { get: sprite, frames: spriteFrames },
       /** Unlock everything, for looking at the late levels. */
       unlockAll(): void {
         save.unlocked = LEVELS.length;

@@ -453,3 +453,78 @@ never quite did.
 **Revisit if:** the roster grows enough that one bear repeated five times looks
 sparse. A different stuffie per lane would be charming, and would cost five
 sprites and nothing else.
+
+## 26. Four drawn poses per kid, not one still being squashed
+
+The first pass at making the kids move was a transform: take the one generated
+still and pivot, squash and lean it about the feet from a phase derived from
+how far the kid had walked. It has a whole paragraph in `applyGait` arguing
+that this was the right trade, on the grounds that four poses would cost thirty
+more billed images and image models will not hold a character consistent across
+separate calls.
+
+Both halves of that argument were wrong, and the giveaway is that it was
+noticed immediately: *"you are just taking an image and sort of cheating it to
+make it look like it is moving vs using a sprite sheet."* One pose is one pose.
+No amount of transform gives a character a second silhouette, and a silhouette
+changing is what walking looks like.
+
+The cost estimate was wrong because it assumed one call per frame. Asking for
+all four poses **in one image**, as a 2x2 grid, is one call per character — ten,
+not thirty — and it fixes the consistency problem at the same time, because the
+model is far better at holding a character together within a single picture
+than across four separate ones. Every sheet came back as one recognisable child
+in four poses on the first attempt.
+
+What it does not fix is registration. The four figures land at slightly
+different sizes and slightly different heights in their cells, and played back
+that is a child who grows, shrinks and hops between frames — visibly worse than
+the still it replaced. That part is not a prompting problem and no amount of
+asking improves it; it is a measurement problem, so `sliceSheet` measures.
+Each frame is trimmed to its own content box, pulled most of the way (not all
+the way, or the walk goes with it) towards the median frame height, and planted
+on a shared floor line. Feet on the floor is what makes it read.
+
+The frame is chosen from distance travelled rather than from a clock, which is
+the same rule the transform used and the reason to keep it: a kid wading
+through Sticky Slime turns over fewer frames per second and visibly plods. It
+also means a kid stopped to chew on a pillow fort holds a pose for free.
+
+The transform did not go away. It sits underneath, reduced to the things four
+frames cannot express — the shove of a kid tugging at a toy, the float of the
+balloon, the friction judder of the sock slider — and everything the drawings
+now contain was taken out of it, because bob applied on top of drawn bob is bob
+twice, slightly out of phase.
+
+**Revisit if:** four frames start looking thin on the characters you watch
+longest, which will be the boss and anything in an endless mode. The path from
+here is more cells in the same grid — a 3x2 sheet is one call, not two, and
+`sliceSheet` already takes `cols` and `rows`.
+
+## 27. Walk sheets are drawn facing right and mirrored at load
+
+Everything else in the manifest faces the way it is meant to face. The kids
+walk left, so they are drawn facing left, and the single-subject pieces obey
+that without complaint.
+
+The sheets would not. All ten came back facing right. Asked again with the
+direction lifted out of the shared style block, described physically rather
+than as a bare compass word — "the nose and hands point LEFT, the back of the
+head is on the RIGHT" — and moved to the very end of the prompt where nothing
+follows it: still right. The pose descriptions are unavoidably full of the
+words "left leg" and "right leg", and the direction drowns in them every time.
+
+So the prompt now asks for the direction the model is going to draw anyway, and
+`sliceSheet` flips the frames. The request and the correction point the same
+way, which makes the result deterministic instead of a coin toss, and the flip
+is one sign in a transform that already exists. A mirrored drawing of a child
+is a drawing of a child.
+
+The general rule this is an instance of: when a model reliably disobeys a
+constraint that is trivially fixable downstream, stop paying for retries and
+fix it downstream. Argue with it only about things the code cannot repair.
+
+**Revisit if:** a piece appears whose mirror is *not* harmless — writing on a
+t-shirt, a plaster on one knee that has to match a still, a character defined
+by holding something in a particular hand. `mirrored` is per-sheet precisely so
+that one can opt out.

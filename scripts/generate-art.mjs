@@ -327,6 +327,12 @@ async function main() {
     // `keyed` pieces get their flat background removed at load time. The room
     // background is a full-bleed image and must not be touched.
     opaque: PIECES.filter((p) => p.background === 'none').map((p) => p.id),
+    // Pieces that are grids of animation frames rather than single subjects.
+    // The loader needs the grid shape to cut them up, and putting it here rather
+    // than in the loader means adding a cycle is still a manifest-only edit.
+    sheets: Object.fromEntries(
+      PIECES.filter((p) => p.sheet && present.includes(p.id)).map((p) => [p.id, p.sheet]),
+    ),
   };
   writeFileSync(INDEX_FILE, `${JSON.stringify(index, null, 2)}\n`);
 

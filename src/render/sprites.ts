@@ -28,15 +28,43 @@
  * and gives you a flat white background still works.
  */
 
+/** A piece that is a grid of animation frames rather than one subject. */
+interface SheetSpec {
+  cols: number;
+  rows: number;
+  /**
+   * What to line the frames up on.
+   *
+   * `floor` puts every frame's lowest pixel at the same height, which is what
+   * makes a walk cycle read as walking: the feet stay on the ground and the
+   * body's rise and fall survives as a difference in height. `center` is for
+   * anything that never touches the floor, where the lowest pixel is a dangling
+   * foot that is *supposed* to move and aligning on it would cancel the float.
+   */
+  align?: 'floor' | 'center';
+  /**
+   * Flip every frame horizontally.
+   *
+   * The frame sheets are generated facing right and used facing left. That is
+   * not a mistake in the prompt — see the note by `FACING_RIGHT` in
+   * `scripts/art-manifest.mjs` — it is the model refusing to draw a pose cycle
+   * in a stated direction, and a mirror being a free and total fix.
+   */
+  mirrored?: boolean;
+}
+
 interface SpriteIndex {
   generated: string[];
   /** File extension the generator wrote. JPEG today; see generate-art.mjs. */
   ext?: string;
   /** Pieces whose background must NOT be removed — full-bleed images. */
   opaque: string[];
+  /** Pieces that are frame grids, by id. */
+  sheets?: Record<string, SheetSpec>;
 }
 
 const sprites = new Map<string, HTMLCanvasElement>();
+const sheets = new Map<string, HTMLCanvasElement[]>();
 let loaded = false;
 
 /**
@@ -61,6 +89,18 @@ export function spriteCount(): number {
 /** The generated image for an id, or null if there isn't one. */
 export function sprite(id: string): HTMLCanvasElement | null {
   return sprites.get(id) ?? null;
+}
+
+/**
+ * The animation frames for an id, in cycle order, or null if there aren't any.
+ *
+ * Every caller must handle null and keep working, exactly as with `sprite()`.
+ * A cycle is the third fallback layer down: no art at all gives you the
+ * procedural painters, a still gives you the still, and only a sheet that both
+ * generated and sliced cleanly gives you frames.
+ */
+export function spriteFrames(id: string): HTMLCanvasElement[] | null {
+  return sheets.get(id) ?? null;
 }
 
 /**
@@ -103,6 +143,7 @@ export function loadSprites(baseUrl: string): void {
     }
 
     const opaque = new Set(index.opaque ?? []);
+    const grids = index.sheets ?? {};
     const ext = index.ext ?? 'jpg';
 
     // Downloads run in parallel; the CUT-OUTS run one at a time with a yield
@@ -123,7 +164,16 @@ export function loadSprites(baseUrl: string): void {
       const { id, image } = await pending;
       if (!image) continue; // One bad file loses one sprite, not the set.
       try {
-        sprites.set(id, opaque.has(id) ? toCanvas(image) : cutOutBackground(image));
+        const grid = grids[id];
+        if (grid) {
+          // A sheet that won't slice is simply not registered, and the caller
+          // falls back to the still. Never register a partial cycle: three good
+          // frames and one hole flickers, which is worse than not animating.
+          const cut = sliceSheet(cutOutBackground(image), grid);
+          if (cut) sheets.set(id, cut);
+        } else {
+          sprites.set(id, opaque.has(id) ? toCanvas(image) : cutOutBackground(image));
+        }
       } catch {
         // A cut-out that throws leaves the hand-drawn version in place.
       }
@@ -131,6 +181,177 @@ export function loadSprites(baseUrl: string): void {
     }
     loaded = true;
   })();
+}
+
+/**
+ * How hard to pull an off-size frame back towards its siblings. 0 is no
+ * correction, 1 makes every frame exactly the median height.
+ *
+ * Not 1, because some of the height difference between frames is real — a
+ * running child genuinely is taller stretched out than compressed on the
+ * landing — and flattening it would delete the animation along with the error.
+ */
+const FRAME_SCALE_PULL = 0.75;
+/** Never rescale a frame by more than this. A frame that far out is a bad draw. */
+const FRAME_SCALE_LIMIT = 0.2;
+/** Alpha above which a pixel counts as the subject rather than a keyed fringe. */
+const FRAME_ALPHA_FLOOR = 24;
+
+/**
+ * Cut a frame grid into separate frames, and fix their registration.
+ *
+ * The registration is the entire point. Asked for four poses of one character
+ * in a 2x2 grid, the model draws four poses of one character — and puts them at
+ * four slightly different sizes, at four slightly different heights, at four
+ * slightly different places in their cells. Played back naively that is a
+ * character who grows, shrinks and hops between every frame, which reads worse
+ * than the single still it replaced. No amount of prompting fixes it, because
+ * it is not a drawing mistake; it is the model having no reason to care about
+ * sub-percent alignment.
+ *
+ * So each frame is measured and moved:
+ *
+ *  - **Trimmed** to the box that actually contains pixels, so cell padding
+ *    stops mattering.
+ *  - **Scaled** most of the way towards the median frame height, so one frame
+ *    drawn larger stops popping — but only most of the way, see the constant.
+ *  - **Planted** on a shared floor line, so the feet stay put and the body's
+ *    rise and fall is the only vertical movement left.
+ *
+ * Frames come back the size of one source cell, with the subject placed inside
+ * exactly as a still sprite is placed inside its own square. That is deliberate:
+ * it means `drawSprite` treats a frame and a still identically, and swapping
+ * between them changes the pose and nothing else.
+ */
+function sliceSheet(sheet: HTMLCanvasElement, spec: SheetSpec): HTMLCanvasElement[] | null {
+  const cols = Math.max(1, Math.floor(spec.cols));
+  const rows = Math.max(1, Math.floor(spec.rows));
+  const cellW = Math.floor(sheet.width / cols);
+  const cellH = Math.floor(sheet.height / rows);
+  if (cellW < 8 || cellH < 8) return null;
+
+  const source = sheet.getContext('2d');
+  if (!source) return null;
+
+  const cells: ImageData[] = [];
+  const boxes: ContentBox[] = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const data = source.getImageData(col * cellW, row * cellH, cellW, cellH);
+      const box = contentBox(data);
+      // A near-empty quadrant means the model ignored the grid — it drew three
+      // frames, or one big figure straddling the middle. Either way there is no
+      // cycle here, and the still sprite is a better answer than a hole.
+      if (!box || box.w < cellW * 0.15 || box.h < cellH * 0.15) return null;
+      cells.push(data);
+      boxes.push(box);
+    }
+  }
+
+  const onFloor = spec.align !== 'center';
+  const targetH = median(boxes.map((b) => b.h));
+  const targetX = median(boxes.map((b) => b.x + b.w / 2));
+  const targetY = median(boxes.map((b) => (onFloor ? b.y + b.h : b.y + b.h / 2)));
+  if (targetH <= 0) return null;
+
+  const scaleOf = (box: ContentBox): number =>
+    clamp((targetH / box.h) ** FRAME_SCALE_PULL, 1 - FRAME_SCALE_LIMIT, 1 + FRAME_SCALE_LIMIT);
+  const anchorXOf = (box: ContentBox): number => box.x + box.w / 2;
+  const anchorYOf = (box: ContentBox): number => (onFloor ? box.y + box.h : box.y + box.h / 2);
+
+  // How far the moved frames reach from the shared target point, in each
+  // direction, across the whole cycle.
+  //
+  // Without this the output canvas was simply one cell, and moving a frame
+  // could push part of it off the edge — which is precisely what happened to
+  // the balloon: its frames are centre-aligned, the tall ones got shifted down,
+  // and the balloon itself was sliced off the top in half the cycle. The canvas
+  // therefore grows to hold the *union* of all four frames. It never shrinks
+  // below a cell, because a tighter crop would make the sprite render larger
+  // than the still it replaces and the kid would jump in size as the art loaded.
+  let reachL = 0;
+  let reachR = 0;
+  let reachT = 0;
+  let reachB = 0;
+  for (const box of boxes) {
+    const k = scaleOf(box);
+    reachL = Math.max(reachL, (anchorXOf(box) - box.x) * k);
+    reachR = Math.max(reachR, (box.x + box.w - anchorXOf(box)) * k);
+    reachT = Math.max(reachT, (anchorYOf(box) - box.y) * k);
+    reachB = Math.max(reachB, (box.y + box.h - anchorYOf(box)) * k);
+  }
+  const originX = Math.max(targetX, Math.ceil(reachL));
+  const originY = Math.max(targetY, Math.ceil(reachT));
+  const outW = Math.max(cellW, Math.ceil(originX + reachR));
+  const outH = Math.max(cellH, Math.ceil(originY + reachB));
+
+  const frames: HTMLCanvasElement[] = [];
+  for (let i = 0; i < cells.length; i++) {
+    const box = boxes[i]!;
+    const scratch = document.createElement('canvas');
+    scratch.width = cellW;
+    scratch.height = cellH;
+    const scratchCtx = scratch.getContext('2d');
+    if (!scratchCtx) return null;
+    scratchCtx.putImageData(cells[i]!, 0, 0);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.imageSmoothingEnabled = true;
+
+    const scale = scaleOf(box);
+    // Anchor: the point on this frame that must land on the shared target.
+    const anchorX = anchorXOf(box);
+    const anchorY = anchorYOf(box);
+    ctx.translate(originX, originY);
+    // The mirror folds into the same transform. Because it reflects about the
+    // anchor, and the anchor is the content's own centre line, a flipped frame
+    // lands in exactly the place an unflipped one would.
+    ctx.scale(spec.mirrored ? -scale : scale, scale);
+    ctx.translate(-anchorX, -anchorY);
+    ctx.drawImage(scratch, 0, 0);
+    frames.push(canvas);
+  }
+  return frames;
+}
+
+interface ContentBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** The smallest box containing every non-transparent pixel, or null if none. */
+function contentBox(frame: ImageData): ContentBox | null {
+  const { width, height, data } = frame;
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (data[(y * width + x) * 4 + 3]! <= FRAME_ALPHA_FLOOR) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < 0) return null;
+  return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[sorted.length >> 1] ?? 0;
+}
+
+function clamp(value: number, low: number, high: number): number {
+  return value < low ? low : value > high ? high : value;
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {

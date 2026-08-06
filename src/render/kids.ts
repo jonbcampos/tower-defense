@@ -16,7 +16,7 @@
 import { ENEMIES, type Enemy, type EnemyKind } from '../game/enemies';
 import { PALETTE, alpha, mix } from './palette';
 import { roundRect } from './bedroom';
-import { drawSprite, sprite } from './sprites';
+import { drawSprite, sprite, spriteFrames } from './sprites';
 
 /**
  * Draw one kid at (x, y), where y is the lane centre.
@@ -65,7 +65,11 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
   // soaked drip and the slowed blob are drawn over the top either way, because
   // they are game state rather than character design and they have to look
   // identical whether or not somebody has run the art script.
-  const image = sprite(enemy.kind);
+  // Three layers, best first: a real frame cycle, a still, then the painters
+  // below. Each is independently optional, so a half-finished art run gives some
+  // kids cycles, some kids stills and some kids rectangles — all playable.
+  const cycle = spriteFrames(`${enemy.kind}.walk`);
+  const image = cycle ? frameFor(cycle, def, walkPx) : sprite(enemy.kind);
   if (image) {
     ctx.save();
     if (enemy.hurt > 0) {
@@ -73,7 +77,8 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
       // going briefly translucent. Same read at a glance: "that one just got hit".
       ctx.globalAlpha = 1 - Math.min(0.45, enemy.hurt * 3);
     }
-    applyGait(ctx, enemy, def, walkPx);
+    if (cycle) settleFrame(ctx, enemy, def, walkPx);
+    else applyGait(ctx, enemy, def, walkPx);
     drawSprite(ctx, image, 0, 0, def.width * 1.7, def.height * 1.7);
     ctx.restore();
     drawStatusMarkers(ctx, enemy, def);
@@ -163,18 +168,96 @@ const GAITS: Partial<Record<EnemyKind, Gait>> = {
 const DEFAULT_GAIT: Gait = { stride: 0.26, bob: 0.13, lean: 0.06, squash: 0.08, sway: 1.2, waddle: 0 };
 
 /**
+ * Which pose to show, from the kid's POSITION rather than a clock.
+ *
+ * That is the load-bearing detail, and it is the same one the transform below
+ * relies on: a kid wading through Sticky Slime covers less ground per second, so
+ * she turns over fewer frames per second and visibly plods. Drive this from a
+ * timer instead and a slowed kid moonwalks — legs pumping at full speed while
+ * she inches along.
+ *
+ * It also means a kid who has stopped to chew on a pillow fort simply holds a
+ * pose, with no special case needed: her x is not changing, so her phase is not
+ * changing. `settleFrame` gives her the shoving motion on top.
+ *
+ * The cadence that falls out is around three frames a second — a real toddler
+ * taking a step every half second, which is slower than a cartoon would run it
+ * and is deliberately not sped up. Twice the frame rate would look livelier and
+ * would also be a child sprinting on the spot.
+ */
+function frameFor(
+  cycle: readonly HTMLCanvasElement[],
+  def: (typeof ENEMIES)[EnemyKind],
+  walkPx: number,
+): HTMLCanvasElement {
+  const gait = GAITS[def.kind] ?? DEFAULT_GAIT;
+  const perFrame = (Math.PI * 2) / cycle.length;
+  const index = Math.floor((walkPx * gait.stride) / perFrame);
+  // Kids walk leftwards, so the phase counts DOWN and the modulo goes negative.
+  const wrapped = ((index % cycle.length) + cycle.length) % cycle.length;
+  return cycle[wrapped] ?? cycle[0]!;
+}
+
+/**
+ * The small continuous motion that sits on top of a frame cycle.
+ *
+ * Deliberately much less than `applyGait` does. The frames already contain the
+ * bob, the squash and the lean — they were drawn that way — so repeating any of
+ * it here would double it, and worse, would double it slightly out of phase.
+ * What is left is the part four frames cannot express: the things that depend on
+ * game state rather than on the walk.
+ */
+function settleFrame(
+  ctx: CanvasRenderingContext2D,
+  enemy: Enemy,
+  def: (typeof ENEMIES)[EnemyKind],
+  walkPx: number,
+): void {
+  if (enemy.grabbing) {
+    // Standing still tugging at a toy. The frame is frozen, so all of the
+    // motion has to come from here or she looks paused rather than busy.
+    const feet = def.height * 0.85;
+    const tug = Math.sin(walkPx * 0.9);
+    ctx.translate(tug * 1.8, 0);
+    ctx.translate(0, feet);
+    ctx.rotate(tug * 0.05);
+    ctx.translate(0, -feet);
+    return;
+  }
+
+  if (def.aerial) {
+    // Her frames are centre-aligned precisely so they contribute no vertical
+    // movement of their own, which leaves the float to be added here.
+    const t = walkPx * 0.09;
+    ctx.translate(Math.sin(t * 0.7) * 1.6, Math.sin(t) * 3);
+    ctx.rotate(Math.sin(t * 0.5) * 0.05);
+    return;
+  }
+
+  if (def.kind === 'slider') {
+    // Friction judder, which is a vibration rather than a pose and so cannot
+    // live in four frames without strobing.
+    ctx.translate(0, Math.sin(walkPx * 0.7) * 0.7);
+    return;
+  }
+
+  // Everyone else: a weight shift, and nothing else. Sub-pixel and continuous,
+  // it fills the gap between one frame and the next without competing with it.
+  const gait = GAITS[def.kind] ?? DEFAULT_GAIT;
+  ctx.translate(Math.cos(walkPx * gait.stride) * gait.sway * 0.4, 0);
+}
+
+/**
  * Fake a walk cycle out of one still image.
  *
- * A sprite that only slides along x reads as a sticker being dragged, which is
- * exactly what it looked like on the first art run. Generating three or four
- * poses per kid would be the "proper" fix and is a bad trade: thirty more
- * billed images, and image models will not hold a character consistent across
- * frames, so you get four slightly different children per enemy.
+ * The fallback for a character with no generated frame sheet — either because
+ * the art script has never been run, or because that one sheet failed to
+ * generate or failed to slice. A sprite that only slides along x reads as a
+ * sticker being dragged, and this is a great deal better than that; it is not,
+ * and was never really, as good as four drawn poses.
  *
- * Instead the transform does the work, driven by the kid's POSITION rather than
- * a clock. That is the load-bearing detail: a kid in Sticky Slime covers less
- * ground per second, so her stride slows down with her, for free. A time-based
- * cycle would have her moonwalking.
+ * Driven by the kid's POSITION rather than a clock, for the same reason
+ * `frameFor` is.
  *
  * Two things make the difference between "bobbing" and "walking":
  *
