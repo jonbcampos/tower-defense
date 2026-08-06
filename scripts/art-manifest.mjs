@@ -157,8 +157,11 @@ const BASE_PIECES = [
     id: 'crawler',
     aspect: '1:1',
     subject:
-      'a happy baby in a green romper crawling on hands and knees, facing LEFT, seen from the side, ' +
-      'arms reaching forward eagerly. Silhouette: low and wide, close to the ground.',
+      'a happy baby crawling on hands and knees, facing LEFT, seen from the side, arms reaching ' +
+      'forward eagerly. She wears a ONE-PIECE green romper of a SINGLE FLAT GREEN, covering the ' +
+      'whole body and BOTH legs right down to the ankles — no nappy, no cream or white patch over ' +
+      'the bottom or the legs, no second colour anywhere on it. ' +
+      'Silhouette: low and wide, close to the ground.',
     cycle:
       'a crawl. Frame 1: left hand and right knee reaching forward, body stretched long. ' +
       'Frame 2: gathered up, both hands under the shoulders, bottom raised highest. ' +
@@ -290,7 +293,9 @@ const BASE_PIECES = [
     aspect: '1:1',
     subject:
       'a happy child riding in a little red toy wagon rolling to the LEFT, with a cardboard box lid ' +
-      'held up in front of them like a shield. Silhouette: wide, with two round wheels.',
+      'held up in front of them like a shield. The wagon has a pull-handle and exactly TWO visible ' +
+      'wheels of the same design in every frame. Nothing trails behind it: no rope, no string, no ' +
+      'line on the floor. Silhouette: wide, with two round wheels.',
     cycle:
       'a roll over carpet — wheels, not steps. The wheel spokes are rotated a quarter turn further ' +
       'in each successive frame. Frame 1: the wagon level. Frame 2: the front wheel up on a bump, ' +
@@ -420,6 +425,18 @@ const SHEET_RULES = [
   // is the exact per-frame drift the single-image approach exists to avoid.
   'The clothing and hair colours are FIXED: use exactly the colours named in the character',
   'description, identical in all four frames. Never change a colour between frames.',
+  // Whole-outfit consistency was not enough. The crawler's romper kept its
+  // green in every frame while a large cream patch appeared over one leg in two
+  // of them and vanished in the other two — read as "its pant leg changing as
+  // it cycles". The rule has to reach individual garment PARTS.
+  'This applies to every PART of the outfit separately: a sleeve, a trouser leg, a collar, a patch',
+  'or a panel keeps its own colour in all four frames. Do not add or remove patches, panels, trim,',
+  'pockets or details between frames — the four figures wear the identical outfit, only posed',
+  'differently.',
+  // The wagon came back with a wandering line on the floor in two frames, drawn
+  // in a green near enough the key colour to be a hazard for the cut-out too.
+  'Draw NOTHING except the character and whatever they are carrying: no ground line, no floor,',
+  'no shadow, no motion trail, no dust, no speed lines, no stray marks of any kind.',
   // Props drift, and a drifting prop is worse than no prop. The Big Kid's plush
   // toy came back in frames 1 and 3 only, under a different arm in each and
   // absent from the other two, so in play it blinked on, off, and swapped sides.
