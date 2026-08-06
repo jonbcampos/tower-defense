@@ -88,16 +88,23 @@ export const FOOTER_H = VIRTUAL_H - BOARD_BOTTOM; // 26
 /**
  * The unicorn's cushion, left of column 0. Not placeable.
  *
- * 84px, which is the old 40 plus the 44 that used to be a drawn doorway on the
- * right. The door was cut because it did not read as a door — it was a bright
- * vertical bar at the edge of the screen — and because the unicorn was jammed
- * up against the row of Toy Vacuums with nowhere to be. One of those was
- * decoration and the other is the thing you are protecting.
+ * Was 40 while there was a drawn doorway on the right; the door was cut (it did
+ * not read as a door) and all 44 of its pixels came here, which was too much —
+ * the unicorn ended up adrift in a wide empty strip while the board sat flush
+ * against the right edge of the screen. 68 is the balance: enough for her to
+ * sit clear of the Toy Vacuums, not so much that she looks lost.
  */
-export const BED_W = 84;
+export const BED_W = 68;
 
-/** 84 + 396 = 480. The design width is this sum, not the other way round. */
-export const BOARD_SPAN = BED_W + BOARD_W;
+/**
+ * A matching strip on the right, so the board is CENTRED rather than shoved
+ * against the edge. Purely visual — the run-up kids walk is measured from the
+ * board (see `SPAWN_RUN`), so this cannot change the difficulty.
+ */
+export const RIGHT_MARGIN = 16;
+
+/** 68 + 396 + 16 = 480. The design width is this sum, not the other way round. */
+export const BOARD_SPAN = BED_W + BOARD_W + RIGHT_MARGIN;
 
 /**
  * How far right of the board a kid appears.

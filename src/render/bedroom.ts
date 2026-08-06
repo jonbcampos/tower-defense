@@ -168,25 +168,25 @@ export function drawBlocked(ctx: CanvasRenderingContext2D, blocked: readonly num
  * hearts. A five-year-old reads the face long before she reads the counter.
  */
 export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: number): void {
-  const x = bedX() + 6;
+  const x = bedX() + 1;
   const cy = (BOARD_TOP + BOARD_BOTTOM) / 2;
   const bob = Math.sin(time * 1.8) * 1.5;
 
   const cushionArt = sprite('cushion');
   const unicornArt = sprite('unicorn');
   if (unicornArt) {
-    if (cushionArt) drawSprite(ctx, cushionArt, x + 30, cy + 34, 62, 30);
+    if (cushionArt) drawSprite(ctx, cushionArt, x + 25, cy + 31, 54, 26);
     ctx.save();
     // She squashes down and forward when squeezed. The pose can't change on a
     // painting, so the SCALE carries it — and the eyes-shut face the painter
     // drew is replaced by the whole toy flinching, which reads fine at this size.
     const squash = 1 - hurt * 0.16;
-    ctx.translate(x + 30, cy + bob + hurt * 5);
+    ctx.translate(x + 25, cy + bob + hurt * 5);
     ctx.scale(1 + hurt * 0.08, squash);
     // Bigger now that the doorway's 44px went to this side. She is the thing
     // the whole game is about and she was previously a thumbnail wedged behind
     // a row of vacuum cleaners.
-    drawSprite(ctx, unicornArt, 0, 0, 66, 88);
+    drawSprite(ctx, unicornArt, 0, 0, 58, 78);
     ctx.restore();
     return;
   }
@@ -277,7 +277,7 @@ export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: n
  */
 export function drawMowers(ctx: CanvasRenderingContext2D, ready: readonly boolean[], time: number): void {
   for (let lane = 0; lane < ready.length; lane++) {
-    const x = bedX() + BED_W - 11;
+    const x = bedX() + BED_W - 10;
     const y = laneY(lane) + CELL_H / 2 + 6;
 
     if (!ready[lane]) {
