@@ -129,16 +129,23 @@ export class GameState {
   readonly cooldowns = new Map<ToyId, number>();
 
   /**
-   * One Toy Vacuum parked at the left end of each lane.
+   * One Guard Bear sitting at the left end of each lane.
    *
    * The last line of defence, and the reason no lane can deadlock. The first
-   * kid to reach the cushion in a lane gets vacuumed up instead of squeezing,
-   * and the vacuum is spent. Straight from Plants vs Zombies' lawnmower, for
-   * the same two reasons: it turns the first mistake in a lane into a warning
-   * rather than a loss, and it guarantees the board can always be cleared.
+   * kid to reach the cushion in a lane gets swept up in an enormous hug by the
+   * bear instead of squeezing the unicorn, and the pair of them wander off
+   * together. The bear is then gone.
+   *
+   * Mechanically this is Plants vs Zombies' lawnmower, for the same two
+   * reasons: it turns the first mistake in a lane into a warning rather than a
+   * loss, and it guarantees the board can always be cleared. It was literally a
+   * robot vacuum at first, which is what you get by translating "lawnmower"
+   * into a bedroom instead of asking what belongs in one. In a game about
+   * stuffed animals, the thing that saves a stuffed animal is another stuffed
+   * animal.
    */
-  readonly mowerReady: boolean[] = new Array<boolean>(LANE_COUNT).fill(true);
-  private readonly mowerTimer: number[] = new Array<number>(LANE_COUNT).fill(0);
+  readonly guardReady: boolean[] = new Array<boolean>(LANE_COUNT).fill(true);
+  private readonly guardTimer: number[] = new Array<number>(LANE_COUNT).fill(0);
 
   /** Cells this level's furniture covers. */
   private blocked = new Set<number>();
@@ -185,8 +192,8 @@ export class GameState {
     this.selected = null;
     this.cooldowns.clear();
     for (const id of this.loadout) this.cooldowns.set(id, 0);
-    this.mowerReady.fill(true);
-    this.mowerTimer.fill(0);
+    this.guardReady.fill(true);
+    this.guardTimer.fill(0);
     this.toysLost = 0;
     this.deepestCol = COL_BEYOND_BOARD;
     this.shake = 0;
@@ -380,9 +387,9 @@ export class GameState {
       if (this.laneFlash[lane]! > 0) this.laneFlash[lane] = Math.max(0, this.laneFlash[lane]! - dt);
     }
     for (let lane = 0; lane < LANE_COUNT; lane++) {
-      if (this.mowerTimer[lane]! <= 0) continue;
-      this.mowerTimer[lane] = Math.max(0, this.mowerTimer[lane]! - dt);
-      if (this.mowerTimer[lane] === 0) this.mowerReady[lane] = true;
+      if (this.guardTimer[lane]! <= 0) continue;
+      this.guardTimer[lane] = Math.max(0, this.guardTimer[lane]! - dt);
+      if (this.guardTimer[lane] === 0) this.guardReady[lane] = true;
     }
 
     // The free trickle. Scaled by the WORLD only — a world can turn the lights
@@ -584,14 +591,14 @@ export class GameState {
       if (enemy.concealed && col <= HALFWAY_COL) enemy.concealed = false;
 
       if (enemy.x <= squeezeX()) {
-        // The vacuum goes first. It clears the WHOLE lane rather than just this
+        // The bear goes first. He clears the WHOLE lane rather than just this
         // kid, because a lane that has been overrun has more than one kid in it
         // and a save that leaves the next one two steps from the cushion is not
         // a save.
-        if (this.mowerReady[enemy.lane]) {
-          this.mowerReady[enemy.lane] = false;
-          if (Number.isFinite(this.difficulty.mowerRechargeSeconds)) {
-            this.mowerTimer[enemy.lane] = this.difficulty.mowerRechargeSeconds;
+        if (this.guardReady[enemy.lane]) {
+          this.guardReady[enemy.lane] = false;
+          if (Number.isFinite(this.difficulty.guardRechargeSeconds)) {
+            this.guardTimer[enemy.lane] = this.difficulty.guardRechargeSeconds;
           }
           this.fireInstant('sweeper', enemy.lane);
           this.shake = JUICE.squeezeShake * 0.6;

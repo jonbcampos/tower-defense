@@ -28,7 +28,7 @@ import { TOYS, type ToyId } from '../game/toys';
 import type { Input } from '../core/input';
 import type { Renderer } from './renderer';
 import { PALETTE, alpha } from './palette';
-import { drawBlocked, drawMowers, drawNook, drawRoom, drawUnicorn } from './bedroom';
+import { drawBlocked, drawGuards, drawNook, drawRoom, drawUnicorn } from './bedroom';
 import { drawKid } from './kids';
 import { drawPlacedToy, drawToyArt } from './toys';
 import { drawFooter, drawPopups } from '../ui/hud';
@@ -120,7 +120,7 @@ export const sceneRenderer: Renderer = {
     particles.draw(ctx);
     // The unicorn over everything on the board, so a kid reaching the cushion
     // is hugging her rather than replacing her.
-    if (inPlay) drawMowers(ctx, state.mowerReady, clock);
+    if (inPlay) drawGuards(ctx, state.guardReady, clock);
     drawUnicorn(ctx, clock, squeezeFlash);
     drawDenyMark(ctx, state);
 

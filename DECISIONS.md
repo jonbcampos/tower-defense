@@ -111,7 +111,7 @@ loss screen.
 
 **Revisit if:** a difficulty above HARD ever exists. One heart is what it should be.
 
-## 9. The Toy Vacuum, and why it isn't optional
+## 9. The lane rescue, and why it isn't optional
 
 One vacuum parked at the left end of every lane, on every difficulty, spent after one use. The
 lawnmower, straight from PvZ.
@@ -429,3 +429,27 @@ not saying what it is.
 **Revisit if:** a world puts something playable in that strip. The nook is
 decoration that reads as furniture, and furniture that turns out to be a cell
 would be a genuinely nasty surprise.
+
+## 25. The lane rescue is a Guard Bear, not a robot vacuum
+
+It was a robot vacuum for a while, and that is what you get by translating
+"lawnmower" into a bedroom instead of asking what belongs in one. Mechanically
+it was right — decision 9 still stands in full — but a small appliance is the
+one thing on the board that is not a toy, in a game whose entire premise is
+toys, and it never stopped looking like a piece of borrowed furniture.
+
+It is now a teddy bear sitting at the end of each lane. The first kid to reach
+the cushion gets swept into an enormous hug and the pair of them wander off
+together. That fits the fiction exactly: in a game about a stuffed animal being
+loved too hard, the thing that saves her is another stuffed animal taking the
+hug for her.
+
+It also fixed the presentation problem for free. The bears sit on small
+cushions that echo the unicorn's own, so the row reads as her friends lined up
+beside her rather than five pieces of equipment — and the empty cushion in a
+spent lane says "somebody was sitting here" in a way an empty charging dock
+never quite did.
+
+**Revisit if:** the roster grows enough that one bear repeated five times looks
+sparse. A different stuffie per lane would be charming, and would cost five
+sprites and nothing else.

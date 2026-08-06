@@ -286,7 +286,7 @@ function drawFlourish(ctx: CanvasRenderingContext2D, id: ToyId, t: number, fired
       break;
     }
 
-    // Pillow forts and vacuums do not do anything. A wall that shimmers is a
+    // Pillow forts do not do anything. A wall that shimmers is a
     // wall that looks like it is about to do something, and it isn't.
     default:
       break;

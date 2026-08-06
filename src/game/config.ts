@@ -92,7 +92,7 @@ export const FOOTER_H = VIRTUAL_H - BOARD_BOTTOM; // 26
  * not read as a door) and all 44 of its pixels came here, which was too much —
  * the unicorn ended up adrift in a wide empty strip while the board sat flush
  * against the right edge of the screen. 68 is the balance: enough for her to
- * sit clear of the Toy Vacuums, not so much that she looks lost.
+ * sit clear of the Guard Bears, not so much that she looks lost.
  */
 export const BED_W = 68;
 
@@ -378,14 +378,14 @@ export interface Difficulty {
   /** Share of `optional` wave beats that are included. */
   extraBeatsShare: number;
   /**
-   * Seconds before a spent Toy Vacuum comes back, or Infinity for never.
+   * Seconds before a rescued Guard Bear comes back, or Infinity for never.
    *
-   * Every difficulty gets one vacuum per lane. That is not a kindness setting,
-   * it is a structural guarantee: without it a kid that reaches column zero can
+   * Every difficulty gets one bear per lane. That is not a kindness setting, it
+   * is a structural guarantee: without it a kid that reaches column zero can
    * become UNKILLABLE, because everything behind it is a producer and every
    * shooter fires the other way. That state doesn't end — it just sits there.
    */
-  mowerRechargeSeconds: number;
+  guardRechargeSeconds: number;
   /**
    * Sparkles fly to the purse on their own. The most important EASY lever,
    * because it removes a thing to CONSIDER rather than a thing to do.
@@ -435,13 +435,13 @@ export const DIFFICULTIES: Record<DifficultyId, Difficulty> = {
     toyCostScale: 0.8,
     waveRestScale: 1.5,
     extraBeatsShare: 0,
-    // Infinity, even on EASY. A recharging vacuum sounds kind and is actually
+    // Infinity, even on EASY. A recharging bear sounds kind and is actually
     // corrosive: with five lanes refilling every 25 seconds the game stops
     // being losable at all, and a trial that drives a level with NO PLAYER
     // caught exactly that — eight of the ten levels beat themselves. EASY is
     // forgiving through softer kids, cheaper toys and free collection, none of
     // which remove the need to play.
-    mowerRechargeSeconds: Infinity,
+    guardRechargeSeconds: Infinity,
     autoCollectSparkles: true,
     loadoutIsPicked: true,
     immunityLeak: 0.25,
@@ -458,7 +458,7 @@ export const DIFFICULTIES: Record<DifficultyId, Difficulty> = {
     toyCostScale: 1,
     waveRestScale: 1,
     extraBeatsShare: 0.5,
-    mowerRechargeSeconds: Infinity,
+    guardRechargeSeconds: Infinity,
     autoCollectSparkles: false,
     loadoutIsPicked: false,
     immunityLeak: 0,
@@ -479,7 +479,7 @@ export const DIFFICULTIES: Record<DifficultyId, Difficulty> = {
     toyCostScale: 1,
     waveRestScale: 0.75,
     extraBeatsShare: 1,
-    mowerRechargeSeconds: Infinity,
+    guardRechargeSeconds: Infinity,
     autoCollectSparkles: false,
     loadoutIsPicked: false,
     immunityLeak: 0,

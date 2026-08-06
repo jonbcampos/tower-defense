@@ -22,8 +22,9 @@ enough that whatever your toys are doing is more interesting than you are.
 | **Wagon Kid** | A cardboard shield comes off first | Sustained damage |
 | **The Big Kid** | Throws a stuffie that destroys a toy; half damage from bubbles | Everything you know |
 
-Ten levels, a new toy every level or two, and a **Toy Vacuum** parked at the end of every lane —
-the first kid to reach the cushion in a lane gets vacuumed up instead of squeezing you, once.
+Ten levels, a new toy every level or two, and a **Guard Bear** sitting at the end of every lane —
+the first kid to reach the cushion in a lane gets swept into an enormous hug by the bear instead
+of squeezing you, and the two of them wander off together. One bear per lane, once each.
 
 Third in a set with [Flappy Unicorn](https://jonbcampos.github.io/flappy-unicorn/) and
 [Ellie's Rainbow Run](https://jonbcampos.github.io/runner-game/), built the same way: TypeScript,

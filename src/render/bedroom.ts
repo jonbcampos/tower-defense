@@ -185,7 +185,7 @@ export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: n
     ctx.scale(1 + hurt * 0.08, squash);
     // Bigger now that the doorway's 44px went to this side. She is the thing
     // the whole game is about and she was previously a thumbnail wedged behind
-    // a row of vacuum cleaners.
+    // a row of teddy bears.
     drawSprite(ctx, unicornArt, 0, 0, 58, 78);
     ctx.restore();
     return;
@@ -307,7 +307,7 @@ export function drawNook(ctx: CanvasRenderingContext2D): void {
   ctx.ellipse(cx, cy + 24, 33, 21, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Toys she has left out. Small, soft, and well away from the vacuum column.
+  // Toys she has left out. Small, soft, and well away from the bears.
   ctx.fillStyle = alpha(PALETTE.unicornMane, 0.5);
   ctx.beginPath();
   ctx.arc(cx - 20, cy - 44, 5, 0, Math.PI * 2);
@@ -323,75 +323,80 @@ export function drawNook(ctx: CanvasRenderingContext2D): void {
 }
 
 /**
- * The Toy Vacuums, one parked at the left end of each lane.
+ * The Guard Bears, one sitting at the left end of each lane.
  *
- * Drawn ON the board, in the strip between the cushion and column zero, so the
- * player can see how many saves are left without reading anything. A spent lane
- * shows a faint outline where its vacuum used to be — the absence has to be as
- * visible as the presence, because "this lane has no safety net any more" is
- * the single most useful thing to know at a glance.
+ * Drawn ON the board, in the strip between the unicorn and column zero, so the
+ * player can see how many saves are left without reading anything.
+ *
+ * Each bear sits on his own small cushion, and THE CUSHION IS DRAWN WHETHER OR
+ * NOT HE IS ON IT. That is the whole trick: two states that would otherwise be
+ * "a shape" and "no shape" become one sentence — somebody sits here, and in
+ * this lane he has already gone. An earlier version drew a bare outline for the
+ * spent state and the first player reported it as "circles that the kids hit".
+ * An unexplained shape is worse than no shape.
+ *
+ * The cushions deliberately echo the unicorn's own, so the row reads as her
+ * friends lined up beside her rather than as five pieces of equipment.
  */
-export function drawMowers(ctx: CanvasRenderingContext2D, ready: readonly boolean[], time: number): void {
-  const art = sprite('vacuum');
+export function drawGuards(ctx: CanvasRenderingContext2D, ready: readonly boolean[], time: number): void {
+  const art = sprite('bear');
   for (let lane = 0; lane < ready.length; lane++) {
     const x = bedX() + BED_W - 14;
     const y = laneY(lane) + CELL_H / 2 + 2;
 
-    // The DOCK is drawn whether or not the vacuum is in it.
-    //
-    // This is the whole fix. Previously a spent lane showed a faint ellipse
-    // outline and nothing else, which the first player reported as "circles
-    // that the kids hit" — an unexplained shape doing an unexplained thing. A
-    // dock that is sometimes full and sometimes empty is a sentence: there is a
-    // slot here, something lives in it, and in this lane it has been used up.
-    ctx.fillStyle = alpha(PALETTE.scrim, ready[lane] ? 0.3 : 0.45);
+    // His cushion.
+    ctx.fillStyle = alpha(ready[lane] ? PALETTE.cushionDark : PALETTE.scrim, ready[lane] ? 0.85 : 0.4);
     ctx.beginPath();
-    ctx.ellipse(x, y + 7, 13, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + 9, 13, 5, 0, 0, Math.PI * 2);
     ctx.fill();
+    if (ready[lane]) {
+      ctx.fillStyle = alpha(PALETTE.cushion, 0.9);
+      ctx.beginPath();
+      ctx.ellipse(x, y + 8, 11, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     if (!ready[lane]) {
-      // Empty dock: a scuff where it used to sit. No outline that could be
-      // mistaken for an object.
+      // Empty cushion: a dent where he was sitting. No outline that could be
+      // mistaken for an object still being there.
       ctx.strokeStyle = alpha(PALETTE.laneLine, 0.35);
       ctx.setLineDash([3, 3]);
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.ellipse(x, y + 7, 10, 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, y + 8, 9, 3.5, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
       continue;
     }
 
-    // Ready: a soft pulse so she can see at a glance which lanes still have a
-    // net under them. Big enough to actually recognise — it was 20x16, which at
-    // this scale is a dot.
-    const pulse = 0.1 + Math.sin(time * 2 + lane * 1.3) * 0.05;
-    ctx.fillStyle = alpha(PALETTE.cardReady, pulse);
-    ctx.beginPath();
-    ctx.ellipse(x, y, 17, 14, 0, 0, Math.PI * 2);
-    ctx.fill();
-
     if (art) {
-      drawSprite(ctx, art, x, y, 30, 26);
+      // A slow breath so he reads as alive and waiting rather than as furniture.
+      const breath = Math.sin(time * 1.5 + lane * 1.1);
+      drawSprite(ctx, art, x, y - 2 + breath * 0.6, 30, 28);
       continue;
     }
 
-    // A little robot vacuum: a disc with a bumper and one blinking eye.
+    // A stubby teddy: round head, round body, two ears, arms out front.
+    ctx.fillStyle = PALETTE.chest;
+    ctx.beginPath();
+    ctx.ellipse(x, y + 1, 9, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - 5, y - 10, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + 5, y - 10, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y - 8, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = PALETTE.chestDark;
+    ctx.fillRect(x + 7, y - 2, 6, 4);
     ctx.fillStyle = PALETTE.cardReady;
-    ctx.beginPath();
-    ctx.ellipse(x, y, 11, 7.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = alpha(PALETTE.toyHighlight, 0.8);
-    ctx.beginPath();
-    ctx.ellipse(x - 3, y - 2.5, 4.5, 2.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = PALETTE.toyShadow;
-    ctx.fillRect(x + 6, y - 1.5, 5, 4);
-    const blink = Math.sin(time * 2.2 + lane * 1.7) > 0.9 ? 0 : 1;
-    if (blink) {
-      ctx.fillStyle = PALETTE.hudAccent;
-      ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
-    }
+    ctx.fillRect(x - 4, y - 3, 8, 2);
+    ctx.fillStyle = PALETTE.kidOutline;
+    ctx.fillRect(x - 3, y - 9, 1.5, 1.5);
+    ctx.fillRect(x + 2, y - 9, 1.5, 1.5);
   }
 }
 

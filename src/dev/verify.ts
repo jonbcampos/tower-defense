@@ -540,8 +540,8 @@ function trialRefundWindowCloses(id: DifficultyId): TrialResult {
   };
 }
 
-/** The Toy Vacuum saves a lane, costs no heart, and only fires once. */
-function trialMowerSavesALane(id: DifficultyId): TrialResult {
+/** A Guard Bear saves a lane, costs no heart, and only does it once. */
+function trialGuardSavesALane(id: DifficultyId): TrialResult {
   const level = levelById(5);
   const state = new GameState();
   state.start(level, id, level.recommended, 6);
@@ -559,14 +559,14 @@ function trialMowerSavesALane(id: DifficultyId): TrialResult {
   const afterFirst = state.enemies.count();
   const livesAfterFirst = state.lives;
 
-  // Second overrun in the same lane: the vacuum is spent, so this one costs a heart.
+  // Second overrun in the same lane: the bear is gone, so this one costs a heart.
   const again = state.enemies.spawn('toddler', 1, 1)!;
   again.x = squeezeX() - 1;
   state.update(FIXED_DT);
   state.drainEvents(() => {});
 
   return {
-    trial: 'the Toy Vacuum saves a lane once, then never again',
+    trial: 'a Guard Bear saves a lane once, then never again',
     level: '5 Lights Out',
     difficulty: id,
     detail: `4 kids on the cushion in lane 1 -> ${afterFirst} left and ${livesAfterFirst}/${livesBefore} hearts; a second overrun left ${state.lives} hearts (lane 3's ${other.kind} untouched: ${other.active})`,
@@ -759,7 +759,7 @@ export function verify(): TrialResult[] {
     results.push(trialBlanketHides(id));
     results.push(trialDeniedPlacementIsFree(id));
     results.push(trialRefundWindowCloses(id));
-    results.push(trialMowerSavesALane(id));
+    results.push(trialGuardSavesALane(id));
   }
   results.push(trialWavePacingResponds());
   results.push(trialStarsAreMonotone());

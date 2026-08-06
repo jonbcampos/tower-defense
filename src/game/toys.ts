@@ -278,7 +278,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   },
 
   /**
-   * The Toy Vacuum's payload. Never a card, never in a loadout, never bought.
+   * The Guard Bear's payload. Never a card, never in a loadout, never bought.
    *
    * It lives in this table anyway because it is a thing that does damage to a
    * lane, and everything that does damage to a lane goes through the same code
@@ -287,7 +287,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
    */
   sweeper: {
     id: 'sweeper',
-    name: 'Toy Vacuum',
+    name: 'Guard Bear',
     role: 'instant',
     layer: 'ground',
     cost: 0,

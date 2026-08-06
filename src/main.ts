@@ -340,7 +340,7 @@ function presentEvent(event: GameEvent): void {
       particles.laneSweep(event.y, 0, 640, '#fff0d9', random);
       break;
     case 'sweeper':
-      // The Toy Vacuum firing. Loud and unmistakably a rescue, because it is
+      // A Guard Bear firing. Loud and unmistakably a rescue, because it is
       // the moment a lane was about to be lost and wasn't.
       audio.play('sweeper');
       particles.laneSweep(event.y, 0, 640, '#7ee6a8', random);

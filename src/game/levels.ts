@@ -155,7 +155,7 @@ export const LEVELS: readonly Level[] = [
       w([k('crawler', 2), k('crawler', 2, 6)], 22),
       w([k('crawler', 2), k('crawler', 2, 5), k('crawler', 2, 5)], 22),
       // Nine crawlers, not six. Six was gentle enough that a player who put
-      // nothing down at all still WON — the lane's Toy Vacuum took the first
+      // nothing down at all still WON — the lane's Guard Bear took the first
       // bunch and three hearts covered the rest. A first level should be almost
       // impossible to lose; "impossible to lose" is a cutscene, and a trial
       // that drives this level with no player at all is what caught it.

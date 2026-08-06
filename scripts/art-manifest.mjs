@@ -137,11 +137,14 @@ export const PIECES = [
       'bubbles rightward, and a little window showing soapy liquid. Silhouette: a box with three spouts.',
   },
   {
-    id: 'vacuum',
+    // Faces RIGHT with the toys, not left with the kids: he is on your side.
+    id: 'bear',
     aspect: '1:1',
     subject:
-      'a small round robot vacuum cleaner, mint green and white, with one friendly glowing eye, ' +
-      'seen from a low three-quarter angle. Silhouette: a low disc.',
+      'a small plush teddy bear standing guard and facing RIGHT, honey-brown fur, a mint green ' +
+      'ribbon bow at his neck, both arms held out in front of him ready to catch someone in a big ' +
+      'hug, brave and friendly expression. He is a stuffed toy like the unicorn, not a real bear. ' +
+      'Silhouette: a stocky little bear with its arms out.',
   },
 
   // --- Kids. All facing LEFT, because they walk towards the unicorn. --------

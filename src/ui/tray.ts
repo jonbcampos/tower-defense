@@ -59,7 +59,7 @@ export function trayCards(loadout: readonly ToyId[]): CardRect[] {
  * the game asked what it was and reported that it didn't do anything. It didn't
  * — it couldn't be selected at all — but the real problem was that a
  * free-floating panic button with no home on the board is not something anyone
- * can guess the meaning of. It became the Toy Vacuum, which lives at the end of
+ * can guess the meaning of. It became the Guard Bear, who sits at the end of
  * each lane where you can see it, fires by itself, and needs no explanation.
  */
 

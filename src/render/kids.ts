@@ -29,6 +29,8 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
   const def = ENEMIES[enemy.kind];
   const walk = x * 0.14;
   const step = Math.sin(walk) * 2;
+  // Gaits take raw pixels travelled and apply their own stride length.
+  const walkPx = x;
   const body = enemy.hurt > 0 ? mix(def.color, PALETTE.kidHealthLost, Math.min(1, enemy.hurt * 5)) : def.color;
 
   ctx.save();
@@ -71,7 +73,7 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
       // going briefly translucent. Same read at a glance: "that one just got hit".
       ctx.globalAlpha = 1 - Math.min(0.45, enemy.hurt * 3);
     }
-    applyGait(ctx, enemy, def, walk);
+    applyGait(ctx, enemy, def, walkPx);
     drawSprite(ctx, image, 0, 0, def.width * 1.7, def.height * 1.7);
     ctx.restore();
     drawStatusMarkers(ctx, enemy, def);
@@ -117,6 +119,50 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
 }
 
 /**
+ * How each kid moves. One row per character, because they should not all walk
+ * the same and a single shared formula is what made the first version read as
+ * "everything is gently bobbing" rather than as five different children.
+ *
+ * `stride` is radians of cycle per pixel travelled, so it sets how many steps
+ * are taken to cross a given distance — small numbers are long, heavy strides.
+ * Everything else is a fraction of the kid's own height, so a big kid's bob is
+ * proportionally the same as a toddler's unless it is deliberately not.
+ */
+interface Gait {
+  /** Cycle per pixel. Higher is more, shorter steps. */
+  stride: number;
+  /** Vertical rise, as a fraction of height. */
+  bob: number;
+  /** Rock about the feet, in radians. */
+  lean: number;
+  /** Squash on the footfall, as a fraction of height. */
+  squash: number;
+  /** Horizontal weight shift, in pixels. */
+  sway: number;
+  /** Side-to-side roll every OTHER step, in radians. A waddle. */
+  waddle: number;
+}
+
+const GAITS: Partial<Record<EnemyKind, Gait>> = {
+  // Hands and knees: almost no rise, a long reach, a big rock forward.
+  crawler: { stride: 0.30, bob: 0.05, lean: 0.09, squash: 0.05, sway: 1.4, waddle: 0 },
+  // The reference walk. Everything else is described relative to this.
+  toddler: { stride: 0.26, bob: 0.15, lean: 0.07, squash: 0.09, sway: 1.4, waddle: 0 },
+  // Long fast strides, thrown forward, barely touching down.
+  runner: { stride: 0.19, bob: 0.19, lean: 0.13, squash: 0.06, sway: 2.2, waddle: 0 },
+  // A stiff plastic coat: less bounce, more swing.
+  raincoat: { stride: 0.24, bob: 0.11, lean: 0.06, squash: 0.07, sway: 1.2, waddle: 0.05 },
+  // Shuffling blind under a blanket, so short steps and a lot of side-to-side.
+  blanket: { stride: 0.34, bob: 0.05, lean: 0.03, squash: 0.11, sway: 0.6, waddle: 0.09 },
+  // Too padded to bend. Rolls from foot to foot instead of stepping.
+  puffy: { stride: 0.16, bob: 0.07, lean: 0.02, squash: 0.05, sway: 1.0, waddle: 0.13 },
+  // Slow, heavy, and lands hard enough that you can feel it.
+  bigkid: { stride: 0.13, bob: 0.09, lean: 0.04, squash: 0.14, sway: 2.6, waddle: 0.06 },
+};
+
+const DEFAULT_GAIT: Gait = { stride: 0.26, bob: 0.13, lean: 0.06, squash: 0.08, sway: 1.2, waddle: 0 };
+
+/**
  * Fake a walk cycle out of one still image.
  *
  * A sprite that only slides along x reads as a sticker being dragged, which is
@@ -125,64 +171,80 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
  * billed images, and image models will not hold a character consistent across
  * frames, so you get four slightly different children per enemy.
  *
- * Instead the transform does the work, driven by `walk` — which is derived from
- * the kid's POSITION, not from a clock. That is the load-bearing detail: a kid
- * in Sticky Slime covers less ground per second, so her stride slows down with
- * her, for free. A time-based cycle would have her moonwalking.
+ * Instead the transform does the work, driven by the kid's POSITION rather than
+ * a clock. That is the load-bearing detail: a kid in Sticky Slime covers less
+ * ground per second, so her stride slows down with her, for free. A time-based
+ * cycle would have her moonwalking.
  *
- * Four components, which is enough for the eye to accept it as walking:
- *  - **bob**: two rises per stride, because you go up on each foot.
- *  - **squash**: at the bottom of the bob, where the weight lands.
- *  - **lean**: a small rock about the feet, opposite phase to the bob.
- *  - **drift**: a hair of horizontal sway, so it isn't a piston.
+ * Two things make the difference between "bobbing" and "walking":
+ *
+ * **Everything pivots at the FEET.** Rotating and squashing about the centre
+ * makes a body swing like a pendulum hung from its middle and sink into the
+ * floor when it compresses. Pivoting at the feet is what plants it on the
+ * ground.
+ *
+ * **It stretches at the top and squashes at the bottom.** Squash alone reads as
+ * a limp; the stretch on the rise is what gives it a push-off.
  */
 function applyGait(
   ctx: CanvasRenderingContext2D,
   enemy: Enemy,
   def: (typeof ENEMIES)[EnemyKind],
-  walk: number,
+  walkPx: number,
 ): void {
+  const feet = def.height * 0.85;
+
   // Standing still to chew on a toy is not walking. The gait freezes and a
-  // small shove-rhythm takes over, so a kid eating a pillow fort is visibly
-  // doing something rather than paused mid-step.
+  // shove-rhythm takes over, so a kid eating a pillow fort is visibly doing
+  // something rather than paused mid-step.
   if (enemy.grabbing) {
-    const tug = Math.sin(walk * 3) * 1.2;
-    ctx.translate(tug, 0);
+    const tug = Math.sin(walkPx * 0.9);
+    ctx.translate(tug * 1.8, 0);
+    ctx.translate(0, feet);
+    ctx.rotate(tug * 0.05);
+    ctx.translate(0, -feet);
     return;
   }
 
   if (def.aerial) {
-    // Floating: a slow lazy rise and fall, no footfall, no lean.
-    ctx.translate(0, Math.sin(walk * 0.45) * 2.2);
+    // Floating: a slow lazy rise and fall and a gentle drift of the whole body.
+    const t = walkPx * 0.09;
+    ctx.translate(Math.sin(t * 0.7) * 1.6, Math.sin(t) * 3);
+    ctx.rotate(Math.sin(t * 0.5) * 0.05);
     return;
   }
 
   if (def.kind === 'slider') {
-    // Sliding on her front. No bob at all — the whole joke is that she is the
-    // one kid not on her feet — just a shiver from the friction.
-    ctx.translate(0, Math.sin(walk * 4) * 0.6);
-    ctx.rotate(Math.sin(walk * 2) * 0.02);
+    // On her front. No bob — the whole joke is that she is the one kid not on
+    // her feet — just judder from the friction and a bit of skid.
+    ctx.translate(0, Math.sin(walkPx * 0.7) * 0.7);
+    ctx.rotate(Math.sin(walkPx * 0.35) * 0.03);
     return;
   }
 
   if (def.kind === 'wagon') {
-    // Wheels on carpet: a bumpy jitter rather than a stride.
-    ctx.translate(0, Math.abs(Math.sin(walk * 2)) * -1.4);
-    ctx.rotate(Math.sin(walk * 2) * 0.03);
+    // Wheels on carpet: bumps, not steps.
+    const bump = Math.abs(Math.sin(walkPx * 0.34));
+    ctx.translate(0, -bump * 2.2);
+    ctx.translate(0, feet);
+    ctx.rotate(Math.sin(walkPx * 0.34) * 0.05);
+    ctx.translate(0, -feet);
     return;
   }
 
-  const bob = Math.abs(Math.sin(walk));
-  const footfall = 1 - bob;
-  const height = def.height;
+  const g = GAITS[def.kind] ?? DEFAULT_GAIT;
+  const phase = walkPx * g.stride;
+  // Two steps per full cycle: `rise` peaks on each foot, `roll` alternates.
+  const rise = Math.abs(Math.sin(phase));
+  const roll = Math.sin(phase * 0.5);
+  const plant = 1 - rise;
 
-  ctx.translate(Math.sin(walk * 0.5) * 0.7, -bob * (height * 0.06));
-  ctx.rotate(Math.cos(walk) * 0.035);
-  // Squash about the FEET, not the centre, or the kid sinks into the floor
-  // instead of compressing onto it.
-  ctx.translate(0, height * 0.5);
-  ctx.scale(1 + footfall * 0.035, 1 - footfall * 0.045);
-  ctx.translate(0, -height * 0.5);
+  ctx.translate(Math.cos(phase) * g.sway, -rise * def.height * g.bob);
+  ctx.translate(0, feet);
+  ctx.rotate(Math.cos(phase) * g.lean + roll * g.waddle);
+  // Stretch on the way up, squash on the way down, about the feet.
+  ctx.scale(1 + plant * g.squash * 0.7 - rise * g.squash * 0.35, 1 - plant * g.squash + rise * g.squash * 0.5);
+  ctx.translate(0, -feet);
 }
 
 /** Shield, soaked and slowed. Drawn over the body, sprite or not. */
