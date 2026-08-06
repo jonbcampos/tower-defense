@@ -313,6 +313,34 @@ function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolatio
 }
 
 /**
+ * How far a kid sits below the middle of her lane.
+ *
+ * Zero, and deliberately a constant rather than a formula. It used to be
+ * `height / 4`, which was right for the procedural painters — they draw feet at
+ * the bottom of the shape — and wrong for the generated art, which is centred
+ * in a square frame. Worse, being per-kind it sat a tall kid lower in her lane
+ * than a short one, so no two kids agreed on where their row was and none of
+ * them looked centred in it. Reported as "I couldn't be sure which row they
+ * were in."
+ */
+const KID_LANE_OFFSET = 0;
+
+/**
+ * How far apart to fan kids who are standing on top of each other.
+ *
+ * Two kids piled against the same pillow fort occupy the same pixel, so a
+ * crowd looks like one child. That matters beyond looks, because the game
+ * treats them very differently from a single kid: both chew the toy at once, so
+ * it dies twice as fast, and a bubble always hits whichever is nearest the
+ * unicorn. A player who cannot see the second one cannot understand either.
+ *
+ * The fan alternates above and below the lane centre so the group stays
+ * balanced on its row instead of drifting off it.
+ */
+const STACK_STEP = 5;
+const STACK_FAN = [0, -1, 1, -2, 2];
+
+/**
  * One lane's kids, furthest from the unicorn first, so a kid nearer her
  * overlaps the one behind rather than the other way round.
  *
@@ -321,6 +349,13 @@ function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolatio
  * times a second, for the whole of a level, in a project whose rule is that
  * nothing is allocated after startup. There are at most a couple of dozen kids
  * alive, so the quadratic scan is cheaper than the garbage was.
+ *
+ * The scan order is also what drives the stacking fan: consecutive kids close
+ * enough to overlap get stepped apart, and a kid with clear space around her
+ * resets to the middle of the lane. Deriving it from proximity rather than from
+ * something per-kid matters — a permanent per-kid offset would fix the crowd
+ * and immediately recreate the "which row is she in?" problem for everyone
+ * walking alone.
  */
 function drawKidsInLane(
   ctx: CanvasRenderingContext2D,
@@ -328,8 +363,15 @@ function drawKidsInLane(
   lane: number,
   interpolation: number,
 ): void {
+  const centre = laneCentreY(lane) + KID_LANE_OFFSET;
   let drawn = 0;
   let previous = Infinity;
+  // Where the last kid was and how wide she is, to decide whether the next one
+  // is standing on top of her. -Infinity so the first is never counted stacked.
+  let lastX = -Infinity;
+  let lastHalf = 0;
+  let depth = 0;
+
   for (;;) {
     let next: Enemy | null = null;
     for (const enemy of state.enemies.items) {
@@ -342,8 +384,16 @@ function drawKidsInLane(
     const cutoff = next.x;
     for (const enemy of state.enemies.items) {
       if (!enemy.active || enemy.lane !== lane || enemy.x !== cutoff) continue;
+      const half = ENEMIES[enemy.kind].width / 2;
+      // Walking from the far end, so lastX is always the greater. Overlapping
+      // bodies mean a pile; clear space means this kid starts a new one.
+      depth = lastX - enemy.x < lastHalf + half ? depth + 1 : 0;
+      lastX = enemy.x;
+      lastHalf = half;
+
+      const fan = STACK_FAN[Math.min(depth, STACK_FAN.length - 1)]! * STACK_STEP;
       const x = enemy.prevX + (enemy.x - enemy.prevX) * interpolation;
-      drawKid(ctx, enemy, x, laneCentreY(lane) + ENEMIES[enemy.kind].height / 4);
+      drawKid(ctx, enemy, x, centre + fan);
       drawn++;
     }
     previous = cutoff - 1e-9;
