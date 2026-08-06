@@ -320,7 +320,70 @@ export function drawNook(ctx: CanvasRenderingContext2D): void {
   ctx.beginPath();
   ctx.arc(cx - 15, cy + 56, 3, 0, Math.PI * 2);
   ctx.fill();
+
+  drawEllie(ctx, cx - 4, cy - 52);
 }
+
+/**
+ * The player, sitting in the nook above her unicorn.
+ *
+ * She is here because a five-year-old asked "where am I?", which is the most
+ * important question anyone has asked about this game. Every other character
+ * on screen is either a toy she owns or a child coming to take one.
+ *
+ * She sits on the LEFT, with the unicorn and the guard bears, and never among
+ * the kids walking in from the right. That is not decoration: the kids are the
+ * things you drive off with bubbles, so putting her among them would make the
+ * game about repelling her. On this side she is the one being protected and the
+ * one doing the protecting.
+ *
+ * She is also deliberately doing nothing — sitting, waving. Nothing about her
+ * animates or reacts, because she is not a mechanic and a player who thought
+ * she was would be looking for a button that isn't there.
+ */
+function drawEllie(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  const art = sprite('ellie');
+  if (art) {
+    drawSprite(ctx, art, x, y, 46, 46);
+    return;
+  }
+
+  // Hand-drawn fallback, in the same shapes the kid painters use: a seated
+  // girl, wide at the hem. Plain, but she should be there whether or not
+  // anybody ever ran the art script.
+  ctx.fillStyle = alpha(PALETTE.kidOutline, 0.22);
+  ctx.beginPath();
+  ctx.ellipse(x, y + 15, 15, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = ELLIE_DRESS;
+  ctx.beginPath();
+  ctx.moveTo(x - 14, y + 15);
+  ctx.quadraticCurveTo(x, y + 6, x + 14, y + 15);
+  ctx.lineTo(x + 7, y - 6);
+  ctx.lineTo(x - 7, y - 6);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = ELLIE_HAIR;
+  ctx.beginPath();
+  ctx.ellipse(x, y - 12, 11, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = ELLIE_SKIN;
+  ctx.beginPath();
+  ctx.arc(x, y - 11, 8, 0, Math.PI * 2);
+  ctx.fill();
+  // The raised hand, so she is waving rather than just sitting there.
+  ctx.fillRect(x + 8, y - 6, 4, 6);
+  ctx.fillStyle = PALETTE.kidOutline;
+  ctx.fillRect(x - 4, y - 12, 1.5, 2);
+  ctx.fillRect(x + 2, y - 12, 1.5, 2);
+}
+
+/** Her colours, matching the generated sprite so the fallback is the same girl. */
+const ELLIE_DRESS = '#f4736f';
+const ELLIE_HAIR = '#6b4a5e';
+const ELLIE_SKIN = '#e0a86a';
 
 /**
  * The Guard Bears, one sitting at the left end of each lane.

@@ -613,3 +613,79 @@ added to that path later. It does not break, it just quietly stays behind.
 **Revisit if:** a second kind ever gets `hidden: true`. Then the concealed pose
 really would leak identity, and it needs a shared silhouette rather than the
 kid's own art — at which point this becomes a branch again, deliberately.
+
+## 31. The cast is a mix, and the mix lives in the data
+
+Ellie is Hispanic, and every child in the first cast came back pale. The kids
+are the whole population of this game — ten of them, on screen constantly — so
+that is worth fixing properly rather than by editing a couple of prompts.
+
+Each `EnemyDef` now carries `skin` and `hair` alongside `color` and `accent`,
+and the ten of them span light golden-brown through deep brown, with the two
+honey-brown tones on the toddler and the wagon kid because those two are on
+screen most. Hair varies with it: afro puffs, straight black, dark curls,
+ginger.
+
+**In the data, not only in the prompts.** The hand-drawn painters used a single
+shared `PALETTE.kidSkin` for every child, so with no generated art the whole
+cast was one person in different shirts. `head()` and every painter now take
+the def and use its own colours. Representation that only works if somebody ran
+a billed script with an API key is not representation, it is a decoration on a
+happy path.
+
+The art prompts carry the same values in a `look` field, one readable line per
+kid, and `src/game/enemies.ts` is named in the manifest as the other half so
+the two stay in step.
+
+**Revisit if:** the roster grows. The spread was chosen across ten; twenty kids
+picked ad hoc will drift back towards the middle unless someone looks at the
+whole list at once, which is why `look` is one line per kid.
+
+## 32. Ellie sits in the nook, on the unicorn's side
+
+She asked "where am I?", which is the best question anyone has asked about this
+game, and there was no answer: every character on screen was a toy she owns or
+a child coming to take one.
+
+She is drawn sitting in the nook beside the unicorn. Deliberately NOT as one of
+the kids, and not as a restyled Runner, which was the other suggestion. The
+kids are the things you drive away with bubbles; putting her among them would
+make the game about repelling her. On the left she is the one being protected
+and the one doing the protecting, which is the actual answer to the question.
+
+She is also inert on purpose — she sits, she waves, nothing about her animates
+or responds. She is not a mechanic, and a player who thought she was would go
+looking for a button that does not exist.
+
+She has a hand-drawn fallback like everything else, for the same reason the
+skin tones went into the data: she should be there with or without the art run.
+
+**Revisit if:** a second child ever wants to be in it. The right shape then is
+a small roster of nook characters with one drawn per save, not a growing pile
+of hard-coded sprites in `drawNook`.
+
+## 33. The waddle is drawn half by the model and half by the transform
+
+The puffy coat kid's sheet came back with frame 3 MIRRORED — she span round in
+the middle of her own cycle. The cause is that "tipped over the other way" and
+"facing the other way" are, to this model, the same instruction. Saying so
+explicitly did not help across two regenerations, including a rule in capitals
+telling it never to mirror a frame.
+
+The fix was to stop asking for the part it cannot do. Her frames are now drawn
+BOLT UPRIGHT with no lean at all — only which boot is off the ground and how
+tall she rides, both of which it does perfectly — and the side-to-side roll is
+applied as a rotation in `settleFrame`, phase-locked so the lean peaks on the
+frames with a boot in the air. A canvas rotation cannot accidentally mirror
+anything.
+
+The general lesson, and the third instance of it in this project: when a model
+reliably fails at one component of an effect, split the effect and give that
+component to the code. Decision 27 mirrors sheets in the loader because the
+model would not draw them facing left; the abandoned note above `ODD_SHOES`
+records the one time the split was not available.
+
+**Revisit if:** anyone regenerates `puffy.walk` and puts a lean back into the
+prompt. The manifest entry says NO LEAN in capitals and names `ROLLED_BY_HAND`;
+the two halves only work as a pair, and a leaning sheet plus the rotation is
+worse than either alone.

@@ -110,34 +110,34 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
 
   switch (enemy.kind) {
     case 'crawler':
-      drawCrawler(ctx, body, def.accent, step);
+      drawCrawler(ctx, body, def, step);
       break;
     case 'toddler':
-      drawToddler(ctx, body, def.accent, step);
+      drawToddler(ctx, body, def, step);
       break;
     case 'runner':
-      drawRunner(ctx, body, def.accent, step);
+      drawRunner(ctx, body, def, step);
       break;
     case 'raincoat':
-      drawRaincoat(ctx, body, def.accent, step);
+      drawRaincoat(ctx, body, def, step);
       break;
     case 'blanket':
-      drawBlanketMound(ctx, body, step);
+      drawBlanketMound(ctx, body, def, step);
       break;
     case 'balloon':
-      drawBalloon(ctx, body, def.accent, walk);
+      drawBalloon(ctx, body, def, walk);
       break;
     case 'puffy':
-      drawPuffy(ctx, body, def.accent, step);
+      drawPuffy(ctx, body, def, step);
       break;
     case 'slider':
-      drawSlider(ctx, body, def.accent, walk);
+      drawSlider(ctx, body, def, walk);
       break;
     case 'wagon':
-      drawWagon(ctx, body, def.accent, walk);
+      drawWagon(ctx, body, def, walk);
       break;
     case 'bigkid':
-      drawBigKid(ctx, body, def.accent, step);
+      drawBigKid(ctx, body, def, step);
       break;
   }
 
@@ -263,11 +263,45 @@ function settleFrame(
     return;
   }
 
-  // Everyone else: a weight shift, and nothing else. Sub-pixel and continuous,
-  // it fills the gap between one frame and the next without competing with it.
   const gait = GAITS[def.kind] ?? DEFAULT_GAIT;
-  ctx.translate(Math.cos(walkPx * gait.stride) * gait.sway * 0.4, 0);
+  const phase = walkPx * gait.stride;
+
+  // A weight shift, for everyone. Sub-pixel and continuous, it fills the gap
+  // between one frame and the next without competing with it.
+  ctx.translate(Math.cos(phase) * gait.sway * 0.4, 0);
+
+  if (ROLLED_BY_HAND.has(def.kind)) {
+    // Rotation phased to the frames: hard over on the frames with a boot in the
+    // air, level on the frames with both boots down. A quarter-turn offset,
+    // because frame N covers phase N*PI/2 to (N+1)*PI/2 and we want the peak in
+    // the middle of a frame rather than on the seam between two.
+    const feet = def.height * 0.85;
+    ctx.translate(0, feet);
+    ctx.rotate(Math.cos(phase - Math.PI / 4) * gait.waddle * 1.3);
+    ctx.translate(0, -feet);
+  }
 }
+
+/**
+ * Kids whose sheets are drawn deliberately upright, with the roll added here.
+ *
+ * A waddle is the one motion the image model could not be made to draw. Told to
+ * tip "the other way" in frame 3 it mirrored the whole character, so the puffy
+ * coat kid span round in the middle of her own cycle; saying "do not turn her
+ * around" in three different ways did not shift it. An opposite lean and a
+ * mirror appear to be the same idea to it.
+ *
+ * A rotation, on the other hand, is something a canvas does perfectly and
+ * cannot get wrong. So the split is by what each half is good at: the sheet
+ * supplies the poses — which boot is up, how tall she rides — and the transform
+ * supplies the tilt. It is phase-locked to the frame index, so the lean peaks
+ * exactly on the frames drawn with a boot in the air.
+ *
+ * The manifest entry for any kid in here says NO LEAN in capitals. If a sheet
+ * is ever regenerated with a lean baked in, the two will fight and the result
+ * will be worse than either alone.
+ */
+const ROLLED_BY_HAND = new Set<EnemyKind>(['puffy']);
 
 /**
  * Fake a walk cycle out of one still image.
@@ -391,13 +425,19 @@ function outline(ctx: CanvasRenderingContext2D): void {
   ctx.stroke();
 }
 
-function head(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
-  ctx.fillStyle = PALETTE.kidSkin;
+function head(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  def: (typeof ENEMIES)[EnemyKind],
+): void {
+  ctx.fillStyle = def.skin;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.fill();
   outline(ctx);
-  ctx.fillStyle = PALETTE.kidHair;
+  ctx.fillStyle = def.hair;
   ctx.beginPath();
   ctx.arc(cx, cy - r * 0.35, r * 0.92, Math.PI, Math.PI * 2);
   ctx.fill();
@@ -407,20 +447,30 @@ function head(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number):
   ctx.fillRect(cx - r * 0.2, cy - 1, 1.5, 2);
 }
 
-function drawCrawler(ctx: CanvasRenderingContext2D, body: string, accent: string, step: number): void {
+function drawCrawler(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  step: number,
+): void {
   ctx.fillStyle = body;
   roundRect(ctx, -10, -3, 20, 11, 5);
   ctx.fill();
   outline(ctx);
   // Hands and knees, alternating.
-  ctx.fillStyle = accent;
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-9, 6 + step, 4, 4);
   ctx.fillRect(4, 6 - step, 4, 4);
-  head(ctx, -10, -4, 6);
+  head(ctx, -10, -4, 6, def);
 }
 
-function drawToddler(ctx: CanvasRenderingContext2D, body: string, accent: string, step: number): void {
-  ctx.fillStyle = accent;
+function drawToddler(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  step: number,
+): void {
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-5, 6 + step, 4, 6);
   ctx.fillRect(1, 6 - step, 4, 6);
   ctx.fillStyle = body;
@@ -429,31 +479,41 @@ function drawToddler(ctx: CanvasRenderingContext2D, body: string, accent: string
   outline(ctx);
   // Arms out front, reaching for the unicorn. Every kid who walks does this;
   // it is the single clearest statement of what they all want.
-  ctx.fillStyle = PALETTE.kidSkin;
+  ctx.fillStyle = def.skin;
   ctx.fillRect(-11, -1, 5, 3);
-  head(ctx, -2, -10, 7);
+  head(ctx, -2, -10, 7, def);
 }
 
-function drawRunner(ctx: CanvasRenderingContext2D, body: string, accent: string, step: number): void {
+function drawRunner(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  step: number,
+): void {
   ctx.save();
   // Leaning into the run. A tilt reads as speed at any size.
   ctx.rotate(-0.16);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-6, 6 + step * 2, 4, 7);
   ctx.fillRect(2, 6 - step * 2, 4, 7);
   ctx.fillStyle = body;
   roundRect(ctx, -7, -4, 14, 11, 4);
   ctx.fill();
   outline(ctx);
-  ctx.fillStyle = PALETTE.kidSkin;
+  ctx.fillStyle = def.skin;
   ctx.fillRect(-12, -2, 6, 3);
   ctx.fillRect(6, 1, 5, 3);
-  head(ctx, -3, -10, 6.5);
+  head(ctx, -3, -10, 6.5, def);
   ctx.restore();
 }
 
-function drawRaincoat(ctx: CanvasRenderingContext2D, body: string, accent: string, step: number): void {
-  ctx.fillStyle = accent;
+function drawRaincoat(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  step: number,
+): void {
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-5, 8 + step, 4, 5);
   ctx.fillRect(1, 8 - step, 4, 5);
   // The coat: a bell, wider at the bottom, so water visibly runs off it.
@@ -477,7 +537,7 @@ function drawRaincoat(ctx: CanvasRenderingContext2D, body: string, accent: strin
   ctx.closePath();
   ctx.fill();
   outline(ctx);
-  ctx.fillStyle = PALETTE.kidSkin;
+  ctx.fillStyle = def.skin;
   ctx.beginPath();
   ctx.arc(-4, -8, 4, 0, Math.PI * 2);
   ctx.fill();
@@ -485,7 +545,12 @@ function drawRaincoat(ctx: CanvasRenderingContext2D, body: string, accent: strin
   ctx.fillRect(-6, -9, 1.5, 2);
 }
 
-function drawBlanketMound(ctx: CanvasRenderingContext2D, body: string, step: number): void {
+function drawBlanketMound(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  step: number,
+): void {
   ctx.fillStyle = body;
   ctx.beginPath();
   ctx.moveTo(-13, 12);
@@ -495,7 +560,7 @@ function drawBlanketMound(ctx: CanvasRenderingContext2D, body: string, step: num
   ctx.fill();
   outline(ctx);
   // Only the feet show. No face: you genuinely cannot tell who is under there.
-  ctx.fillStyle = PALETTE.kidSkin;
+  ctx.fillStyle = def.skin;
   ctx.fillRect(-6, 10 + step, 4, 3);
   ctx.fillRect(2, 10 - step, 4, 3);
   ctx.fillStyle = alpha(PALETTE.kidOutline, 0.25);
@@ -504,7 +569,12 @@ function drawBlanketMound(ctx: CanvasRenderingContext2D, body: string, step: num
   }
 }
 
-function drawBalloon(ctx: CanvasRenderingContext2D, body: string, accent: string, walk: number): void {
+function drawBalloon(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  walk: number,
+): void {
   const float = Math.sin(walk * 0.5) * 2;
   ctx.translate(0, float - 4);
   // String first, so the kid hangs from it.
@@ -514,7 +584,7 @@ function drawBalloon(ctx: CanvasRenderingContext2D, body: string, accent: string
   ctx.moveTo(0, -6);
   ctx.lineTo(0, 2);
   ctx.stroke();
-  ctx.fillStyle = accent;
+  ctx.fillStyle = def.accent;
   ctx.beginPath();
   ctx.ellipse(0, -13, 8, 9, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -528,14 +598,19 @@ function drawBalloon(ctx: CanvasRenderingContext2D, body: string, accent: string
   roundRect(ctx, -6, 2, 12, 10, 4);
   ctx.fill();
   outline(ctx);
-  ctx.fillStyle = PALETTE.kidSkin;
+  ctx.fillStyle = def.skin;
   ctx.fillRect(-4, 11, 3, 5);
   ctx.fillRect(1, 11, 3, 5);
-  head(ctx, -1, -1, 5.5);
+  head(ctx, -1, -1, 5.5, def);
 }
 
-function drawPuffy(ctx: CanvasRenderingContext2D, body: string, accent: string, step: number): void {
-  ctx.fillStyle = accent;
+function drawPuffy(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  step: number,
+): void {
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-7, 11 + step, 5, 4);
   ctx.fillRect(2, 11 - step, 5, 4);
   // Three stacked puffs. A quilted coat, and unmistakably the biggest
@@ -547,12 +622,17 @@ function drawPuffy(ctx: CanvasRenderingContext2D, body: string, accent: string, 
   ctx.fillStyle = alpha(PALETTE.kidOutline, 0.13);
   ctx.fillRect(-13, -2, 26, 1.5);
   ctx.fillRect(-13, 5, 26, 1.5);
-  ctx.fillStyle = PALETTE.kidSkin;
+  ctx.fillStyle = def.skin;
   ctx.fillRect(-19, 0, 6, 4);
-  head(ctx, -4, -14, 7);
+  head(ctx, -4, -14, 7, def);
 }
 
-function drawSlider(ctx: CanvasRenderingContext2D, body: string, accent: string, walk: number): void {
+function drawSlider(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  walk: number,
+): void {
   // Horizontal. The only kid in the game that isn't upright, which is the whole
   // reason you can tell at a glance that this is the fast one.
   ctx.save();
@@ -561,9 +641,9 @@ function drawSlider(ctx: CanvasRenderingContext2D, body: string, accent: string,
   roundRect(ctx, -8, -2, 20, 10, 5);
   ctx.fill();
   outline(ctx);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-14, 1, 7, 5);
-  head(ctx, 12, 0, 6);
+  head(ctx, 12, 0, 6, def);
   // Speed lines behind, to the right.
   ctx.fillStyle = alpha('#ffffff', 0.5);
   for (let i = 0; i < 3; i++) {
@@ -573,7 +653,12 @@ function drawSlider(ctx: CanvasRenderingContext2D, body: string, accent: string,
   ctx.restore();
 }
 
-function drawWagon(ctx: CanvasRenderingContext2D, body: string, accent: string, walk: number): void {
+function drawWagon(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  walk: number,
+): void {
   ctx.fillStyle = body;
   roundRect(ctx, -16, 0, 32, 12, 3);
   ctx.fill();
@@ -586,18 +671,23 @@ function drawWagon(ctx: CanvasRenderingContext2D, body: string, accent: string, 
   ctx.beginPath();
   ctx.arc(9, 13, 4, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = accent;
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-10 + spin, 12, 2, 2);
   ctx.fillRect(8 - spin, 12, 2, 2);
   // The passenger, sitting up out of the wagon.
-  ctx.fillStyle = accent;
+  ctx.fillStyle = def.accent;
   roundRect(ctx, -6, -9, 12, 11, 4);
   ctx.fill();
   outline(ctx);
-  head(ctx, -2, -14, 6);
+  head(ctx, -2, -14, 6, def);
 }
 
-function drawBigKid(ctx: CanvasRenderingContext2D, body: string, accent: string, step: number): void {
+function drawBigKid(
+  ctx: CanvasRenderingContext2D,
+  body: string,
+  def: (typeof ENEMIES)[EnemyKind],
+  step: number,
+): void {
   ctx.fillStyle = PALETTE.kidOutline;
   ctx.fillRect(-10, 16 + step, 7, 6);
   ctx.fillRect(3, 16 - step, 7, 6);
@@ -605,13 +695,13 @@ function drawBigKid(ctx: CanvasRenderingContext2D, body: string, accent: string,
   roundRect(ctx, -18, -10, 36, 28, 8);
   ctx.fill();
   outline(ctx);
-  ctx.fillStyle = accent;
+  ctx.fillStyle = def.accent;
   ctx.fillRect(-6, -6, 12, 12);
   // Arms out wide. He wants a very big hug.
-  ctx.fillStyle = PALETTE.kidSkin;
+  ctx.fillStyle = def.skin;
   ctx.fillRect(-26, -4, 9, 5);
   ctx.fillRect(17, -4, 9, 5);
-  head(ctx, -6, -19, 10);
+  head(ctx, -6, -19, 10, def);
   // A stuffie in the raised hand, so the throw is telegraphed by the pose too.
   ctx.fillStyle = PALETTE.cushion;
   roundRect(ctx, 18, -12, 9, 8, 3);

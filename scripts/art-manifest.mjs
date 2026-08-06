@@ -67,6 +67,29 @@ const BASE_PIECES = [
       'It should read as a cuddly toy, not a real horse.',
   },
 
+  {
+    // The player, sitting in the nook beside her unicorn.
+    //
+    // She is on the LEFT with the unicorn and the guard bears, not among the
+    // kids walking in from the right, and that is the whole point of her. The
+    // kids are what you drive away with bubbles; putting her among them would
+    // make the game about repelling her. Here she is the one being protected
+    // and doing the protecting, which is the answer to "where am I?"
+    //
+    // A cartoon character, not a portrait. The description is a handful of
+    // traits — hair, skin, a coral sundress — drawn in the same picture-book
+    // style as everything else, so she belongs to this cast rather than being
+    // a photograph pasted into it.
+    id: 'ellie',
+    aspect: '1:1',
+    subject:
+      'a happy little girl about five years old sitting cross-legged on the floor facing the ' +
+      'viewer, long wavy dark brown hair past her shoulders, warm honey-tan skin, big brown eyes, ' +
+      'a bright coral-pink sleeveless sundress with white trim at the neck and hem. She is smiling ' +
+      'and one arm is raised in a small wave. Calm and comfortable, sitting still, at home. ' +
+      'Silhouette: a seated child, wider at the bottom where the dress spreads on the floor.',
+  },
+
   // --- Toys. All facing RIGHT, because they shoot towards the door. ---------
   {
     id: 'jar',
@@ -162,6 +185,7 @@ const BASE_PIECES = [
       'whole body and BOTH legs right down to the ankles — no nappy, no cream or white patch over ' +
       'the bottom or the legs, no second colour anywhere on it. ' +
       'Silhouette: low and wide, close to the ground.',
+    look: 'light golden-brown skin and soft dark brown hair',
     cycle:
       'a crawl. Frame 1: left hand and right knee reaching forward, body stretched long. ' +
       'Frame 2: gathered up, both hands under the shoulders, bottom raised highest. ' +
@@ -174,6 +198,7 @@ const BASE_PIECES = [
     subject:
       'a cheerful toddler in an orange t-shirt walking to the LEFT, seen from the side, ' +
       'both arms stretched out in front wanting a hug, big head, stubby legs mid-step.',
+    look: 'warm honey-brown skin and dark brown hair — a Hispanic toddler',
     cycle:
       'a toddling walk. Frame 1: the NEAR leg is forward and planted, the FAR leg trails behind, ' +
       'body at its lowest. Frame 2: the legs pass and overlap, up on the toes, body at its ' +
@@ -186,6 +211,7 @@ const BASE_PIECES = [
     subject:
       'an excited child in a pink top running fast to the LEFT, body leaning forward, ' +
       'one arm trailing behind, hair blown back. Silhouette: tilted forward, clearly sprinting.',
+    look: 'deep brown skin and black hair worn in two big afro puffs',
     cycle:
       'a full run. Frame 1: the NEAR leg reaches far forward and the FAR leg stretches far back, ' +
       'both feet off the ground, fully extended. Frame 2: the NEAR foot is planted underneath and ' +
@@ -201,6 +227,7 @@ const BASE_PIECES = [
       'a child in a bright yellow hooded raincoat walking to the LEFT, the hood UP and clearly ' +
       'pointed, water droplets visibly bouncing off the shiny coat. Silhouette: a bell-shaped coat ' +
       'with a sharp pointed hood — the most distinctive outline in the set.',
+    look: 'fair skin and auburn hair, mostly hidden by the hood',
     cycle:
       'a walk in a stiff plastic coat. Frame 1: left welly boot forward and planted, the coat hem ' +
       'swung back. Frame 2: boots together, the coat hanging straight and still. Frame 3: right ' +
@@ -213,6 +240,7 @@ const BASE_PIECES = [
     subject:
       'a child completely hidden under a draped lilac blanket, like a little ghost, shuffling to ' +
       'the LEFT with only bare feet showing at the bottom. No face at all. Silhouette: a soft mound.',
+    look: 'medium brown skin on the bare feet that show under the hem',
     cycle:
       'a blind shuffle. Frame 1: leaning left, the left bare foot poking out from under the hem. ' +
       'Frame 2: upright and gathered, the blanket settling, both feet hidden. Frame 3: leaning ' +
@@ -243,6 +271,7 @@ const BASE_PIECES = [
       'are stretched up holding on. Knees pulled up and legs kicking cheerfully. Laughing, having ' +
       'enormous fun, like a child on a rope swing. Silhouette: a balloon, a string, then a child ' +
       'holding on by both hands with bent kicking legs.',
+    look: 'warm tan skin and straight black hair',
     cycle:
       'a lively kicking float — the child is holding on and having fun, and is NEVER limp. In all ' +
       'four frames BOTH HANDS grip the string above the head and the arms stay raised. Frame 1: ' +
@@ -264,16 +293,29 @@ const BASE_PIECES = [
     // an exaggerated whole-body tip, a boot that clearly leaves the floor, and
     // a pom-pom that swings, which is a bright dot against a dark coat and so
     // is the one part of this character still readable at thirty pixels.
+    look: 'deep brown skin and black hair, only a little face showing',
+    // NO LEAN in these frames, on purpose, and do not put one back.
+    //
+    // A waddle is a side-to-side roll, and asking for one cost two generations:
+    // told to tip "the other way" in frame 3, the model mirrored the whole
+    // character instead, so she span round halfway through her own cycle. Being
+    // told explicitly not to turn around did not help — an opposite lean and a
+    // mirror are apparently the same idea to it.
+    //
+    // So the frames carry only what the model is reliable at — which boot is
+    // off the ground, and how tall she is — and the roll is applied as a
+    // rotation in `settleFrame`, which cannot flip anything. See ROLLED_BY_HAND
+    // in src/render/kids.ts; the two halves only work together.
     cycle:
-      'a heavy waddle — too padded to bend at the waist, so the WHOLE BODY tips right over from ' +
-      'one boot to the other. The tip must be LARGE and unmistakable, at least 20 degrees, not a ' +
-      'slight lean. Frame 1: tipped hard over onto the NEAR boot, the FAR boot lifted clear off ' +
-      'the ground behind, the pom-pom flung backwards. Frame 2: bolt upright and level, both ' +
-      'boots flat on the ground, body at its tallest, pom-pom straight up. Frame 3: tipped hard ' +
-      'the OTHER way onto the FAR boot, the NEAR boot lifted clear off the ground in front, the ' +
-      'pom-pom flung forwards. Frame 4: bolt upright and level again, both boots down. ' +
-      'A different boot is off the ground in frame 1 than in frame 3. The arms stay stuck out ' +
-      'sideways by the padding throughout.',
+      'a heavy plod, too padded to bend at the waist. She stands BOLT UPRIGHT and PERFECTLY ' +
+      'VERTICAL in all four frames — no leaning, no tipping, no tilting whatsoever, in any frame. ' +
+      'The only things that change are which boot is off the ground and how high she rides. ' +
+      'Frame 1: upright, the FAR boot lifted clear off the ground behind her, body at its lowest. ' +
+      'Frame 2: upright, both boots flat on the ground, body at its tallest. Frame 3: upright, ' +
+      'the NEAR boot lifted clear off the ground in front, body at its lowest. Frame 4: upright, ' +
+      'both boots flat on the ground, body at its tallest. A different boot is off the ground in ' +
+      'frame 1 than in frame 3. The arms stay stuck out sideways by the padding throughout, and ' +
+      'the pom-pom hat sits straight on her head in every frame.',
   },
   {
     id: 'slider',
@@ -282,6 +324,7 @@ const BASE_PIECES = [
       'a laughing child in stripey socks sliding along the floor on their front, arms forward, ' +
       'moving fast to the LEFT, with little speed lines behind. Silhouette: horizontal, low, unlike ' +
       'every other child in the set who is upright.',
+    look: 'fair freckled skin and ginger hair',
     cycle:
       'a belly slide, horizontal in all four frames — this child never stands up. Frame 1: both ' +
       'legs kicked wide apart behind. Frame 2: legs together and trailing straight. Frame 3: legs ' +
@@ -296,6 +339,7 @@ const BASE_PIECES = [
       'held up in front of them like a shield. The wagon has a pull-handle and exactly TWO visible ' +
       'wheels of the same design in every frame. Nothing trails behind it: no rope, no string, no ' +
       'line on the floor. Silhouette: wide, with two round wheels.',
+    look: 'warm honey-brown skin and dark curly hair — a Hispanic child',
     cycle:
       'a roll over carpet — wheels, not steps. The wheel spokes are rotated a quarter turn further ' +
       'in each successive frame. Frame 1: the wagon level. Frame 2: the front wheel up on a bump, ' +
@@ -309,6 +353,7 @@ const BASE_PIECES = [
       'a big grinning older child, much larger than the others, striding to the LEFT with both arms ' +
       'flung wide open for an enormous hug, a plush toy tucked under one arm. Friendly and boisterous, ' +
       'never scary. Silhouette: tall and very wide.',
+    look: 'medium brown skin and dark curly hair',
     cycle:
       'a slow heavy stride. Frame 1: the NEAR leg planted far forward, the whole body dropped low ' +
       'onto it, landing hard. Frame 2: pushing off, legs passing, body at its highest. Frame 3: ' +
@@ -418,6 +463,12 @@ const SHEET_RULES = [
   'All four poses must be DIFFERENT from each other. In particular frame 3 must not repeat frame 1',
   'and frame 4 must not repeat frame 2: where a pose leads with one limb, its opposite frame leads',
   'with the other. A walking figure must use BOTH legs across the cycle, not the same leg twice.',
+  // "Frame 3 tips the OTHER way" was read as "frame 3 faces the other way", so
+  // the puffy coat kid span round halfway through her waddle. Describing a pose
+  // as the reverse of another one needs this said next to it.
+  'NEVER mirror, flip or turn the character around between frames. All four face the same way.',
+  'When a pose is described as the reverse of another, only the LEAN or the LIMBS reverse — the',
+  'body still faces the same direction, and the head, face and any hat stay on the same side.',
   // Do NOT reintroduce a "shade the far limbs darker" rule here. It is correct
   // animation practice and it made things worse: asked for it, the model started
   // recolouring rather than shading — a bare arm went orange, a pink top washed
@@ -429,6 +480,7 @@ const SHEET_RULES = [
   // green in every frame while a large cream patch appeared over one leg in two
   // of them and vanished in the other two — read as "its pant leg changing as
   // it cycles". The rule has to reach individual garment PARTS.
+  'SKIN TONE and HAIR COLOUR are part of this and must be identical in all four frames.',
   'This applies to every PART of the outfit separately: a sleeve, a trouser leg, a collar, a patch',
   'or a panel keeps its own colour in all four frames. Do not add or remove patches, panels, trim,',
   'pockets or details between frames — the four figures wear the identical outfit, only posed',
@@ -514,6 +566,7 @@ const WALK_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => ({
   sheet: { cols: 2, rows: 2, align: piece.align ?? 'floor', mirrored: true },
   subject: piece.subject,
   poses: piece.cycle,
+  look: piece.look,
 }));
 
 export const PIECES = [...BASE_PIECES, ...WALK_SHEETS];
@@ -528,12 +581,24 @@ export const PIECES = [...BASE_PIECES, ...WALK_SHEETS];
  * backgrounds came back as a small room floating in a field of pure green.
  * String surgery on a prompt fails quietly and looks like a model problem.
  */
+/**
+ * The child's own colouring, if the piece names one.
+ *
+ * Separate from `subject` so that the cast's variety is a list you can read
+ * down in one place and check, rather than a detail buried in ten paragraphs.
+ * The same values live on the `EnemyDef`s in `src/game/enemies.ts`, which is
+ * what the hand-drawn fallback painters use, and the two are meant to agree.
+ */
+function look(piece) {
+  return piece.look ? ` Skin and hair: ${piece.look}.` : '';
+}
+
 export function promptFor(piece) {
   if (piece.sheet) {
-    return `${KEY_BACKGROUND} ${SHEET_RULES} The character: ${piece.subject} The four poses: ${piece.poses} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
+    return `${KEY_BACKGROUND} ${SHEET_RULES} The character: ${piece.subject}${look(piece)} The four poses: ${piece.poses} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
   }
   if (piece.background === 'none') {
     return `${piece.subject} ${DRAW_STYLE}. This is a full-bleed background image: it must fill the entire frame edge to edge, with no border and no chroma-key colour anywhere.`;
   }
-  return `${KEY_BACKGROUND} Subject: ${piece.subject} A single centred subject filling most of the frame. ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00.`;
+  return `${KEY_BACKGROUND} Subject: ${piece.subject}${look(piece)} A single centred subject filling most of the frame. ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00.`;
 }

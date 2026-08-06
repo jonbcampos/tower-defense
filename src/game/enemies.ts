@@ -81,6 +81,19 @@ export interface EnemyDef {
   height: number;
   color: string;
   accent: string;
+
+  /**
+   * Skin and hair, per kid.
+   *
+   * These children are the whole cast of the game and a five-year-old should
+   * see herself somewhere in it. They live here, next to `color` and `accent`,
+   * rather than only in the art prompts, so that the variety survives with no
+   * generated art at all — it must not depend on whether somebody ran a script
+   * and had an API key. The prompts in `scripts/art-manifest.mjs` describe the
+   * same children, and the two are meant to agree.
+   */
+  skin: string;
+  hair: string;
 }
 
 export const ENEMIES: Record<EnemyKind, EnemyDef> = {
@@ -98,6 +111,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 18,
     color: '#8fd9a8',
     accent: '#ffd166',
+    skin: '#c98d5e',
+    hair: '#3a2418',
   },
 
   toddler: {
@@ -114,6 +129,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 26,
     color: '#f2a65a',
     accent: '#ffe1b3',
+    skin: '#c68642',
+    hair: '#2e1b10',
   },
 
   runner: {
@@ -127,6 +144,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 26,
     color: '#ff6b8a',
     accent: '#fff0f4',
+    skin: '#7a4a24',
+    hair: '#241309',
   },
 
   raincoat: {
@@ -143,6 +162,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 28,
     color: '#ffd23f',
     accent: '#e0a800',
+    skin: '#f2c396',
+    hair: '#8a4b2a',
   },
 
   blanket: {
@@ -160,6 +181,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 28,
     color: '#a89bd6',
     accent: '#d9d0f5',
+    skin: '#a8693c',
+    hair: '#2b1a10',
   },
 
   balloon: {
@@ -177,6 +200,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 30,
     color: '#ff8fc7',
     accent: '#ffe14d',
+    skin: '#e8b07a',
+    hair: '#1f1610',
   },
 
   puffy: {
@@ -193,6 +218,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 30,
     color: '#7fb2e8',
     accent: '#d6e9ff',
+    skin: '#5e3418',
+    hair: '#1a0f08',
   },
 
   slider: {
@@ -210,6 +237,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 22,
     color: '#ffffff',
     accent: '#ff6b8a',
+    skin: '#f7d3b0',
+    hair: '#c96a2e',
   },
 
   wagon: {
@@ -224,6 +253,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 28,
     color: '#e05a3a',
     accent: '#ffd166',
+    skin: '#c68642',
+    hair: '#3a2012',
   },
 
   bigkid: {
@@ -242,6 +273,8 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
     height: 44,
     color: '#8f5cff',
     accent: '#ffd94d',
+    skin: '#9b6136',
+    hair: '#2a1a10',
   },
 };
 
