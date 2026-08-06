@@ -401,3 +401,31 @@ hard inset border on top, so the board looks like it has holes cut in it.
 
 **Revisit if:** a world's terrain rule needs the floor itself to carry
 information. At that point the scrim is hiding the thing it needs to show.
+
+## 24. The strip left of the board is a place, not a margin
+
+Three separate notes from the first player were really one problem: the space
+around the unicorn "looks like dead space", and the Toy Vacuums were "circles
+that the kids hit" — an unexplained shape doing an unexplained thing.
+
+Both come from the same mistake. That strip is not playable and never will be,
+so it got treated as leftover, and two important things were left sitting on
+bare carpet with nothing to say what they were.
+
+- The strip is now a **nook**: a pool of lamplight, a round bedside rug and a
+  couple of toys she has left out. Round and soft on purpose — nothing there
+  may look like a square you could build on. Procedural rather than generated,
+  because it has to fit the strip exactly and the strip's width has already
+  changed twice; an ellipse is right at any width, a painting isn't.
+- The vacuums sit in **docks**. The dock is drawn whether or not the vacuum is
+  in it, which turns two mystery states into one sentence: there is a slot here,
+  something lives in it, and in this lane it has been used up. They also went
+  from 20x16 to 30x26, because the last line of defence should not be a dot.
+
+The general lesson: an unexplained shape is worse than no shape. If something is
+on screen it has to say what it is, and "it appears when the state changes" is
+not saying what it is.
+
+**Revisit if:** a world puts something playable in that strip. The nook is
+decoration that reads as furniture, and furniture that turns out to be a cell
+would be a genuinely nasty surprise.

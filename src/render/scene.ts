@@ -28,7 +28,7 @@ import { TOYS, type ToyId } from '../game/toys';
 import type { Input } from '../core/input';
 import type { Renderer } from './renderer';
 import { PALETTE, alpha } from './palette';
-import { drawBlocked, drawMowers, drawRoom, drawUnicorn } from './bedroom';
+import { drawBlocked, drawMowers, drawNook, drawRoom, drawUnicorn } from './bedroom';
 import { drawKid } from './kids';
 import { drawPlacedToy, drawToyArt } from './toys';
 import { drawFooter, drawPopups } from '../ui/hud';
@@ -106,6 +106,7 @@ export const sceneRenderer: Renderer = {
     drawRoom(ctx, inPlay);
     // The door goes down before the kids, so a kid at the doorway is walking
     // OUT of it rather than standing on top of it.
+    if (inPlay) drawNook(ctx);
     if (inPlay) drawBlocked(ctx, state.level.blocked);
     drawLaneFlashes(ctx, state);
     drawFloorToys(ctx, state);

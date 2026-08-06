@@ -267,6 +267,62 @@ export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: n
 }
 
 /**
+ * The unicorn's corner: a lamplit nook to the left of the board.
+ *
+ * The strip left of column zero is not playable and never will be, so with a
+ * flat carpet under it and one small character on it, it read as dead space —
+ * a margin the artist forgot rather than a place. This gives it a reason to
+ * exist: a warm pool of lamplight, a round bedside rug, and a couple of toys
+ * she has left lying about.
+ *
+ * Everything here is procedural rather than another generated image, for one
+ * reason: it has to fit the strip EXACTLY, and the strip's width is a layout
+ * constant that has already changed twice. A painting sized to a 68px strip
+ * would be wrong the next time that number moves; an ellipse and a gradient
+ * are right at any width.
+ *
+ * It also has to stay visibly UNPLACEABLE. No straight edges, no cell-sized
+ * anything, nothing that could be mistaken for a square you could build on.
+ */
+export function drawNook(ctx: CanvasRenderingContext2D): void {
+  const cx = bedX() + 26;
+  const cy = (BOARD_TOP + BOARD_BOTTOM) / 2;
+
+  // Lamplight from above, pooling on the floor around her.
+  const glow = ctx.createRadialGradient(cx, cy - 10, 6, cx, cy - 10, 96);
+  glow.addColorStop(0, alpha(PALETTE.doorGlow, 0.2));
+  glow.addColorStop(0.55, alpha(PALETTE.doorGlow, 0.07));
+  glow.addColorStop(1, alpha(PALETTE.doorGlow, 0));
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, BOARD_TOP, bedX() + BED_W, BOARD_BOTTOM - BOARD_TOP);
+
+  // A round bedside rug. Round on purpose — nothing else on the floor is.
+  ctx.fillStyle = alpha(PALETTE.cushionDark, 0.28);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 24, 40, 26, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = alpha(PALETTE.cushionFrill, 0.3);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 24, 33, 21, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Toys she has left out. Small, soft, and well away from the vacuum column.
+  ctx.fillStyle = alpha(PALETTE.unicornMane, 0.5);
+  ctx.beginPath();
+  ctx.arc(cx - 20, cy - 44, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = alpha(PALETTE.sparkle, 0.4);
+  ctx.beginPath();
+  ctx.arc(cx + 16, cy + 52, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = alpha(PALETTE.shotBubble, 0.35);
+  ctx.beginPath();
+  ctx.arc(cx - 15, cy + 56, 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
  * The Toy Vacuums, one parked at the left end of each lane.
  *
  * Drawn ON the board, in the strip between the cushion and column zero, so the
@@ -276,46 +332,65 @@ export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: n
  * the single most useful thing to know at a glance.
  */
 export function drawMowers(ctx: CanvasRenderingContext2D, ready: readonly boolean[], time: number): void {
+  const art = sprite('vacuum');
   for (let lane = 0; lane < ready.length; lane++) {
-    const x = bedX() + BED_W - 10;
-    const y = laneY(lane) + CELL_H / 2 + 6;
+    const x = bedX() + BED_W - 14;
+    const y = laneY(lane) + CELL_H / 2 + 2;
+
+    // The DOCK is drawn whether or not the vacuum is in it.
+    //
+    // This is the whole fix. Previously a spent lane showed a faint ellipse
+    // outline and nothing else, which the first player reported as "circles
+    // that the kids hit" — an unexplained shape doing an unexplained thing. A
+    // dock that is sometimes full and sometimes empty is a sentence: there is a
+    // slot here, something lives in it, and in this lane it has been used up.
+    ctx.fillStyle = alpha(PALETTE.scrim, ready[lane] ? 0.3 : 0.45);
+    ctx.beginPath();
+    ctx.ellipse(x, y + 7, 13, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     if (!ready[lane]) {
-      ctx.strokeStyle = alpha(PALETTE.kidOutline, 0.3);
+      // Empty dock: a scuff where it used to sit. No outline that could be
+      // mistaken for an object.
+      ctx.strokeStyle = alpha(PALETTE.laneLine, 0.35);
+      ctx.setLineDash([3, 3]);
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.ellipse(x, y, 7, 4, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, y + 7, 10, 4, 0, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.setLineDash([]);
       continue;
     }
 
-    const art = sprite('vacuum');
-    if (art) {
-      drawSprite(ctx, art, x, y, 20, 16);
-      continue;
-    }
-
-    ctx.fillStyle = alpha(PALETTE.toyShadow, 0.3);
+    // Ready: a soft pulse so she can see at a glance which lanes still have a
+    // net under them. Big enough to actually recognise — it was 20x16, which at
+    // this scale is a dot.
+    const pulse = 0.1 + Math.sin(time * 2 + lane * 1.3) * 0.05;
+    ctx.fillStyle = alpha(PALETTE.cardReady, pulse);
     ctx.beginPath();
-    ctx.ellipse(x, y + 4, 7, 2.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y, 17, 14, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    if (art) {
+      drawSprite(ctx, art, x, y, 30, 26);
+      continue;
+    }
 
     // A little robot vacuum: a disc with a bumper and one blinking eye.
     ctx.fillStyle = PALETTE.cardReady;
     ctx.beginPath();
-    ctx.ellipse(x, y, 8, 5.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y, 11, 7.5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = alpha(PALETTE.toyHighlight, 0.8);
     ctx.beginPath();
-    ctx.ellipse(x - 2, y - 2, 3.5, 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(x - 3, y - 2.5, 4.5, 2.5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = PALETTE.toyShadow;
-    ctx.fillRect(x + 4, y - 1, 4, 3);
-    // The eye blinks on its own clock per lane, so five of them aren't a chorus.
+    ctx.fillRect(x + 6, y - 1.5, 5, 4);
     const blink = Math.sin(time * 2.2 + lane * 1.7) > 0.9 ? 0 : 1;
     if (blink) {
       ctx.fillStyle = PALETTE.hudAccent;
-      ctx.fillRect(x - 1, y - 1, 2, 2);
+      ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
   }
 }
