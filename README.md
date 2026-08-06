@@ -165,7 +165,28 @@ Consider `npm run art -- --size=512` for the first pass. The sprites are drawn a
 pixels tall, so 1K is far more detail than the game can show, and every one of them is a file a
 phone has to download.
 
-### 5. Reload the game
+### 5. Shrink it
+
+```bash
+npm run art:shrink
+```
+
+**Do this after every run.** The API returns pictures far larger than the game
+draws — a 2752px background, a 1024px walk sheet, against a kid rendered about
+thirty pixels tall — and all of that excess is download time on a phone. The
+script resamples each piece to roughly 4x the size it is actually drawn at:
+13.6 MB down to 1.25 MB, with no visible difference.
+
+It overwrites the originals, which is the point, since those are what get
+committed and served. The full-size versions stay in git history if a target
+ever turns out to be too aggressive. Running it twice is harmless — anything
+already small enough is skipped. Needs macOS (it uses `sips`, so that nothing
+gets added to `package.json`); pass `--dry-run` to see the plan first.
+
+Downscaling a large picture beats asking the model for a small one: it is a
+resample of a finished drawing rather than a coarser drawing, and it is free.
+
+### 6. Reload the game
 
 That's it. No build step, no import to add. Anything in `public/sprites/` is picked up on the
 next page load, and anything missing keeps its hand-drawn version.
@@ -189,7 +210,7 @@ npm run art -- --only=raincoat --force
 | `--dry-run` | Print the prompts, call nothing, spend nothing |
 | `--only=jar,wand` | Just those pieces |
 | `--force` | Redo pieces that already exist |
-| `--size=512` | Smaller images — **worth doing**, since a phone downloads all of these. Valid sizes are `512`, `1K`, `2K`, `4K` |
+| `--size=512` | Smaller images. Valid sizes are `512`, `1K`, `2K`, `4K`. Prefer generating big and running `npm run art:shrink`, which keeps more detail for the same bytes |
 | `--model=gemini-3-pro-image-preview` | The pricier, better model |
 | `--list` | What has been generated so far |
 
@@ -199,10 +220,10 @@ npm run art -- --only=raincoat --force
   failed or corrupt piece just keeps its hand-drawn version, so a half-finished run gives you a
   half-painted game rather than a broken one. The fairness contracts and the 91 trials never look
   at any of it. If you hate the result, `rm -rf public/sprites` puts everything back.
-- **The generated JPEGs get committed**, because GitHub Pages builds from the repo. At `1K` each
-  is around half a megabyte, so the full set is about **13 MB** — which is a lot to hand to a
-  phone, and the main thing worth improving about the art pipeline; `--size=512` is much kinder to
-  both
+- **The generated JPEGs get committed**, because GitHub Pages builds from the repo. Straight out
+  of the API the full set is about 13 MB, which is far too much to hand to a phone —
+  `npm run art:shrink` takes it to about 1.25 MB and is not optional. `--size=512` is also kinder
+  to both
   the repo and the phone downloading it.
 - **JPEG, not PNG** — the API rejects PNG outright. That means no transparency, which is why the
   prompts ask for a flat green background and the game cuts it out at load time with a flood fill

@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
     "art": "node scripts/generate-art.mjs",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "art:shrink": "node scripts/shrink-art.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

@@ -528,3 +528,37 @@ fix it downstream. Argue with it only about things the code cannot repair.
 t-shirt, a plaster on one knee that has to match a still, a character defined
 by holding something in a particular hand. `mirrored` is per-sheet precisely so
 that one can opt out.
+
+## 28. Generate the art large, then resample it down
+
+Straight out of the API the sprite set was 13.6 MB — two 2752px backgrounds at
+2.3 MB each, ten 1024px walk sheets, and two dozen 512px stills, against a game
+that draws a kid about thirty pixels tall and a background across at most 1280
+device pixels. Every byte above that is download time on a phone buying detail
+that cannot be displayed. `npm run art:shrink` resamples the set to roughly 4x
+what is actually drawn: **1.25 MB, a 91% cut, with no visible difference.**
+
+The obvious alternative is to generate smaller in the first place, and the
+script exists instead of that for two reasons. Downscaling a large picture
+keeps more detail than asking for a small one, because it resamples a finished
+drawing rather than producing a coarser drawing. And it is free and repeatable
+where regenerating is billed and comes back as *different art* — which matters
+enormously once you like what you have, as we now do.
+
+It uses `sips`, which ships with macOS, so nothing joins package.json and the
+project's no-dependency rule survives intact. The cost is that the script is
+macOS-only. That is an acceptable trade for a tool run by hand every few weeks
+whose *output* is committed: nobody else ever needs to run it.
+
+It overwrites the originals deliberately, because those are what get committed
+and served, and the full-size versions remain in git history if a target here
+turns out to be too aggressive.
+
+The one target that is not a judgement call is the backgrounds: they stretch
+across the whole frame, which is `MAX_VIRTUAL_W` (640) at up to `MAX_DPR` (2),
+so 1280 pixels exactly. Anything above that is unreachable by construction.
+
+**Revisit if:** either of those two constants changes — the background target is
+derived from them and there is nothing to make it follow automatically. Or if a
+piece ever needs to be shown much larger than it is on the board; a toy that
+appears in a full-screen unlock celebration would want its own target.
