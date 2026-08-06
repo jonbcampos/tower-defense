@@ -19,7 +19,8 @@ import { TOYS, type ToyId } from '../game/toys';
 import { PALETTE, alpha } from '../render/palette';
 import { drawToyArt } from '../render/toys';
 import { starsFor, type Save } from '../core/save';
-import { drawText } from './text';
+import { drawIcon, drawTick, type IconId } from './icons';
+import { drawText, setFont } from './text';
 
 export interface MenuRect {
   /** `level:3`, `diff:kid`, `back`, `retry`, `next`, `menu`, `mute`. */
@@ -31,6 +32,8 @@ export interface MenuRect {
   label: string;
   sub: string;
   enabled: boolean;
+  /** A pictogram drawn beside the label, for the player who isn't reading yet. */
+  icon: IconId;
 }
 
 const TAP_PAD = 6;
@@ -51,7 +54,17 @@ export function hitTestMenu(rects: readonly MenuRect[], x: number, y: number): M
 }
 
 export function muteButton(): MenuRect {
-  return { id: 'mute', x: SCREEN.w - 30, y: 8, w: 22, h: 22, label: '', sub: '', enabled: true };
+  return {
+    id: 'mute',
+    x: SCREEN.w - 30,
+    y: 8,
+    w: 22,
+    h: 22,
+    label: '',
+    sub: '',
+    enabled: true,
+    icon: 'none',
+  };
 }
 
 /** Title: pick a difficulty, which is also the button that starts. */
@@ -69,6 +82,7 @@ export function titleMenu(): MenuRect[] {
     label: DIFFICULTIES[id].label,
     sub: DIFFICULTY_BLURB[id],
     enabled: true,
+    icon: id === 'kid' ? 'easy' : id === 'normal' ? 'normal' : 'hard',
   }));
 }
 
@@ -100,17 +114,19 @@ export function levelMenu(save: Save): MenuRect[] {
       label: String(level.id),
       sub: level.name,
       enabled: level.id <= save.unlocked,
+      icon: 'none',
     };
   });
   rects.push({
     id: 'back',
     x: 8,
     y: VIRTUAL_H - 30,
-    w: 62,
+    w: 70,
     h: 22,
     label: 'BACK',
     sub: '',
     enabled: true,
+    icon: 'back',
   });
   return rects;
 }
@@ -140,6 +156,7 @@ export function loadoutMenu(available: readonly ToyId[]): MenuRect[] {
     label: TOYS[id].name,
     sub: '',
     enabled: true,
+    icon: 'none',
   }));
   rects.push({
     id: 'play',
@@ -150,6 +167,7 @@ export function loadoutMenu(available: readonly ToyId[]): MenuRect[] {
     label: 'PLAY',
     sub: '',
     enabled: true,
+    icon: 'play',
   });
   rects.push({
     id: 'back',
@@ -160,6 +178,7 @@ export function loadoutMenu(available: readonly ToyId[]): MenuRect[] {
     label: 'BACK',
     sub: '',
     enabled: true,
+    icon: 'back',
   });
   return rects;
 }
@@ -172,10 +191,12 @@ export function drawLoadout(
   time: number,
 ): void {
   drawScrim(ctx, 0.85);
-  drawText(ctx, max === 1 ? 'PICK YOUR TOY' : `PICK ${max} TOYS`, SCREEN.w / 2, 26, {
-    size: 15,
+
+  const none = picked.length === 0;
+  drawText(ctx, none ? 'TAP THE TOYS YOU WANT' : max === 1 ? 'PICK YOUR TOY' : `PICK ${max} TOYS`, SCREEN.w / 2, 26, {
+    size: 14,
     align: 'center',
-    color: PALETTE.hudText,
+    color: none ? PALETTE.hudAccent : PALETTE.hudText,
     glow: true,
   });
   drawText(ctx, `${picked.length} / ${max}`, SCREEN.w - 10, 26, {
@@ -186,30 +207,39 @@ export function drawLoadout(
 
   for (const rect of loadoutMenu(available)) {
     if (!rect.id.startsWith('toy:')) {
-      // PLAY lights up as soon as ONE toy is chosen. Requiring a full hand
-      // would make the early levels, which have two or three toys in the whole
-      // world, impossible to start.
-      drawButton(ctx, rect, rect.id === 'play' && picked.length > 0);
+      // PLAY is visibly dead until something is chosen, rather than looking
+      // ready and then refusing. A button that silently does nothing is the
+      // single worst thing you can put in front of a five-year-old: she has no
+      // way to tell "I did it wrong" from "the game is broken", so she taps it
+      // harder. It reads DIMMED and the heading turns into the instruction.
+      const dead = rect.id === 'play' && none;
+      drawButton(ctx, rect, rect.id === 'play' && !none, dead);
       continue;
     }
     const id = rect.id.slice('toy:'.length) as ToyId;
     const chosen = picked.includes(id);
-    ctx.fillStyle = chosen ? PALETTE.card : alpha(PALETTE.card, 0.45);
+
+    // Chosen and unchosen differ in THREE ways at once — brightness, border
+    // weight, and a tick badge. One of those is a thing to miss; three is not.
+    ctx.fillStyle = chosen ? PALETTE.card : alpha(PALETTE.card, 0.3);
     roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 5);
     ctx.fill();
     ctx.save();
-    if (!chosen) ctx.globalAlpha = 0.5;
+    if (!chosen) ctx.globalAlpha = 0.4;
     drawToyArt(ctx, id, rect.x + rect.w / 2, rect.y + 18, 0.72, time);
     ctx.restore();
     drawText(ctx, String(TOYS[id].cost), rect.x + rect.w / 2, rect.y + rect.h - 9, {
       size: 8,
       align: 'center',
-      color: PALETTE.tray,
+      color: chosen ? PALETTE.tray : PALETTE.hudDim,
     });
-    ctx.lineWidth = chosen ? 2 : 1;
-    ctx.strokeStyle = chosen ? PALETTE.cardReady : PALETTE.cardEdge;
+    ctx.lineWidth = chosen ? 3 : 1;
+    ctx.strokeStyle = chosen ? PALETTE.cardReady : PALETTE.trayEdge;
     roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 5);
     ctx.stroke();
+    if (chosen) {
+      drawTick(ctx, rect.x + rect.w - 7, rect.y + 7, 7, PALETTE.cardReady, PALETTE.tray);
+    }
   }
 }
 
@@ -217,18 +247,25 @@ export function resultMenu(won: boolean, hasNext: boolean): MenuRect[] {
   const rects: MenuRect[] = [];
   const y = 176;
   if (won && hasNext) {
-    rects.push({ id: 'next', x: SCREEN.w / 2 - 112, y, w: 104, h: 34, label: 'NEXT', sub: '', enabled: true });
-    rects.push({ id: 'retry', x: SCREEN.w / 2 + 8, y, w: 104, h: 34, label: 'AGAIN', sub: '', enabled: true });
+    rects.push({
+      id: 'next', x: SCREEN.w / 2 - 112, y, w: 104, h: 34,
+      label: 'NEXT', sub: '', enabled: true, icon: 'next',
+    });
+    rects.push({
+      id: 'retry', x: SCREEN.w / 2 + 8, y, w: 104, h: 34,
+      label: 'AGAIN', sub: '', enabled: true, icon: 'again',
+    });
   } else {
     rects.push({
       id: 'retry',
-      x: SCREEN.w / 2 - 52,
+      x: SCREEN.w / 2 - 60,
       y,
-      w: 104,
+      w: 120,
       h: 34,
       label: won ? 'AGAIN' : 'TRY AGAIN',
       sub: '',
       enabled: true,
+      icon: 'again',
     });
   }
   rects.push({
@@ -240,6 +277,7 @@ export function resultMenu(won: boolean, hasNext: boolean): MenuRect[] {
     label: 'LEVELS',
     sub: '',
     enabled: true,
+    icon: 'levels',
   });
   return rects;
 }
@@ -260,8 +298,12 @@ export function drawScrim(ctx: CanvasRenderingContext2D, strength = 0.72): void 
   ctx.fillRect(0, 0, SCREEN.w, VIRTUAL_H);
 }
 
+/**
+ * The title. Draws no scrim of its own — `scene.ts` lays the scrim down first
+ * and then redraws the unicorn ON TOP of it, so the mascot stays bright white
+ * instead of being greyed out along with the room behind her.
+ */
 export function drawTitle(ctx: CanvasRenderingContext2D, save: Save, time: number): void {
-  drawScrim(ctx, 0.55);
   const bob = Math.sin(time * 1.5) * 2;
 
   drawText(ctx, 'UNICORN', SCREEN.w / 2, 54 + bob, {
@@ -298,7 +340,12 @@ export function drawTitle(ctx: CanvasRenderingContext2D, save: Save, time: numbe
   }
 }
 
-export function drawLevelSelect(ctx: CanvasRenderingContext2D, save: Save, difficulty: DifficultyId): void {
+export function drawLevelSelect(
+  ctx: CanvasRenderingContext2D,
+  save: Save,
+  difficulty: DifficultyId,
+  time: number,
+): void {
   drawScrim(ctx, 0.82);
   drawText(ctx, 'PICK A LEVEL', SCREEN.w / 2, 32, {
     size: 16,
@@ -318,11 +365,26 @@ export function drawLevelSelect(ctx: CanvasRenderingContext2D, save: Save, diffi
       continue;
     }
     const id = Number(rect.id.slice('level:'.length));
-    drawLevelCard(ctx, rect, id, save);
+    drawLevelCard(ctx, rect, id, save, time);
   }
 }
 
-function drawLevelCard(ctx: CanvasRenderingContext2D, rect: MenuRect, id: number, save: Save): void {
+/**
+ * A level card: its number, the toy it gives you, and its stars.
+ *
+ * The toy picture is the important part. A column of numbers tells a
+ * five-year-old nothing about what is behind them, but "the one where you get
+ * the sprinkler" is a thing she can want. The level's name is dropped from the
+ * card rather than shrunk — at 6px it was decoration for her and unreadable for
+ * everyone; it is on the footer during play instead.
+ */
+function drawLevelCard(
+  ctx: CanvasRenderingContext2D,
+  rect: MenuRect,
+  id: number,
+  save: Save,
+  time: number,
+): void {
   const locked = !rect.enabled;
   ctx.fillStyle = locked ? alpha(PALETTE.cardCharging, 0.6) : PALETTE.card;
   roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 6);
@@ -332,26 +394,39 @@ function drawLevelCard(ctx: CanvasRenderingContext2D, rect: MenuRect, id: number
   roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 6);
   ctx.stroke();
 
-  drawText(ctx, rect.label, rect.x + rect.w / 2, rect.y + 15, {
-    size: 15,
-    align: 'center',
-    color: locked ? PALETTE.hudDim : PALETTE.tray,
-  });
-  // The level's name and the thing it teaches, because a locked row of numbers
-  // tells a child nothing about what she is working toward.
-  drawText(ctx, rect.sub, rect.x + rect.w / 2, rect.y + 30, {
-    size: 6,
-    align: 'center',
+  drawText(ctx, rect.label, rect.x + 7, rect.y + 11, {
+    size: 11,
+    align: 'left',
     color: locked ? PALETTE.hudDim : PALETTE.cardCharging,
-    bold: false,
   });
+
+  // The toy this level hands over. The last level introduces nothing, so it
+  // gets the boss's crown colour instead of a blank space.
+  const level = LEVELS[id - 1];
+  const toy = level?.unlocks[0];
+  if (toy) {
+    ctx.save();
+    if (locked) ctx.globalAlpha = 0.35;
+    drawToyArt(ctx, toy, rect.x + rect.w / 2, rect.y + 27, 0.66, time + id);
+    ctx.restore();
+  } else {
+    ctx.save();
+    if (locked) ctx.globalAlpha = 0.35;
+    drawText(ctx, '!', rect.x + rect.w / 2, rect.y + 27, {
+      size: 22,
+      align: 'center',
+      color: PALETTE.hudWarn,
+      glow: true,
+    });
+    ctx.restore();
+  }
 
   const stars = starsFor(save, id);
   for (let i = 0; i < 3; i++) {
     drawStar(
       ctx,
       rect.x + rect.w / 2 + (i - 1) * 13,
-      rect.y + 44,
+      rect.y + 45,
       5,
       i < stars ? PALETTE.star : PALETTE.starEmpty,
     );
@@ -408,7 +483,21 @@ export function drawUnlockBanner(ctx: CanvasRenderingContext2D, name: string): v
   });
 }
 
-function drawButton(ctx: CanvasRenderingContext2D, rect: MenuRect, selected: boolean): void {
+/**
+ * A button: pictogram on the left, word on the right.
+ *
+ * Both, always. The icon is what the five-year-old reads and the word is what
+ * everyone else reads — and the word is also how she learns the word.
+ */
+function drawButton(
+  ctx: CanvasRenderingContext2D,
+  rect: MenuRect,
+  selected: boolean,
+  dimmed = false,
+): void {
+  ctx.save();
+  if (dimmed) ctx.globalAlpha = 0.4;
+
   ctx.fillStyle = selected ? PALETTE.buttonActive : PALETTE.buttonIdle;
   roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 6);
   ctx.fill();
@@ -419,11 +508,32 @@ function drawButton(ctx: CanvasRenderingContext2D, rect: MenuRect, selected: boo
 
   const textColor = selected ? PALETTE.buttonIdle : PALETTE.tray;
   const centred = rect.sub === '';
-  drawText(ctx, rect.label, rect.x + rect.w / 2, rect.y + (centred ? rect.h / 2 : 16), {
-    size: 13,
-    align: 'center',
-    color: textColor,
-  });
+  const labelY = rect.y + (centred ? rect.h / 2 : 16);
+  const hasIcon = rect.icon !== 'none';
+  const iconSize = Math.min(16, rect.h * 0.5);
+
+  if (hasIcon) {
+    // Icon and label are measured together and centred as one group, so a
+    // short word and a long one both sit properly under the button's middle.
+    setFont(ctx, 13, true);
+    const textW = ctx.measureText(rect.label).width;
+    const gap = 6;
+    const groupW = iconSize + gap + textW;
+    const left = rect.x + (rect.w - groupW) / 2;
+    drawIcon(ctx, rect.icon, left + iconSize / 2, labelY, iconSize, textColor);
+    drawText(ctx, rect.label, left + iconSize + gap, labelY, {
+      size: 13,
+      align: 'left',
+      color: textColor,
+    });
+  } else {
+    drawText(ctx, rect.label, rect.x + rect.w / 2, labelY, {
+      size: 13,
+      align: 'center',
+      color: textColor,
+    });
+  }
+
   if (!centred) {
     drawText(ctx, rect.sub, rect.x + rect.w / 2, rect.y + 32, {
       size: 6,
@@ -432,6 +542,7 @@ function drawButton(ctx: CanvasRenderingContext2D, rect: MenuRect, selected: boo
       bold: false,
     });
   }
+  ctx.restore();
 }
 
 function drawMute(ctx: CanvasRenderingContext2D): void {

@@ -37,6 +37,7 @@ import {
   drawLevelSelect,
   drawLoadout,
   drawResult,
+  drawScrim,
   drawTitle,
   drawUnlockBanner,
 } from '../ui/screens';
@@ -309,10 +310,15 @@ function drawDenyMark(ctx: CanvasRenderingContext2D, state: GameState): void {
 function drawOverlays(ctx: CanvasRenderingContext2D, state: GameState): void {
   switch (state.phase) {
     case 'title':
+      // Scrim, then the unicorn again over it, then the words. She is the
+      // mascot and the thing you are protecting; behind a 55% scrim she came
+      // out grey-brown, which is not a hero.
+      drawScrim(ctx, 0.6);
+      drawUnicorn(ctx, clock, 0);
       drawTitle(ctx, save, clock);
       break;
     case 'select':
-      drawLevelSelect(ctx, save, save.difficulty);
+      drawLevelSelect(ctx, save, save.difficulty, clock);
       break;
     case 'loadout':
       drawLoadout(ctx, loadoutAvailable, loadoutPicked, loadoutMax, clock);

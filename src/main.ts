@@ -192,9 +192,17 @@ function beginSetup(): void {
     startRun(level.recommended);
     return;
   }
-  // Pre-seed the picker with the recommended set, so PLAY is always one tap
-  // away and the recommendation is a starting point rather than a secret.
-  picked = level.recommended.filter((id) => availableToys().includes(id)).slice(0, maxLoadout());
+  // The picker opens EMPTY, and that is a fix rather than a default.
+  //
+  // It used to open with the recommended set already chosen, so that PLAY was
+  // one tap away. What actually happened is that a player reads "PICK 2 TOYS",
+  // taps the two toys — the only sensible reading of that instruction — and
+  // thereby DESELECTS both, at which point PLAY silently refuses. The screen
+  // punished you for doing exactly what it told you to do.
+  //
+  // Starting empty makes the instruction literally true: tap toys, they get a
+  // tick, PLAY lights up.
+  picked = [];
   setLoadoutDisplay(availableToys(), picked, maxLoadout());
   state.phase = 'loadout';
 }
