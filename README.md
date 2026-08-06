@@ -99,8 +99,8 @@ change looks fine on NORMAL and quietly makes HARD impossible.
 __game.verify()
 ```
 
-91 headless trials driving the real `GameState` with a scripted bot, across every level at every
-difficulty. Every one reports **what it measured**, not just pass or fail. EASY and NORMAL are
+121 headless trials driving the real `GameState` with a scripted bot, across every level at every
+difficulty — the count grows on its own as levels are added, which is the point. Every one reports **what it measured**, not just pass or fail. EASY and NORMAL are
 held to a deliberately mediocre bot; HARD is held to a competent one, and that difference is the
 definition of the tier.
 
@@ -263,5 +263,9 @@ that kid keeps its still image and the procedural gait. Nothing has to be true f
 
 ## Status
 
-Playable end to end: ten levels, ten toys, ten kids, three difficulties, saved progress and
-stars. All 91 trials and every design contract pass.
+Playable end to end: **fifteen levels across two worlds**, twelve toys, ten kids, three
+difficulties, saved progress and stars, an in-game guide, and the screen stays awake while you
+play. All 121 trials and every design contract pass.
+
+The backyard's levels use the bedroom's background until its own is generated — the terrain and
+the toys are done, the scenery is not.
