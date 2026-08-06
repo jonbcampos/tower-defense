@@ -562,3 +562,54 @@ so 1280 pixels exactly. Anything above that is unreachable by construction.
 derived from them and there is nothing to make it follow automatically. Or if a
 piece ever needs to be shown much larger than it is on the board; a toy that
 appears in a full-screen unlock celebration would want its own target.
+
+## 29. Kids are drawn twice their collision height, so the board draws by row
+
+A lane is 40px and a toddler's collision box is 26 tall, so art sized to the
+box left the cast looking like distant figures on a big empty floor.
+`KID_ART_SCALE` now draws every kid at twice its own height, deliberately large
+enough that the tallest overflow their lane.
+
+Two things make that safe. It is **render only** — `def.width` and `def.height`
+are what the simulation aims and collides with, and nothing in `render/` touches
+them, so a kid who looks bigger is not easier to hit. And the scale is driven by
+height rather than by the smaller dimension: these are narrow upright children,
+and fitting a square sprite to width made a toddler as wide as she was tall.
+
+The overflow is what forces the second half. The board used to draw in two flat
+passes — every toy, then every kid — which is fine while everything stays inside
+its own row and wrong the moment anything doesn't: a kid in lane 3 ended up in
+front of a toy in lane 2 *and* in front of a toy in lane 4, and lane 4 is nearer
+the player. `drawRows` walks the lanes far to near, drawing that row's toys and
+then that row's kids, which fixes both at once. Within a row, toys still come
+before kids, because a kid chewing a pillow fort has to be visibly on top of it.
+
+While moving it, `filter().sort()` per lane per frame became a scan. It was two
+allocations per lane, sixty times a second, in a project whose rule is that
+nothing is allocated after startup.
+
+**Revisit if:** something has to be drawn *between* two rows — a projectile that
+should pass behind a nearer kid, say. Today shots and sparkles are still global
+passes over the top, which is right for bubbles and would be wrong for anything
+that needs to be occluded.
+
+## 30. Concealment is a dimming, not a separate way of being drawn
+
+The blanket kid had her own early-return branch in `drawKid`: paint the still
+sprite at 0.75 alpha, return. It predated the walk cycles and never learned
+about them, so the one kid it applies to slid across half the board without
+moving a muscle and then abruptly started walking the moment she peeked out at
+the halfway column. Reported as, exactly, "what was with the half screen float?"
+
+She now goes through the same path as everybody else and concealment sets an
+alpha, nothing more. There is nothing to hide by animating her: she is the only
+kid who can be concealed, and concealed or not she is the same featureless
+mound, so the dimming is the whole of the effect.
+
+The general shape of this bug is worth remembering, because it will recur: a
+special case that opts out of the shared path silently stops receiving anything
+added to that path later. It does not break, it just quietly stays behind.
+
+**Revisit if:** a second kind ever gets `hidden: true`. Then the concealed pose
+really would leak identity, and it needs a shared silhouette rather than the
+kid's own art — at which point this becomes a branch again, deliberately.

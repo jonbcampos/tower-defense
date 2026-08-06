@@ -13,6 +13,7 @@ import {
   CELL_W,
   COL_COUNT,
   LANE_COUNT,
+  POOL,
   SCREEN,
   WAVE,
   cellAt,
@@ -22,7 +23,7 @@ import {
   laneCentreY,
   laneY,
 } from '../game/config';
-import { ENEMIES } from '../game/enemies';
+import { ENEMIES, type Enemy } from '../game/enemies';
 import type { GameState } from '../game/state';
 import { TOYS, type ToyId } from '../game/toys';
 import type { Input } from '../core/input';
@@ -111,12 +112,10 @@ export const sceneRenderer: Renderer = {
     drawLaneFlashes(ctx, state);
     drawFloorToys(ctx, state);
     drawPlacementHints(ctx, state, input);
-    drawGroundToys(ctx, state);
+    // Ground toys and kids together, one row at a time. See drawRows.
+    drawRows(ctx, state, interpolation);
     drawSparkles(ctx, state);
     drawShots(ctx, state, interpolation);
-    // Kids over toys: a kid chewing a pillow fort has to be visibly on top of
-    // it, or "which one is being eaten" is a guess.
-    drawKids(ctx, state, interpolation);
     particles.draw(ctx);
     // The unicorn over everything on the board, so a kid reaching the cushion
     // is hugging her rather than replacing her.
@@ -160,10 +159,30 @@ function drawFloorToys(ctx: CanvasRenderingContext2D, state: GameState): void {
   }
 }
 
-function drawGroundToys(ctx: CanvasRenderingContext2D, state: GameState): void {
-  for (const toy of state.toys.ground) {
-    if (!toy.active) continue;
-    drawPlacedToy(ctx, toy, cellCentreX(toy.col), laneCentreY(toy.lane), clock);
+/**
+ * The board, row by row: a whole far lane, then a whole nearer one.
+ *
+ * Kids are drawn about twice their collision height (see `KID_ART_SCALE`), so
+ * they overflow their lane on purpose. That makes the draw order load-bearing
+ * in a way it wasn't when everything fitted in its own row.
+ *
+ * The old arrangement was two flat passes — every toy, then every kid — which
+ * put a kid in lane 3 in front of a toy in lane 2 *and* in front of a toy in
+ * lane 4. The first is right and the second is wrong: lane 4 is nearer the
+ * player. Painter's algorithm by row fixes both at once, and costs nothing.
+ *
+ * Within a row, toys first and then kids, because a kid chewing on a pillow
+ * fort has to be visibly on top of it or "which one is being eaten" is a guess.
+ * Within the kids, furthest from the unicorn first.
+ */
+function drawRows(ctx: CanvasRenderingContext2D, state: GameState, interpolation: number): void {
+  for (let lane = 0; lane < LANE_COUNT; lane++) {
+    const base = lane * COL_COUNT;
+    for (let col = 0; col < COL_COUNT; col++) {
+      const toy = state.toys.ground[base + col]!;
+      if (toy.active) drawPlacedToy(ctx, toy, cellCentreX(col), laneCentreY(lane), clock);
+    }
+    drawKidsInLane(ctx, state, lane, interpolation);
   }
 }
 
@@ -293,16 +312,42 @@ function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolatio
   }
 }
 
-function drawKids(ctx: CanvasRenderingContext2D, state: GameState, interpolation: number): void {
-  // Back to front within a lane, so a kid nearer the unicorn overlaps the one
-  // behind it rather than the other way round.
-  for (let lane = 0; lane < LANE_COUNT; lane++) {
-    const inLane = state.enemies.items.filter((e) => e.active && e.lane === lane);
-    inLane.sort((a, b) => b.x - a.x);
-    for (const enemy of inLane) {
+/**
+ * One lane's kids, furthest from the unicorn first, so a kid nearer her
+ * overlaps the one behind rather than the other way round.
+ *
+ * The order is found by scanning for the rightmost undrawn kid rather than by
+ * `filter().sort()`, which allocated two arrays per lane per frame — sixty
+ * times a second, for the whole of a level, in a project whose rule is that
+ * nothing is allocated after startup. There are at most a couple of dozen kids
+ * alive, so the quadratic scan is cheaper than the garbage was.
+ */
+function drawKidsInLane(
+  ctx: CanvasRenderingContext2D,
+  state: GameState,
+  lane: number,
+  interpolation: number,
+): void {
+  let drawn = 0;
+  let previous = Infinity;
+  for (;;) {
+    let next: Enemy | null = null;
+    for (const enemy of state.enemies.items) {
+      if (!enemy.active || enemy.lane !== lane) continue;
+      if (enemy.x > previous) continue;
+      if (next === null || enemy.x > next.x) next = enemy;
+    }
+    if (next === null) return;
+    // Ties on x would otherwise loop forever, so each pass must consume one.
+    const cutoff = next.x;
+    for (const enemy of state.enemies.items) {
+      if (!enemy.active || enemy.lane !== lane || enemy.x !== cutoff) continue;
       const x = enemy.prevX + (enemy.x - enemy.prevX) * interpolation;
       drawKid(ctx, enemy, x, laneCentreY(lane) + ENEMIES[enemy.kind].height / 4);
+      drawn++;
     }
+    previous = cutoff - 1e-9;
+    if (drawn > POOL.enemies) return; // belt and braces; unreachable
   }
 }
 

@@ -18,6 +18,29 @@ import { PALETTE, alpha, mix } from './palette';
 import { roundRect } from './bedroom';
 import { drawSprite, sprite, spriteFrames } from './sprites';
 
+/** How faded a kid under an unrevealed blanket is. Visible, but not readable. */
+const CONCEALED_ALPHA = 0.75;
+
+/**
+ * How big a kid is drawn, as a multiple of its own `height`.
+ *
+ * Deliberately large enough that the tallest kids overflow their lane. A lane
+ * is 40px and a toddler's collision box is 26 tall, so sizing the art to the
+ * box left the cast looking like distant figures on a big empty floor.
+ *
+ * Two things make the overflow safe rather than messy. It is **render only** —
+ * `def.width` and `def.height` are what the simulation aims and collides with,
+ * and nothing here touches them, so making a kid look bigger cannot make her
+ * easier to hit. And the board is drawn row by row in `scene.ts`, near lane
+ * last, so a kid who overlaps upward passes in front of the row behind her and
+ * behind the row in front — which is what overlapping is for.
+ *
+ * Driven by height rather than by the smaller of the two dimensions, because
+ * these are narrow upright children: clamping to width made a toddler 34px
+ * wide *and* 34px tall, throwing away a third of the room she had.
+ */
+const KID_ART_SCALE = 2;
+
 /**
  * Draw one kid at (x, y), where y is the lane centre.
  *
@@ -31,7 +54,19 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
   const step = Math.sin(walk) * 2;
   // Gaits take raw pixels travelled and apply their own stride length.
   const walkPx = x;
-  const body = enemy.hurt > 0 ? mix(def.color, PALETTE.kidHealthLost, Math.min(1, enemy.hurt * 5)) : def.color;
+  // Concealment is a dimming, NOT a different way of being drawn. It used to be
+  // its own early-return branch that painted the still sprite and stopped, which
+  // meant the one kid it applies to slid across half the board without moving a
+  // muscle and then abruptly started walking the moment she peeked out. Anything
+  // that opts out of the animation path will do that again, so don't add one:
+  // this is the only kid who can be concealed, and concealed or not she is the
+  // same featureless mound, so there is nothing to hide by animating her.
+  const veiled = enemy.concealed;
+  const body = veiled
+    ? PALETTE.kidHidden
+    : enemy.hurt > 0
+      ? mix(def.color, PALETTE.kidHealthLost, Math.min(1, enemy.hurt * 5))
+      : def.color;
 
   ctx.save();
   ctx.translate(x, y);
@@ -44,23 +79,6 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
   ctx.ellipse(0, def.height / 2 + (aerial ? 8 : 1), aerial ? 6 : def.width / 2.4, 3, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // A kid under a blanket that hasn't been revealed is drawn as a dim mound.
-  // Visible, so she is never a surprise; featureless, so you cannot tell what
-  // is under there until something lights her up.
-  if (enemy.concealed) {
-    const hidden = sprite('blanket');
-    if (hidden) {
-      ctx.save();
-      ctx.globalAlpha = 0.75;
-      drawSprite(ctx, hidden, 0, 0, def.width * 1.7, def.height * 1.7);
-      ctx.restore();
-    } else {
-      drawBlanketMound(ctx, PALETTE.kidHidden, step);
-    }
-    ctx.restore();
-    return;
-  }
-
   // Generated art wins if it exists — but only for the BODY. The shield, the
   // soaked drip and the slowed blob are drawn over the top either way, because
   // they are game state rather than character design and they have to look
@@ -72,16 +90,20 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
   const image = cycle ? frameFor(cycle, def, walkPx) : sprite(enemy.kind);
   if (image) {
     ctx.save();
-    if (enemy.hurt > 0) {
-      // Sprites can't be tinted the way a fill can, so a hurt kid flashes by
-      // going briefly translucent. Same read at a glance: "that one just got hit".
-      ctx.globalAlpha = 1 - Math.min(0.45, enemy.hurt * 3);
-    }
+    // Sprites can't be tinted the way a fill can, so a hurt kid flashes by going
+    // briefly translucent, and a concealed one sits permanently faded. Same read
+    // at a glance, and they multiply rather than fight when both apply.
+    let fade = veiled ? CONCEALED_ALPHA : 1;
+    if (enemy.hurt > 0) fade *= 1 - Math.min(0.45, enemy.hurt * 3);
+    ctx.globalAlpha = fade;
     if (cycle) settleFrame(ctx, enemy, def, walkPx);
     else applyGait(ctx, enemy, def, walkPx);
-    drawSprite(ctx, image, 0, 0, def.width * 1.7, def.height * 1.7);
+    const box = def.height * KID_ART_SCALE;
+    drawSprite(ctx, image, 0, 0, box, box);
     ctx.restore();
-    drawStatusMarkers(ctx, enemy, def);
+    // No status markers while concealed: a shield or a soaked drip floating over
+    // the mound would say more about who is under there than the blanket should.
+    if (!veiled) drawStatusMarkers(ctx, enemy, def);
     ctx.restore();
     return;
   }

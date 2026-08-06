@@ -253,12 +253,24 @@ const BASE_PIECES = [
     aspect: '1:1',
     subject:
       'a child in an enormous puffy quilted blue winter coat walking to the LEFT, so padded they ' +
-      'look almost round, tiny head poking out of the top. Silhouette: a big soft ball.',
+      'look almost round, tiny head poking out of the top, wearing a woolly hat with a big ' +
+      'cream POM-POM on it. Silhouette: a big soft ball.',
+    // The coat hides the legs, so there is almost nothing for a walk to move —
+    // and the first version came back as one drawing tilted a few degrees four
+    // times. The motion therefore has to be made big and put somewhere visible:
+    // an exaggerated whole-body tip, a boot that clearly leaves the floor, and
+    // a pom-pom that swings, which is a bright dot against a dark coat and so
+    // is the one part of this character still readable at thirty pixels.
     cycle:
-      'a waddle — too padded to bend, so they roll from foot to foot rather than stride. Frame 1: ' +
-      'tipped over onto the left foot, whole body leaning left. Frame 2: upright and level between ' +
-      'steps. Frame 3: tipped over onto the right foot, leaning right. Frame 4: upright and level. ' +
-      'The arms stay stuck out sideways by the padding in every frame.',
+      'a heavy waddle — too padded to bend at the waist, so the WHOLE BODY tips right over from ' +
+      'one boot to the other. The tip must be LARGE and unmistakable, at least 20 degrees, not a ' +
+      'slight lean. Frame 1: tipped hard over onto the NEAR boot, the FAR boot lifted clear off ' +
+      'the ground behind, the pom-pom flung backwards. Frame 2: bolt upright and level, both ' +
+      'boots flat on the ground, body at its tallest, pom-pom straight up. Frame 3: tipped hard ' +
+      'the OTHER way onto the FAR boot, the NEAR boot lifted clear off the ground in front, the ' +
+      'pom-pom flung forwards. Frame 4: bolt upright and level again, both boots down. ' +
+      'A different boot is off the ground in frame 1 than in frame 3. The arms stay stuck out ' +
+      'sideways by the padding throughout.',
   },
   {
     id: 'slider',
@@ -297,7 +309,9 @@ const BASE_PIECES = [
       'onto it, landing hard. Frame 2: pushing off, legs passing, body at its highest. Frame 3: ' +
       'THE OPPOSITE OF FRAME 1 — the FAR leg planted far forward, body dropped low, landing hard. ' +
       'Frame 4: pushing off, legs passing, body at its highest. ' +
-      'Both arms stay flung wide open for a hug in every frame, the plush toy under one of them.',
+      'Both arms stay flung wide open for a hug in every frame. He carries a small green plush ' +
+      'bunny tucked under the SAME arm — the one NEAREST the viewer — in ALL FOUR frames, in the ' +
+      'same spot and at the same size. The bunny must never swap arms, move, or vanish.',
   },
 
   // --- Scenery --------------------------------------------------------------
@@ -406,9 +420,47 @@ const SHEET_RULES = [
   // is the exact per-frame drift the single-image approach exists to avoid.
   'The clothing and hair colours are FIXED: use exactly the colours named in the character',
   'description, identical in all four frames. Never change a colour between frames.',
+  // Props drift, and a drifting prop is worse than no prop. The Big Kid's plush
+  // toy came back in frames 1 and 3 only, under a different arm in each and
+  // absent from the other two, so in play it blinked on, off, and swapped sides.
+  'Any object the character is holding or carrying appears in ALL FOUR frames, on the SAME side,',
+  'under or in the SAME hand, at the same size. It must never swap sides, move, or disappear.',
   'No grid lines, no boxes, no borders, no frame numbers, no dividing lines of any kind:',
   'one single continuous flat #00FF00 background behind and between all four figures.',
 ].join(' ');
+
+/**
+ * ABANDONED: telling the two legs apart. Read this before trying again.
+ *
+ * A side-on walk cycle whose legs are the same colour at the same depth reads,
+ * at thirty pixels tall, as ONE leg scissoring open and shut — "the girl
+ * running looks like she is only running with one leg." The poses do alternate;
+ * it is a failure of contrast, not of posing, and it survived two rounds of
+ * fixing the poses.
+ *
+ * Two fixes were tried and BOTH made the sheet worse overall:
+ *
+ *  1. **Shade the far limb darker**, which is the textbook answer. The model
+ *     recoloured instead of shading: a pink top washed out to skin tone, a bare
+ *     arm went orange, and one frame's hair came back a different colour.
+ *  2. **Mismatched shoes**, on the theory that an object is more robust than a
+ *     tone. It gave the toddler matching shoes that changed colour BETWEEN
+ *     frames — a strobe, which is worse than the thing it fixed — and made him
+ *     bald into the bargain. On the Big Kid the shoe colours drifted the same
+ *     way.
+ *
+ * The pattern in both failures is the same: any instruction phrased as "make
+ * this part of the character look different from that part" gets read as
+ * licence to vary the character, which is exactly what the single-image sheet
+ * exists to prevent. Per-frame consistency and intra-frame contrast are pulling
+ * against each other, and consistency is the one worth keeping.
+ *
+ * So it is left as it is. At the size these are drawn the alternation is weak
+ * but the character is stable, which is the better of the two failures. If you
+ * want to try again, do it somewhere the model cannot express it as colour
+ * variation — different leg GEOMETRY, say a child in wellingtons where only the
+ * near boot is drawn with a turned-up cuff.
+ */
 
 /**
  * Sheets are drawn facing RIGHT and mirrored at load. Everything else in this
