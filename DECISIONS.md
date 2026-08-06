@@ -7,6 +7,11 @@ one — the reasoning that led somewhere wrong is the most useful thing in the f
 Sister log to the ones in `../flappy-unicorn` and `../runner`. Where a decision is inherited
 rather than made here, it says so.
 
+An entry that a later one overturns keeps its text and gains a **Superseded by** line under the
+heading. That line is a pointer, not a rewrite: the entry still has to be readable on its own,
+because someone scanning the file in order will hit the wrong answer first otherwise. Adding the
+pointer is the only edit an old entry ever gets.
+
 ---
 
 ## 1. TypeScript, a 2D canvas, and no engine
@@ -65,6 +70,9 @@ change without silently changing how hard a level is.
 point the derivation has to move rather than be duplicated.
 
 ## 5. The doorway is a legitimate spawn point
+
+> **Superseded by 21.** The door was removed and kids now walk on from off-board. The reasoning
+> below about *why* a run-up has to be visible is still the reason, and 21 keeps it.
 
 Runner's decision 38 forbids anything entering inside the frame, because a scrolling world has no
 legible spawn — a hazard appearing at x=400 reads as popping into existence. A static board with
@@ -349,6 +357,11 @@ central enough to read as one, which means designing the board around it rather
 than giving it the last 44 pixels.
 
 ## 22. Animation is procedural, layered over still art
+
+> **Partly superseded by 26.** The cost estimate below is wrong — four poses in ONE image is one
+> call per character, not four, and that also fixes the consistency problem it worries about. Kids
+> now walk on real drawn frames. Everything here about the per-toy flourishes still stands, and so
+> does the rule that animation is driven by position rather than by a clock.
 
 Generated sprites are one frame each, forever, and a board of them reads as a
 sticker album — the first illustrated build had kids sliding along x like
