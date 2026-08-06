@@ -758,3 +758,34 @@ not mean paging past the Big Kid.
 **Revisit if:** the roster outgrows three pages a tab. Paging is fine at three
 and tedious at six, and the answer then is probably a grid of pictures that
 opens one entry, not more pages.
+
+## 36. The screen is kept awake, and re-awake
+
+A lane defence has long stretches where the correct move is to touch nothing
+and watch a wave arrive. A phone reads "no touches" as "nobody is here" and
+dims, which happened to the first real player mid-level.
+
+`WakeLock` requests a screen lock on the first press — the same gesture that
+unlocks the AudioContext, because some browsers refuse a lock that isn't tied
+to user activation, and there is always a gesture in a game you play by tapping.
+
+The load-bearing half is the `visibilitychange` listener. A wake lock is dropped
+whenever the page stops being visible and is **not** handed back on return, so
+requesting once at startup works until the first phone-lock and then silently
+stops. That is the worst version of this bug, because it looks fixed.
+
+Writing it turned up a race worth recording: `held` alone is not enough to stop
+a double request. Both `arm()` on a press and the visibility listener can fire
+in the same tick — which is exactly what happens when you tap the screen to
+wake the phone — and an `await`ed request means both pass the check before
+either resolves. The second sentinel then overwrites the first, and the first
+lock is held forever with nothing pointing at it. A `pending` flag fixes it, and
+the in-flight result is released rather than kept if `release()` won the race.
+
+Every failure path is a no-op. Unsupported browser, battery saver, page not
+visible — the game plays exactly as before and the screen dims as it used to.
+
+**Revisit if:** the lock should be dropped on the menus rather than held for the
+whole session. `release()` exists and nothing calls it; holding it throughout is
+the simpler behaviour and, for a game a child puts down by locking the phone,
+probably the right one.

@@ -2,6 +2,7 @@ import { Audio } from './core/audio';
 import { Input, type KeyAction, type Tap } from './core/input';
 import { startLoop } from './core/loop';
 import { Viewport } from './core/viewport';
+import { WakeLock } from './core/wakelock';
 import {
   freshSave,
   loadSave,
@@ -47,6 +48,7 @@ const input = new Input(viewport);
 const state = new GameState();
 const particles = new Particles();
 const audio = new Audio();
+const wakeLock = new WakeLock();
 
 // Generated art, if any has been generated. Fire-and-forget: nothing waits for
 // it, nothing breaks without it, and every piece that arrives simply replaces
@@ -422,8 +424,13 @@ function finishRun(won: boolean, stars: number): void {
 
 function step(dt: number): void {
   // Any touch at all is a valid gesture to start audio with; browsers refuse to
-  // create an AudioContext before one.
-  if (input.consumeAnyPress()) audio.unlock();
+  // create an AudioContext before one. The screen wake lock wants a gesture for
+  // the same reason, and re-arms here because a lock is dropped every time the
+  // page is hidden and never handed back on its own.
+  if (input.consumeAnyPress()) {
+    audio.unlock();
+    wakeLock.arm();
+  }
 
   squeezedThisStep = false;
 
@@ -497,6 +504,7 @@ if (import.meta.env.DEV) {
        * stack looks the same from there.
        */
       sprites: { get: sprite, frames: spriteFrames },
+      wakeLock,
       /** Unlock everything, for looking at the late levels. */
       unlockAll(): void {
         save.unlocked = LEVELS.length;
