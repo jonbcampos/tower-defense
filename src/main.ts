@@ -14,6 +14,7 @@ import { LEVELS, levelById, unlockedBy } from './game/levels';
 import { GameState, validateDesignContracts, type GameEvent } from './game/state';
 import { TOYS, type ToyId } from './game/toys';
 import { Particles } from './render/particles';
+import { loadSprites } from './render/sprites';
 import {
   advanceScene,
   sceneRenderer,
@@ -41,6 +42,11 @@ const input = new Input(viewport);
 const state = new GameState();
 const particles = new Particles();
 const audio = new Audio();
+
+// Generated art, if any has been generated. Fire-and-forget: nothing waits for
+// it, nothing breaks without it, and every piece that arrives simply replaces
+// the hand-drawn version of that one thing. See scripts/generate-art.mjs.
+loadSprites(import.meta.env.BASE_URL);
 
 /**
  * Surface any broken design contract loudly, on every load.

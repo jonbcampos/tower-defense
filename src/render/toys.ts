@@ -17,6 +17,7 @@ import { CELL_H, CELL_W } from '../game/config';
 import { TOYS, type Toy, type ToyId } from '../game/toys';
 import { PALETTE, alpha, mix } from './palette';
 import { roundRect } from './bedroom';
+import { drawSprite, sprite } from './sprites';
 
 /**
  * Draw a toy centred on (x, y).
@@ -34,6 +35,29 @@ export function drawToyArt(
   hurt = 0,
 ): void {
   const def = TOYS[id];
+
+  // Generated art wins if it exists. This is the only place toys are drawn, so
+  // one check here covers the board, the tray cards, the placement ghost and
+  // the level-select cards at once — they can never disagree about what a toy
+  // looks like, which is the reason they all came through this function in the
+  // first place.
+  const image = sprite(id);
+  if (image) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    drawSprite(ctx, image, 0, 0, CELL_W - 2, CELL_H - 2);
+    if (hurt > 0) {
+      // A wash rather than a colour mix: we can't recolour a painting the way
+      // we can swap a fill, and a flash of red over the top reads the same.
+      ctx.fillStyle = alpha(PALETTE.toyDamaged, Math.min(0.55, hurt * 2.2));
+      roundRect(ctx, -CELL_W / 2 + 2, -CELL_H / 2 + 2, CELL_W - 4, CELL_H - 4, 6);
+      ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+
   const body = hurt > 0 ? mix(def.color, PALETTE.toyDamaged, Math.min(1, hurt * 2.2)) : def.color;
 
   ctx.save();

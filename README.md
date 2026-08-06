@@ -109,6 +109,39 @@ __game.unlockAll()
 `tune` re-runs both layers after every change, because the feel knobs and the fairness
 constraints are the same numbers.
 
+## Painted art (optional)
+
+The game ships with everything drawn in code — a few hundred rectangles and
+arcs. That reads well and costs nothing, but it is deliberately plain. If you
+want it to look painted instead, there is a generator:
+
+```bash
+cp .env.example .env.local     # then paste your Gemini API key into it
+npm run art
+```
+
+That's it. Reload the game and the generated art appears.
+
+- **Your key never touches the repo.** It lives in `.env.local`, which is
+  gitignored, and the script *refuses to run* if that file ever stops being
+  ignored or turns out to be tracked. There is no `--key=` flag on purpose: a
+  key on the command line goes into your shell history.
+- **`scripts/art-manifest.mjs` is the art direction.** One shared style
+  paragraph plus one sentence of subject per piece, 26 in all. Edit a
+  description, run `npm run art --  --only=raincoat --force`, look at it, edit
+  again. To change the whole look, change `STYLE` once and regenerate.
+- **It is resumable and per-piece.** Finished pieces are skipped, so an
+  interrupted run costs nothing to restart. `--only=jar,wand` redoes two.
+  `--dry-run` prints every prompt and calls nothing.
+- **Nothing here can break the game.** Every sprite is optional and independent.
+  A missing, failed or malformed piece just keeps its hand-drawn version, so a
+  half-finished art run gives you a half-painted game rather than a broken one.
+  The fairness contracts and the 91 trials never look at any of it.
+
+Other flags: `--model=gemini-3-pro-image-preview` for the pricier model,
+`--size=512px` to cut the download (the sprites are served to a phone, so this
+is worth doing), `--force` to redo what already exists.
+
 ## Status
 
 Playable end to end: ten levels, ten toys, ten kids, three difficulties, saved progress and

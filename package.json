@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host --port 5174 --strictPort",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "art": "node scripts/generate-art.mjs",
+    "icons": "node scripts/make-icons.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

@@ -25,9 +25,23 @@ import {
   laneY,
 } from '../game/config';
 import { PALETTE, alpha } from './palette';
+import { drawSprite, sprite } from './sprites';
 
 /** Wall, wainscot and the floor's lane stripes. Drawn before anything else. */
 export function drawRoom(ctx: CanvasRenderingContext2D): void {
+  // A generated room replaces the wall and floor wholesale, but the lane lines
+  // are drawn over it either way — they are the grid, not decoration, and a
+  // painting of a carpet does not tell you where a cell ends.
+  const room = sprite('room');
+  if (room) {
+    const smoothing = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(room, 0, 0, SCREEN.w, SCREEN.h);
+    ctx.imageSmoothingEnabled = smoothing;
+    drawLaneGrid(ctx);
+    return;
+  }
+
   const wall = ctx.createLinearGradient(0, 0, 0, BOARD_TOP);
   wall.addColorStop(0, PALETTE.wallTop);
   wall.addColorStop(1, PALETTE.wallBottom);
@@ -51,8 +65,18 @@ export function drawRoom(ctx: CanvasRenderingContext2D): void {
     ctx.fillRect(0, laneY(lane), SCREEN.w, CELL_H);
   }
 
-  // Lane separators, only across the board itself. Extending them into the
-  // margins would imply the margins are playable.
+  drawLaneGrid(ctx);
+
+  // The footer strip under the board.
+  ctx.fillStyle = PALETTE.skirting;
+  ctx.fillRect(0, BOARD_BOTTOM, SCREEN.w, SCREEN.h - BOARD_BOTTOM);
+}
+
+/**
+ * Lane separators, only across the board itself. Extending them into the
+ * margins would imply the margins are playable.
+ */
+function drawLaneGrid(ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = alpha(PALETTE.laneLine, 0.5);
   for (let lane = 1; lane < LANE_COUNT; lane++) {
     ctx.fillRect(boardLeft(), laneY(lane), BOARD_W, 1);
@@ -61,10 +85,6 @@ export function drawRoom(ctx: CanvasRenderingContext2D): void {
   for (let col = 1; col < COL_COUNT; col++) {
     ctx.fillRect(cellX(col), BOARD_TOP, 1, BOARD_BOTTOM - BOARD_TOP);
   }
-
-  // The footer strip under the board.
-  ctx.fillStyle = PALETTE.skirting;
-  ctx.fillRect(0, BOARD_BOTTOM, SCREEN.w, SCREEN.h - BOARD_BOTTOM);
 }
 
 /** Furniture over the cells a level has blocked. */
@@ -75,6 +95,11 @@ export function drawBlocked(ctx: CanvasRenderingContext2D, blocked: readonly num
     const col = index % COL_COUNT;
     const x = cellX(col);
     const y = laneY(lane);
+    const art = sprite('rug');
+    if (art) {
+      drawSprite(ctx, art, x + CELL_W / 2, y + CELL_H / 2, CELL_W, CELL_H);
+      continue;
+    }
     // A rug: soft edges, low contrast, obviously not a place you build.
     ctx.fillStyle = PALETTE.rug;
     ctx.fillRect(x + 1, y + 1, CELL_W - 2, CELL_H - 2);
@@ -89,6 +114,16 @@ export function drawBlocked(ctx: CanvasRenderingContext2D, blocked: readonly num
 /** The doorway on the right. Kids walk out of it, so it stays lit. */
 export function drawDoor(ctx: CanvasRenderingContext2D, time: number): void {
   const x = doorX();
+  const art = sprite('door');
+  if (art) {
+    const top = BOARD_TOP - 20;
+    const height = BOARD_BOTTOM - top;
+    const smoothing = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(art, x - 2, top, DOOR_W + 4, height);
+    ctx.imageSmoothingEnabled = smoothing;
+    return;
+  }
   ctx.fillStyle = PALETTE.doorDark;
   ctx.fillRect(x + 4, BOARD_TOP - 18, DOOR_W - 8, BOARD_BOTTOM - BOARD_TOP + 18);
 
@@ -117,6 +152,22 @@ export function drawUnicorn(ctx: CanvasRenderingContext2D, time: number, hurt: n
   const x = bedX() + 2;
   const cy = (BOARD_TOP + BOARD_BOTTOM) / 2;
   const bob = Math.sin(time * 1.8) * 1.5;
+
+  const cushionArt = sprite('cushion');
+  const unicornArt = sprite('unicorn');
+  if (unicornArt) {
+    if (cushionArt) drawSprite(ctx, cushionArt, x + 18, cy + 30, 40, 22);
+    ctx.save();
+    // She squashes down and forward when squeezed. The pose can't change on a
+    // painting, so the SCALE carries it — and the eyes-shut face the painter
+    // drew is replaced by the whole toy flinching, which reads fine at this size.
+    const squash = 1 - hurt * 0.16;
+    ctx.translate(x + 18, cy + bob + hurt * 5);
+    ctx.scale(1 + hurt * 0.08, squash);
+    drawSprite(ctx, unicornArt, 0, 0, 44, 62);
+    ctx.restore();
+    return;
+  }
 
   // Cushion.
   ctx.fillStyle = PALETTE.cushionDark;
@@ -213,6 +264,12 @@ export function drawMowers(ctx: CanvasRenderingContext2D, ready: readonly boolea
       ctx.beginPath();
       ctx.ellipse(x, y, 7, 4, 0, 0, Math.PI * 2);
       ctx.stroke();
+      continue;
+    }
+
+    const art = sprite('vacuum');
+    if (art) {
+      drawSprite(ctx, art, x, y, 20, 16);
       continue;
     }
 

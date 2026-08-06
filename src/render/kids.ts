@@ -13,9 +13,10 @@
  * would use and the framing is the only thing that isn't.
  */
 
-import { ENEMIES, type Enemy } from '../game/enemies';
+import { ENEMIES, type Enemy, type EnemyKind } from '../game/enemies';
 import { PALETTE, alpha, mix } from './palette';
 import { roundRect } from './bedroom';
+import { drawSprite, sprite } from './sprites';
 
 /**
  * Draw one kid at (x, y), where y is the lane centre.
@@ -45,7 +46,34 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
   // Visible, so she is never a surprise; featureless, so you cannot tell what
   // is under there until something lights her up.
   if (enemy.concealed) {
-    drawBlanketMound(ctx, PALETTE.kidHidden, step);
+    const hidden = sprite('blanket');
+    if (hidden) {
+      ctx.save();
+      ctx.globalAlpha = 0.75;
+      drawSprite(ctx, hidden, 0, 0, def.width * 1.7, def.height * 1.7);
+      ctx.restore();
+    } else {
+      drawBlanketMound(ctx, PALETTE.kidHidden, step);
+    }
+    ctx.restore();
+    return;
+  }
+
+  // Generated art wins if it exists — but only for the BODY. The shield, the
+  // soaked drip and the slowed blob are drawn over the top either way, because
+  // they are game state rather than character design and they have to look
+  // identical whether or not somebody has run the art script.
+  const image = sprite(enemy.kind);
+  if (image) {
+    ctx.save();
+    if (enemy.hurt > 0) {
+      // Sprites can't be tinted the way a fill can, so a hurt kid flashes by
+      // going briefly translucent. Same read at a glance: "that one just got hit".
+      ctx.globalAlpha = 1 - Math.min(0.45, enemy.hurt * 3);
+    }
+    drawSprite(ctx, image, 0, 0, def.width * 1.7, def.height * 1.7);
+    ctx.restore();
+    drawStatusMarkers(ctx, enemy, def);
     ctx.restore();
     return;
   }
@@ -83,6 +111,16 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
       break;
   }
 
+  drawStatusMarkers(ctx, enemy, def);
+  ctx.restore();
+}
+
+/** Shield, soaked and slowed. Drawn over the body, sprite or not. */
+function drawStatusMarkers(
+  ctx: CanvasRenderingContext2D,
+  enemy: Enemy,
+  def: (typeof ENEMIES)[EnemyKind],
+): void {
   // The shield, drawn as a cardboard box lid held out front. Its own layer over
   // whatever is underneath, so "the shield is gone" is a visible event.
   if (enemy.shield > 0) {
@@ -106,8 +144,6 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
     ctx.arc(5, -def.height / 2 - 5, 2.5, 0, Math.PI * 2);
     ctx.fill();
   }
-
-  ctx.restore();
 }
 
 // --- Painters ---------------------------------------------------------------

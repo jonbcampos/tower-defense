@@ -281,3 +281,46 @@ every toy needs a shelf first).
 
 **Revisit if:** world two turns out to need a field this interface doesn't have. That's the point
 at which the shape was wrong, and it's cheap to find out with two worlds and expensive with five.
+
+## 20. Generated art sits on top of the hand-drawn art, and never replaces it
+
+Decision 1 said no image files, and named its own revisit condition: "the art
+direction needs something a few hundred rectangles and arcs can't express." The
+condition was met by the person the game is for finding it not pretty enough to
+hold her attention, which is the only measure that matters here.
+
+So there is now `scripts/generate-art.mjs`, which paints the whole cast with the
+Gemini image API. What matters is the shape of the integration rather than the
+script:
+
+- **Every sprite is optional and independent.** `sprite(id)` returns null and
+  the procedural painter runs. No file, half the files, a corrupt file, or a
+  browser that failed to fetch — all identical to how the game shipped.
+- **The fairness machinery cannot see it.** `validateDesignContracts()` and the
+  91 trials run against `src/game/`, which has no idea any of this exists. Art
+  can never make a level unwinnable.
+- **One lookup per subject.** Toys are looked up in `drawToyArt`, which is the
+  single function the board, the tray, the ghost and the level cards all go
+  through, so they cannot disagree about what a toy looks like.
+- **Game state stays hand-drawn on top.** Health bars, shields, the soaked
+  drip, the slowed blob and the red X are drawn over the sprite, not baked into
+  it. Those must look identical whether or not anyone ran the script.
+
+Two things that are easy to get wrong and are worth keeping:
+
+**Backgrounds come off in the browser, not in the script.** The prompts ask for
+a flat green background because models are far more reliable at that than at
+producing an alpha channel. `sprites.ts` removes it with a flood fill *from the
+edges*, keyed on the colour actually found in the corners. Flooding rather than
+"delete every green pixel" is what lets the slime keep its green highlights;
+keying on the corners rather than on a hard-coded green is what makes it work
+when the model ignores the instruction and hands you a white background.
+
+**Smoothing is forced on for sprites and off for everything else.** The viewport
+disables image smoothing globally, which is correct for crisp rectangles and
+turns a downscaled painting into aliased mush.
+
+**Revisit if:** the sprites become load-bearing — if a kid's twist is only
+legible in the painting, the fallback has silently become a broken game rather
+than a plainer one. The test is to delete `public/sprites/` and check the game
+is still readable, not merely still running.
