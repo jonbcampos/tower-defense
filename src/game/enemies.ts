@@ -38,6 +38,8 @@ export type BehaviourId = 'throws';
 export interface EnemyDef {
   kind: EnemyKind;
   name: string;
+  /** One line for the guide screen. See the note on `ToyDef.blurb`. */
+  blurb: string;
   hp: number;
   /**
    * Seconds to walk the whole board unobstructed, at NORMAL.
@@ -100,6 +102,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   crawler: {
     kind: 'crawler',
     name: 'Crawler',
+    blurb: 'The slowest one of all. Anything at all will turn her round.',
     // The slowest thing in the game by a wide margin. Level one is six of
     // these in one lane, and a single Bubble Wand lands nine times what it
     // takes to turn one around.
@@ -118,6 +121,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   toddler: {
     kind: 'toddler',
     name: 'Toddler',
+    blurb: 'An ordinary kid. Bubbles are plenty.',
     // The baseline every other kid is described relative to.
     hp: 45,
     crossSeconds: 22,
@@ -136,6 +140,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   runner: {
     kind: 'runner',
     name: 'Runner',
+    blurb: 'Quick! Slow her down, or have two toys ready.',
     hp: 40,
     crossSeconds: 12,
     grabDps: 15,
@@ -151,6 +156,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   raincoat: {
     kind: 'raincoat',
     name: 'Raincoat Kid',
+    blurb: 'Water does nothing to her coat. Use bubbles instead.',
     hp: 60,
     crossSeconds: 20,
     grabDps: 14,
@@ -169,6 +175,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   blanket: {
     kind: 'blanket',
     name: 'Blanket Kid',
+    blurb: 'You cannot aim at her until she peeks out halfway.',
     hp: 70,
     crossSeconds: 18,
     grabDps: 14,
@@ -188,6 +195,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   balloon: {
     kind: 'balloon',
     name: 'Balloon Kid',
+    blurb: 'She floats right over your toys. Spray her instead.',
     hp: 30,
     crossSeconds: 16,
     // Never stops. A kid who is floating is not going to pause to wrestle a
@@ -207,6 +215,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   puffy: {
     kind: 'puffy',
     name: 'Puffy Coat',
+    blurb: 'Very tough. A water gun, and a wall to slow her down.',
     // The tank. Two Water Guns at the back of a lane land comfortably more than
     // this even at HARD, so it is beatable with damage alone; the wall and the
     // Powder Puff are what make it comfortable rather than what make it possible.
@@ -225,6 +234,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   slider: {
     kind: 'slider',
     name: 'Sock Slider',
+    blurb: 'The fastest, and she slides straight over slime.',
     // The fastest thing in the game. Crosses in seven seconds and slides
     // straight over Sticky Slime, which is why level eight — the level that
     // introduces her — deliberately doesn't hand you Slime.
@@ -244,6 +254,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   wagon: {
     kind: 'wagon',
     name: 'Wagon Kid',
+    blurb: 'Her cardboard shield comes off first, then her.',
     hp: 90,
     shield: 150,
     crossSeconds: 20,
@@ -260,6 +271,7 @@ export const ENEMIES: Record<EnemyKind, EnemyDef> = {
   bigkid: {
     kind: 'bigkid',
     name: 'The Big Kid',
+    blurb: 'Throws a stuffie at your toys, and shrugs off half of every bubble.',
     hp: 500,
     crossSeconds: 35,
     grabDps: 40,

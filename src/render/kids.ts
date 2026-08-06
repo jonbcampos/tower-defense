@@ -190,6 +190,64 @@ const GAITS: Partial<Record<EnemyKind, Gait>> = {
 const DEFAULT_GAIT: Gait = { stride: 0.26, bob: 0.13, lean: 0.06, squash: 0.08, sway: 1.2, waddle: 0 };
 
 /**
+ * One kid, at rest, for the guide screen.
+ *
+ * Deliberately reuses the game's own art rather than a set of menu
+ * illustrations. A reference sheet that drifts out of step with the thing it
+ * describes is worse than none, and this one cannot drift: change a kid's
+ * sprite and this changes with it.
+ *
+ * Frame 0 of the walk cycle and no transform at all — a guide entry is a
+ * portrait, and a figure mid-stride reads as a mistake when it is sitting still
+ * in a list. `concealed` is ignored on purpose: looking the Blanket Kid up is
+ * exactly when you want to see her.
+ */
+export function drawGuideKid(
+  ctx: CanvasRenderingContext2D,
+  kind: EnemyKind,
+  x: number,
+  y: number,
+  box: number,
+): void {
+  const cycle = spriteFrames(`${kind}.walk`);
+  const image = cycle?.[0] ?? sprite(kind);
+  if (image) {
+    drawSprite(ctx, image, x, y, box, box);
+    return;
+  }
+
+  // No generated art: fall through to the painters, scaled to the box. They
+  // draw around the origin at roughly the kid's collision size.
+  const def = ENEMIES[kind];
+  ctx.save();
+  ctx.translate(x, y);
+  const scale = box / Math.max(def.width, def.height) / 1.5;
+  ctx.scale(scale, scale);
+  drawKidBody(ctx, def, def.color);
+  ctx.restore();
+}
+
+/** The procedural body for one kind, with no state and no gait. */
+function drawKidBody(
+  ctx: CanvasRenderingContext2D,
+  def: (typeof ENEMIES)[EnemyKind],
+  body: string,
+): void {
+  switch (def.kind) {
+    case 'crawler': drawCrawler(ctx, body, def, 0); break;
+    case 'toddler': drawToddler(ctx, body, def, 0); break;
+    case 'runner': drawRunner(ctx, body, def, 0); break;
+    case 'raincoat': drawRaincoat(ctx, body, def, 0); break;
+    case 'blanket': drawBlanketMound(ctx, body, def, 0); break;
+    case 'balloon': drawBalloon(ctx, body, def, 0); break;
+    case 'puffy': drawPuffy(ctx, body, def, 0); break;
+    case 'slider': drawSlider(ctx, body, def, 0); break;
+    case 'wagon': drawWagon(ctx, body, def, 0); break;
+    case 'bigkid': drawBigKid(ctx, body, def, 0); break;
+  }
+}
+
+/**
  * Which pose to show, from the kid's POSITION rather than a clock.
  *
  * That is the load-bearing detail, and it is the same one the transform below

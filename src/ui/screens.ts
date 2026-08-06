@@ -14,10 +14,12 @@ import {
   VIRTUAL_H,
   type DifficultyId,
 } from '../game/config';
+import { ENEMIES, ENEMY_ORDER } from '../game/enemies';
 import { LEVELS, LEVEL_COUNT } from '../game/levels';
-import { TOYS, type ToyId } from '../game/toys';
+import { TOYS, TOY_ORDER, type ToyId } from '../game/toys';
 import { PALETTE, alpha } from '../render/palette';
 import { drawToyArt } from '../render/toys';
+import { drawGuideKid } from '../render/kids';
 import { starsFor, type Save } from '../core/save';
 import { drawIcon, drawTick, type IconId } from './icons';
 import { drawText, setFont } from './text';
@@ -64,6 +66,28 @@ export function muteButton(): MenuRect {
     sub: '',
     enabled: true,
     icon: 'none',
+  };
+}
+
+/**
+ * The guide button, on the title screen next to mute.
+ *
+ * Its own function rather than part of `titleMenu()` because that list is the
+ * three difficulties and choosing one starts the game — dropping a fourth
+ * entry in it that does something else entirely would make every caller check
+ * which kind of button it got back.
+ */
+export function guideButton(): MenuRect {
+  return {
+    id: 'guide',
+    x: SCREEN.w - 58,
+    y: 8,
+    w: 22,
+    h: 22,
+    label: '',
+    sub: '',
+    enabled: true,
+    icon: 'guide',
   };
 }
 
@@ -331,6 +355,7 @@ export function drawTitle(ctx: CanvasRenderingContext2D, save: Save, time: numbe
   }
 
   drawMute(ctx);
+  drawCornerButton(ctx, guideButton());
   if (SCREEN.rotated) {
     drawText(ctx, 'TURN YOUR PHONE', SCREEN.w / 2, VIRTUAL_H - 18, {
       size: 9,
@@ -545,6 +570,14 @@ function drawButton(
   ctx.restore();
 }
 
+/** A square icon button in the corner strip, styled like the mute toggle. */
+function drawCornerButton(ctx: CanvasRenderingContext2D, rect: MenuRect): void {
+  ctx.fillStyle = alpha(PALETTE.card, 0.9);
+  roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 5);
+  ctx.fill();
+  drawIcon(ctx, rect.icon, rect.x + rect.w / 2, rect.y + rect.h / 2, 14, PALETTE.tray);
+}
+
 function drawMute(ctx: CanvasRenderingContext2D): void {
   const rect = muteButton();
   ctx.fillStyle = alpha(PALETTE.card, 0.9);
@@ -605,3 +638,188 @@ function roundedRect(
 }
 
 export { LEVEL_COUNT };
+
+
+// --- The guide ---------------------------------------------------------------
+
+/**
+ * Which half of the guide is showing. Toys and kids are separate lists rather
+ * than one long one because they answer different questions — "what does this
+ * do" and "what stops this" — and a child looking up the sprinkler should not
+ * have to page past the Big Kid to reach it.
+ */
+export type GuideTab = 'toys' | 'kids';
+
+/** Rows per page. Four fits 270px tall with room for the pager underneath. */
+export const GUIDE_ROWS = 4;
+const GUIDE_TOP = 74;
+const GUIDE_ROW_H = 38;
+
+export function guideCount(tab: GuideTab): number {
+  return tab === 'toys' ? TOY_ORDER.length : ENEMY_ORDER.length;
+}
+
+export function guidePages(tab: GuideTab): number {
+  return Math.max(1, Math.ceil(guideCount(tab) / GUIDE_ROWS));
+}
+
+export function guideMenu(tab: GuideTab, page: number): MenuRect[] {
+  const last = guidePages(tab) - 1;
+  const blank = { label: '', sub: '', enabled: true };
+  const bottom = VIRTUAL_H - 30;
+  return [
+    { id: 'back', x: 10, y: bottom, w: 60, h: 22, label: 'BACK', sub: '', enabled: true, icon: 'back' },
+    // The tabs carry no `icon`: they are drawn with real game art instead, by
+    // drawGuideTab. To a child who cannot read, TOYS and KIDS are two identical
+    // smudges, and an abstract glyph beside them is a third thing to decode.
+    { id: 'tab:toys', x: SCREEN.w / 2 - 92, y: 42, w: 88, h: 24, label: 'TOYS', sub: '', enabled: true, icon: 'none' },
+    { id: 'tab:kids', x: SCREEN.w / 2 + 4, y: 42, w: 88, h: 24, label: 'KIDS', sub: '', enabled: true, icon: 'none' },
+    // Paging arrows sit at the outer edges, far apart, because a small thumb
+    // aiming for one must never catch the other.
+    { id: 'prev', x: SCREEN.w / 2 - 70, y: bottom, w: 34, h: 22, ...blank, enabled: page > 0, icon: 'prev' },
+    { id: 'next', x: SCREEN.w / 2 + 36, y: bottom, w: 34, h: 22, ...blank, enabled: page < last, icon: 'next' },
+  ];
+}
+
+/**
+ * The guide: every toy and every kid, with one line each.
+ *
+ * Two audiences at once, which is the whole design problem. The child cannot
+ * read, so each row leads with the actual game art at a size she recognises —
+ * she looks up "the spinny water one" by finding its picture. The parent can
+ * read, and is the one who forgets whether the sprinkler reaches the floating
+ * kid, so the line beside it answers exactly that in plain words.
+ *
+ * The art is drawn by the same painters the board uses, not by a separate set
+ * of menu illustrations. A guide that drifts out of step with the game is worse
+ * than no guide, and this one cannot: change a toy's look and this changes.
+ */
+export function drawGuide(
+  ctx: CanvasRenderingContext2D,
+  tab: GuideTab,
+  page: number,
+  time: number,
+): void {
+  drawScrim(ctx, 0.86);
+  drawText(ctx, 'WHAT DOES WHAT', SCREEN.w / 2, 28, {
+    size: 15,
+    align: 'center',
+    color: PALETTE.hudText,
+    glow: true,
+  });
+
+  for (const rect of guideMenu(tab, page)) {
+    if (rect.id.startsWith('tab:')) {
+      drawGuideTab(ctx, rect, rect.id === `tab:${tab}`, time);
+    } else if (rect.id === 'prev' || rect.id === 'next') {
+      drawButton(ctx, rect, false, !rect.enabled);
+    } else {
+      drawButton(ctx, rect, false);
+    }
+  }
+
+  const first = page * GUIDE_ROWS;
+  const ids = tab === 'toys' ? TOY_ORDER : ENEMY_ORDER;
+  for (let i = 0; i < GUIDE_ROWS; i++) {
+    const which = ids[first + i];
+    if (!which) break;
+    drawGuideRow(ctx, tab, which, GUIDE_TOP + i * GUIDE_ROW_H, time);
+  }
+
+  // Page dots. A "2 / 3" would be two more numerals to decode; dots are a
+  // shape, and she can see at a glance that there is more to the right.
+  const pages = guidePages(tab);
+  const dotsY = VIRTUAL_H - 19;
+  for (let i = 0; i < pages; i++) {
+    const x = SCREEN.w / 2 - ((pages - 1) * 9) / 2 + i * 9;
+    ctx.fillStyle = i === page ? PALETTE.hudAccent : alpha(PALETTE.hudDim, 0.5);
+    ctx.beginPath();
+    ctx.arc(x, dotsY, i === page ? 3 : 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/**
+ * A tab, labelled with a picture of the thing it contains.
+ *
+ * A bubble wand for the toys and a toddler for the kids — the same art the
+ * board uses, so the button is literally a picture of what is behind it. The
+ * words stay for the adult; the picture is what the child navigates by.
+ */
+function drawGuideTab(
+  ctx: CanvasRenderingContext2D,
+  rect: MenuRect,
+  selected: boolean,
+  time: number,
+): void {
+  ctx.fillStyle = selected ? PALETTE.hudAccent : alpha(PALETTE.card, 0.85);
+  roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 6);
+  ctx.fill();
+  ctx.strokeStyle = selected ? PALETTE.cardReady : PALETTE.cardEdge;
+  ctx.lineWidth = selected ? 2 : 1;
+  roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 6);
+  ctx.stroke();
+
+  const cx = rect.x + 18;
+  const cy = rect.y + rect.h / 2;
+  if (rect.id === 'tab:toys') drawToyArt(ctx, 'wand', cx, cy, 0.5, time, 0, 0);
+  else drawGuideKid(ctx, 'toddler', cx, cy, 22);
+
+  drawText(ctx, rect.label, rect.x + rect.w / 2 + 10, cy - 5, {
+    size: 11,
+    align: 'center',
+    color: selected ? PALETTE.tray : PALETTE.hudText,
+  });
+}
+
+function drawGuideRow(
+  ctx: CanvasRenderingContext2D,
+  tab: GuideTab,
+  which: string,
+  y: number,
+  time: number,
+): void {
+  const left = 18;
+  const width = SCREEN.w - left * 2;
+
+  ctx.fillStyle = alpha(PALETTE.card, 0.5);
+  roundedRect(ctx, left, y, width, GUIDE_ROW_H - 5, 5);
+  ctx.fill();
+
+  const artX = left + 22;
+  const artY = y + (GUIDE_ROW_H - 5) / 2;
+  let name: string;
+  let blurb: string;
+  let cost = '';
+
+  if (tab === 'toys') {
+    const def = TOYS[which as ToyId];
+    name = def.name;
+    blurb = def.blurb;
+    // The Guard Bear has no cost because you never buy him, and printing "0"
+    // beside him would read as "free to place" rather than "not a card".
+    cost = def.cost > 0 ? String(def.cost) : '';
+    drawToyArt(ctx, def.id, artX, artY, 0.62, time, 0, 0);
+  } else {
+    const def = ENEMIES[which as keyof typeof ENEMIES];
+    name = def.name;
+    blurb = def.blurb;
+    drawGuideKid(ctx, def.kind, artX, artY, 30);
+  }
+
+  const textX = left + 46;
+  drawText(ctx, name, textX, y + 12, { size: 10, color: PALETTE.hudText });
+  drawText(ctx, blurb, textX, y + 24, {
+    size: 7,
+    color: PALETTE.hudDim,
+    bold: false,
+  });
+
+  if (cost) {
+    ctx.fillStyle = PALETTE.sparkle;
+    ctx.beginPath();
+    ctx.arc(left + width - 26, y + 16, 4, 0, Math.PI * 2);
+    ctx.fill();
+    drawText(ctx, cost, left + width - 18, y + 12, { size: 9, color: PALETTE.hudAccent });
+  }
+}

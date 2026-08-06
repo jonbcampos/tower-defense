@@ -24,6 +24,8 @@ export type IconId =
   | 'again'
   | 'next'
   | 'levels'
+  | 'guide'
+  | 'prev'
   | 'easy'
   | 'normal'
   | 'hard';
@@ -98,6 +100,39 @@ export function drawIcon(
         ctx.fill();
       }
       break;
+
+    case 'guide': {
+      // An open book. A question mark would be the obvious choice and is
+      // useless here: the player who most needs this button cannot read, and a
+      // '?' is a letter to her. A book is a thing she has held.
+      ctx.lineWidth = Math.max(1, size * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(0, -s * 0.62);
+      ctx.lineTo(0, s * 0.66);
+      ctx.stroke();
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(0, -s * 0.62);
+        ctx.quadraticCurveTo(side * s * 0.5, -s * 0.86, side * s * 0.88, -s * 0.5);
+        ctx.lineTo(side * s * 0.88, s * 0.5);
+        ctx.quadraticCurveTo(side * s * 0.5, s * 0.3, 0, s * 0.66);
+        ctx.stroke();
+      }
+      break;
+    }
+
+    case 'prev': {
+      // The mirror of 'next'. Drawn out rather than reusing 'next' with a flip,
+      // because everything else here is drawn and a lone transform would be the
+      // one thing a reader has to go and check.
+      ctx.beginPath();
+      ctx.moveTo(s * 0.5, -s * 0.72);
+      ctx.lineTo(-s * 0.55, 0);
+      ctx.lineTo(s * 0.5, s * 0.72);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
 
     case 'levels': {
       // A grid of squares — literally a picture of the level-select screen.

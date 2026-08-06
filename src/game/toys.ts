@@ -51,6 +51,15 @@ export type ToyLayer = 'ground' | 'floor';
 export interface ToyDef {
   id: ToyId;
   name: string;
+  /**
+   * One line for the guide screen, written to be read ALOUD to a five-year-old.
+   *
+   * Lives here rather than in the UI so that adding a toy still touches only
+   * the four files decision 18 allows. Say what it does and what it is for; a
+   * child who has forgotten what the sprinkler is does not need its damage
+   * numbers, she needs "sprays three lanes, hits the floaty one".
+   */
+  blurb: string;
   role: ToyRole;
   layer: ToyLayer;
   cost: number;
@@ -101,6 +110,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   jar: {
     id: 'jar',
     name: 'Glitter Jar',
+    blurb: 'Makes sparkles by itself. Build these first.',
     role: 'producer',
     layer: 'ground',
     // Cheap enough that the very first thing a new player can afford is the
@@ -121,6 +131,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   wand: {
     id: 'wand',
     name: 'Bubble Wand',
+    blurb: 'Blows bubbles along its own row.',
     role: 'shooter',
     layer: 'ground',
     cost: 50,
@@ -140,6 +151,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   fort: {
     id: 'fort',
     name: 'Pillow Fort',
+    blurb: 'A wall of pillows. Hurts nobody, but they stop to pull it apart.',
     role: 'wall',
     layer: 'ground',
     // The same price as the wand it protects. A wall that costs more than the
@@ -155,6 +167,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   sprinkler: {
     id: 'sprinkler',
     name: 'Sprinkler',
+    blurb: 'Sprays three rows at once, and it can reach the floaty one.',
     role: 'shooter',
     layer: 'ground',
     // The same price as a Water Gun for two thirds of its total damage, spread
@@ -179,6 +192,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   watergun: {
     id: 'watergun',
     name: 'Water Gun',
+    blurb: 'Hits hard, straight ahead. Raincoats just shrug it off.',
     role: 'shooter',
     layer: 'ground',
     cost: 100,
@@ -196,6 +210,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   nightlight: {
     id: 'nightlight',
     name: 'Nightlight',
+    blurb: 'Lights up one whole row and finds whoever is hiding.',
     role: 'instant',
     layer: 'ground',
     cost: 140,
@@ -213,6 +228,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   slime: {
     id: 'slime',
     name: 'Sticky Slime',
+    blurb: 'Goes on the floor. Everyone slows down in it, except sock feet.',
     role: 'floor',
     layer: 'floor',
     cost: 75,
@@ -229,6 +245,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   powder: {
     id: 'powder',
     name: 'Powder Puff',
+    blurb: 'One big puff clears a whole row at once. Then it needs a rest.',
     role: 'instant',
     layer: 'ground',
     cost: 150,
@@ -246,6 +263,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   fountain: {
     id: 'fountain',
     name: 'Sparkle Fountain',
+    blurb: 'Sparkles quicker than a jar, but it costs more to put down.',
     role: 'producer',
     layer: 'ground',
     cost: 150,
@@ -264,6 +282,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   machine: {
     id: 'machine',
     name: 'Bubble Machine',
+    blurb: 'Bubbles in three rows at the same time. The big one.',
     role: 'shooter',
     layer: 'ground',
     cost: 250,
@@ -288,6 +307,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   sweeper: {
     id: 'sweeper',
     name: 'Guard Bear',
+    blurb: 'Free! He hugs the first kid who reaches you. One per row, once.',
     role: 'instant',
     layer: 'ground',
     cost: 0,

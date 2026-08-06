@@ -63,7 +63,7 @@ import { Rng } from '../core/rng';
  * the simulation nothing and the renderer gets one field to switch on instead
  * of a parallel screen-state machine that could disagree with this one.
  */
-export type Phase = 'title' | 'select' | 'loadout' | 'playing' | 'won' | 'lost';
+export type Phase = 'title' | 'select' | 'loadout' | 'guide' | 'playing' | 'won' | 'lost';
 
 export type GameEventType =
   | 'place'

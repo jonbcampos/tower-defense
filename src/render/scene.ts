@@ -35,12 +35,14 @@ import { drawPlacedToy, drawToyArt } from './toys';
 import { drawFooter, drawPopups } from '../ui/hud';
 import { drawTray } from '../ui/tray';
 import {
+  drawGuide,
   drawLevelSelect,
   drawLoadout,
   drawResult,
   drawScrim,
   drawTitle,
   drawUnlockBanner,
+  type GuideTab,
 } from '../ui/screens';
 import { freshSave, type Save } from '../core/save';
 import { LEVELS } from '../game/levels';
@@ -83,6 +85,15 @@ export function setLoadoutDisplay(
   loadoutAvailable = available;
   loadoutPicked = picked;
   loadoutMax = max;
+}
+
+/** Mirrored from main.ts, like the loadout: the guide's page is UI state. */
+let guideTab: GuideTab = 'toys';
+let guidePage = 0;
+
+export function setGuideDisplay(tab: GuideTab, page: number): void {
+  guideTab = tab;
+  guidePage = page;
 }
 
 export function sceneClock(): number {
@@ -436,6 +447,9 @@ function drawOverlays(ctx: CanvasRenderingContext2D, state: GameState): void {
       break;
     case 'loadout':
       drawLoadout(ctx, loadoutAvailable, loadoutPicked, loadoutMax, clock);
+      break;
+    case 'guide':
+      drawGuide(ctx, guideTab, guidePage, clock);
       break;
     case 'won':
     case 'lost': {

@@ -16,7 +16,17 @@
  * time the icon exists the game is already fully cached.
  */
 
-const VERSION = 'v1';
+/**
+ * Bump this to force every installed copy to throw its cache away.
+ *
+ * `activate` deletes every cache whose name isn't the current one, so changing
+ * the version is the only lever that reaches a phone with the game already on
+ * its home screen. Worth doing after anything that could have been cached
+ * wrong — v2 is here because GitHub Pages 404'd for most of a day during an
+ * Actions outage, and any worker that installed in that window cached the
+ * failures.
+ */
+const VERSION = 'v2';
 const CACHE = `tower-defense-${VERSION}`;
 
 // The shell has stable, known names, so it can be cached up front.

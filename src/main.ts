@@ -18,12 +18,16 @@ import { loadSprites, sprite, spriteFrames } from './render/sprites';
 import {
   advanceScene,
   sceneRenderer,
+  setGuideDisplay,
   setLoadoutDisplay,
   setSaveForDisplay,
   setUnlockBanner,
 } from './render/scene';
 import { addPopup, resetHud, updateHud } from './ui/hud';
 import {
+  guideButton,
+  guideMenu,
+  guidePages,
   hitTestMenu,
   levelMenu,
   loadoutMenu,
@@ -31,6 +35,7 @@ import {
   resultMenu,
   setMutedDisplay,
   titleMenu,
+  type GuideTab,
 } from './ui/screens';
 import { hitTestCard, validateTrayContracts } from './ui/tray';
 
@@ -73,6 +78,9 @@ setMutedDisplay(audio.muted);
 let currentLevelId = 1;
 /** Cards chosen on the loadout screen. Unused on EASY. */
 let picked: ToyId[] = [];
+/** Where the guide is open, if it is. Reset every time it opens. */
+let guideTab: GuideTab = 'toys';
+let guidePage = 0;
 let squeezedThisStep = false;
 
 // --- Menus ------------------------------------------------------------------
@@ -90,12 +98,42 @@ function routeMenuTap(tap: Tap): void {
       toggleMute();
       return;
     }
+    if (hitTestMenu([guideButton()], tap.x, tap.y)) {
+      audio.play('select');
+      guideTab = 'toys';
+      guidePage = 0;
+      setGuideDisplay(guideTab, guidePage);
+      state.phase = 'guide';
+      return;
+    }
     const hit = hitTestMenu(titleMenu(), tap.x, tap.y);
     if (!hit) return;
     audio.play('select');
     save.difficulty = hit.id.slice('diff:'.length) as DifficultyId;
     writeSave(save);
     state.phase = 'select';
+    return;
+  }
+
+  if (state.phase === 'guide') {
+    const hit = hitTestMenu(guideMenu(guideTab, guidePage), tap.x, tap.y);
+    if (!hit) return;
+    audio.play('select');
+    if (hit.id === 'back') {
+      state.phase = 'title';
+      return;
+    }
+    if (hit.id.startsWith('tab:')) {
+      guideTab = hit.id.slice('tab:'.length) as GuideTab;
+      // Back to the first page on a tab change: keeping page 2 when the other
+      // list is shorter would open on a page that isn't there.
+      guidePage = 0;
+    } else if (hit.id === 'prev') {
+      guidePage = Math.max(0, guidePage - 1);
+    } else if (hit.id === 'next') {
+      guidePage = Math.min(guidePages(guideTab) - 1, guidePage + 1);
+    }
+    setGuideDisplay(guideTab, guidePage);
     return;
   }
 

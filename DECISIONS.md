@@ -728,3 +728,33 @@ a prompt full of instructions about legs for a character who is sitting down.
 
 **Revisit if:** the heart count ever changes from three. The mapping in
 `ellieMood` is written against 3/2/1 and would silently pin to one drawing.
+
+## 35. A guide screen, written for two people at once
+
+"We need a screen explaining what everything does — like the water sprinkler, I
+forget." Both halves of that matter: the person who forgets is the adult, and
+the person holding the phone usually cannot read.
+
+So every row leads with the **actual game art**, at a size the child recognises,
+and carries one plain line beside it for the adult. She looks up "the spinny
+water one" by finding its picture; he reads "sprays three rows at once, and it
+can reach the floaty one" and stops wondering. The tabs are the same idea — a
+bubble wand and a toddler rather than glyphs, because TOYS and KIDS are two
+identical smudges to someone who does not read, and an abstract icon beside
+them is a third thing to decode.
+
+The art is drawn by the game's own painters, never a separate set of menu
+illustrations. A reference sheet that drifts out of step with the thing it
+describes is worse than none, and this one cannot drift.
+
+The lines live on `ToyDef.blurb` and `EnemyDef.blurb`, next to the numbers they
+describe, so adding a toy still touches only the four files decision 18 allows.
+
+Paged four at a time with dots rather than "2 / 3", because dots are a shape and
+a numeral is a thing to decode. Toys and kids are separate lists rather than one
+long one: they answer different questions, and looking up the sprinkler should
+not mean paging past the Big Kid.
+
+**Revisit if:** the roster outgrows three pages a tab. Paging is fine at three
+and tedious at six, and the answer then is probably a grid of pictures that
+opens one entry, not more pages.
