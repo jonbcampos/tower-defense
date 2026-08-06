@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Unicorn Squeeze Squad</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#2a2140" />
+    <meta
+      name="description"
+      content="You are a unicorn stuffie. Kids are coming to squeeze you. Defend the bed with toys."
+    />
+
+    <!-- Relative paths throughout, so the same build works at the domain root
+         and under a GitHub Pages subpath without rewriting anything. -->
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+
+    <!-- iOS ignores the manifest and needs its own tags. Harmless on Android,
+         and means an iPhone can install it too. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Squeeze Squad" />
+    <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: #16112a;
+        overflow: hidden;
+        overscroll-behavior: none;
+        /* Kill every browser gesture that would otherwise eat a game input:
+           scrolling, pinch-zoom, double-tap-zoom, text selection, tap flash. */
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #game {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

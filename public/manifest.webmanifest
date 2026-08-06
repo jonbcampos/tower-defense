@@ -1,0 +1,19 @@
+{
+  "name": "Unicorn Squeeze Squad",
+  "short_name": "Squeeze Squad",
+  "description": "You are a unicorn stuffie. Kids are coming to squeeze you. Defend the bed with toys.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "background_color": "#2a2140",
+  "theme_color": "#2a2140",
+  "categories": ["games"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
