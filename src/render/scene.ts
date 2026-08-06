@@ -96,11 +96,17 @@ export const sceneRenderer: Renderer = {
       ctx.translate(Math.sin(clock * 47) * state.shake, Math.cos(clock * 39) * state.shake * 0.6);
     }
 
+    // On the menus the board behind the scrim is set dressing, so it is drawn
+    // as a plain empty room. Level one's furniture covers four whole lanes, and
+    // a title screen sitting on top of that reads as a broken level rather than
+    // as a bedroom.
+    const inPlay = state.phase === 'playing' || state.phase === 'won' || state.phase === 'lost';
+
     drawRoom(ctx);
     // The door goes down before the kids, so a kid at the doorway is walking
     // OUT of it rather than standing on top of it.
     drawDoor(ctx, clock);
-    drawBlocked(ctx, state.level.blocked);
+    if (inPlay) drawBlocked(ctx, state.level.blocked);
     drawLaneFlashes(ctx, state);
     drawFloorToys(ctx, state);
     drawPlacementHints(ctx, state, input);
@@ -113,7 +119,7 @@ export const sceneRenderer: Renderer = {
     particles.draw(ctx);
     // The unicorn over everything on the board, so a kid reaching the cushion
     // is hugging her rather than replacing her.
-    drawMowers(ctx, state.mowerReady, clock);
+    if (inPlay) drawMowers(ctx, state.mowerReady, clock);
     drawUnicorn(ctx, clock, squeezeFlash);
     drawDenyMark(ctx, state);
 
@@ -126,7 +132,7 @@ export const sceneRenderer: Renderer = {
     // semi-transparent by design — it has to push the room back without hiding
     // it — and a row of toy cards bleeding through the top of PICK A LEVEL just
     // reads as a rendering fault.
-    if (state.phase === 'playing' || state.phase === 'won' || state.phase === 'lost') {
+    if (inPlay) {
       drawTray(ctx, state, clock);
       drawFooter(ctx, state);
       drawPopups(ctx);
