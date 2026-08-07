@@ -213,8 +213,18 @@ const GAITS: Partial<Record<EnemyKind, Gait>> = {
 
 const DEFAULT_GAIT: Gait = { stride: 0.26, bob: 0.13, lean: 0.06, squash: 0.08, sway: 1.2, waddle: 0 };
 
+/** Which cycle a guide entry is showing. `still` is frame 0 and no motion. */
+export type GuideMode = 'still' | 'walk' | 'grab';
+
 /**
- * One kid, at rest, for the guide screen.
+ * How fast a guide entry plays. Brisk on purpose — this screen exists to be
+ * looked at and judged, and a cycle at its true in-game cadence is hard to read
+ * when there is nothing moving past to give it context.
+ */
+const GUIDE_FPS = 5;
+
+/**
+ * One kid, for the guide screen.
  *
  * Deliberately reuses the game's own art rather than a set of menu
  * illustrations. A reference sheet that drifts out of step with the thing it
@@ -232,9 +242,17 @@ export function drawGuideKid(
   x: number,
   y: number,
   box: number,
+  time = 0,
+  mode: GuideMode = 'still',
 ): void {
-  const cycle = spriteFrames(`${kind}.walk`);
-  const image = cycle?.[0] ?? sprite(kind);
+  // Time-driven here, unlike everywhere else, because a guide entry is not
+  // travelling anywhere. The rule the rest of the game follows — animate from
+  // distance so a slowed kid plods — has nothing to measure on this screen.
+  const sheet = mode === 'still' ? null : spriteFrames(`${kind}.${mode}`);
+  const cycle = sheet ?? spriteFrames(`${kind}.walk`);
+  const image = sheet
+    ? (sheet[Math.floor(time * GUIDE_FPS) % sheet.length] ?? sheet[0]!)
+    : (cycle?.[0] ?? sprite(kind));
   if (image) {
     drawSprite(ctx, image, x, y, box, box);
     return;

@@ -20,6 +20,7 @@ import { TOYS, TOY_ORDER, type ToyId } from '../game/toys';
 import { PALETTE, alpha } from '../render/palette';
 import { drawToyArt } from '../render/toys';
 import { drawGuideKid } from '../render/kids';
+import { spriteFrames } from '../render/sprites';
 import { starsFor, type Save } from '../core/save';
 import { drawIcon, drawTick, type IconId } from './icons';
 import { drawText, setFont } from './text';
@@ -758,6 +759,13 @@ export function drawGuide(
     }
   }
 
+  if (tab === 'kids') {
+    // Two small captions, once at the top rather than on every row. At 6px
+    // these are for the adult; the child is looking at the pictures.
+    drawText(ctx, 'walking', 40, GUIDE_TOP - 6, { size: 6, align: 'center', color: PALETTE.hudDim, bold: false });
+    drawText(ctx, 'grabbing', 70, GUIDE_TOP - 6, { size: 6, align: 'center', color: PALETTE.hudDim, bold: false });
+  }
+
   const first = page * GUIDE_ROWS;
   const ids = tab === 'toys' ? TOY_ORDER : ENEMY_ORDER;
   for (let i = 0; i < GUIDE_ROWS; i++) {
@@ -844,10 +852,17 @@ function drawGuideRow(
     const def = ENEMIES[which as keyof typeof ENEMIES];
     name = def.name;
     blurb = def.blurb;
-    drawGuideKid(ctx, def.kind, artX, artY, 30);
+    // Both cycles, side by side and both running: walking on the left, pulling
+    // a toy apart on the right. Showing them together is the whole point of
+    // this screen — it is where you decide whether an animation is any good,
+    // and you cannot judge a grab you have to wait for a kid to start.
+    drawGuideKid(ctx, def.kind, artX, artY, 28, time, 'walk');
+    if (spriteFrames(`${def.kind}.grab`)) {
+      drawGuideKid(ctx, def.kind, artX + 30, artY, 28, time, 'grab');
+    }
   }
 
-  const textX = left + 46;
+  const textX = left + (tab === 'kids' ? 76 : 46);
   drawText(ctx, name, textX, y + 12, { size: 10, color: PALETTE.hudText });
   drawText(ctx, blurb, textX, y + 24, {
     size: 7,
