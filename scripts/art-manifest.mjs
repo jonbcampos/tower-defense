@@ -515,13 +515,30 @@ const BASE_PIECES = [
  * on a shared floor line. Do not try to solve that here by asking harder — it
  * is a measurement problem and the loader can measure.
  */
-const SHEET_RULES = [
-  'A SPRITE SHEET containing EXACTLY FOUR drawings of the SAME single character,',
-  'arranged in a 2x2 grid: two frames on the top row, two on the bottom row,',
-  'read left-to-right then top-to-bottom as frames 1, 2, 3 and 4 of one looping cycle.',
-  'The character is IDENTICAL in all four frames — same size, same colours, same clothes,',
-  'same side-on camera. ONLY THE POSE CHANGES between frames.',
-  'Centre each figure in its own quadrant with its feet at the same height in all four.',
+/**
+ * The grid rules, parameterised by shape.
+ *
+ * Says the same things `SHEET_RULES` used to — identical character, no grid
+ * lines, no mirroring, consistent colours — plus the one new demand that
+ * matters: the two rows are the same child doing two different things, not two
+ * children. That sentence is the entire reason this piece exists.
+ */
+const MOTION_RULES = (grid, rowCount) =>
+  [
+    `A SPRITE SHEET laid out as a grid of ${grid}, containing`,
+    rowCount > 1
+      ? 'EIGHT drawings of the SAME single character: the top row is one action and the bottom row is a DIFFERENT action by THE SAME child.'
+      : 'FOUR drawings of the SAME single character.',
+    'Read each row left to right.',
+    'The character is IDENTICAL in every single cell — same face, same hair, same height, same',
+    'build, same clothes, same colours, same side-on camera. Across the rows as well as along',
+    'them: it must be impossible to tell that the two rows were drawn separately, because they',
+    'were not. ONLY THE POSE CHANGES from cell to cell.',
+    ...SHEET_COMMON,
+  ].join(' ');
+
+const SHEET_COMMON = [
+  'Centre each figure in its own cell, with its feet at the same height in every cell of a row.',
   'All four poses must be DIFFERENT from each other. In particular frame 3 must not repeat frame 1',
   'and frame 4 must not repeat frame 2: where a pose leads with one limb, its opposite frame leads',
   'with the other. A walking figure must use BOTH legs across the cycle, not the same leg twice.',
@@ -636,44 +653,53 @@ const FACE_SHEET_RULES = [
 ].join(' ');
 
 /**
- * The grab sheets: a kid pulling a toy apart, one per character.
+ * One sheet per kid holding BOTH cycles: walking on the top row, grabbing on
+ * the bottom.
  *
- * Separate from the walk cycle because it is a different action, and separate
- * from `cycle` in the data because not every kid has one — the Balloon Kid
- * never stops and the Big Kid throws instead.
+ * This replaced two separate sheets, and the reason is the most expensive
+ * lesson in this file. A walk sheet and a grab sheet drawn by two calls are two
+ * different children, however carefully the description is pinned. First the
+ * outfits drifted, so the outfit was written down; then the same toddler came
+ * back bare-legged in one and in shorts in the other; then the runner changed
+ * hairstyle. Every fix corrected that detail and moved the drift somewhere
+ * else, because the model holds a character together WITHIN an image and simply
+ * does not across two.
  *
- * These are the one animation in the game driven by a CLOCK rather than by
- * distance travelled. Everything else is position-driven so that a slowed kid
- * plods; a grabbing kid is not moving at all, so position would freeze the
- * cycle on one frame, which is exactly the bug this fixes.
+ * 4x2 on a 16:9 frame gives eight cells of roughly 690x770 — near enough square
+ * that each frame gets the same treatment a 2x2 cell used to. `rowIds` tells the
+ * loader to publish the rows as `<kid>.walk` and `<kid>.grab`, so nothing
+ * downstream changed: the renderer still asks for exactly those two ids.
+ *
+ * A kid with no `grab` gets a walk-only 1x4. The Balloon Kid never stops, and
+ * four frames of her pulling at nothing would be four wasted cells and one
+ * baffling glossary entry.
  */
-const GRAB_SHEETS = BASE_PIECES.filter((piece) => piece.grab).map((piece) => ({
-  id: `${piece.id}.grab`,
-  aspect: '1:1',
-  size: '1K',
-  sheet: { cols: 2, rows: 2, align: piece.align ?? 'floor', mirrored: true },
-  subject: piece.subject,
-  poses: piece.grab,
-  look: piece.look,
-  outfit: piece.outfit,
-}));
+const MOTION_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => {
+  const both = Boolean(piece.grab);
+  return {
+    id: `${piece.id}.motion`,
+    aspect: both ? '16:9' : '1:1',
+    size: '2K',
+    sheet: {
+      cols: 4,
+      rows: both ? 2 : 1,
+      align: piece.align ?? 'floor',
+      mirrored: true,
+      rowIds: both ? ['walk', 'grab'] : ['walk'],
+    },
+    subject: piece.subject,
+    look: piece.look,
+    outfit: piece.outfit,
+    rows: both
+      ? [
+          { label: 'TOP ROW (frames 1 to 4), WALKING', poses: piece.cycle },
+          { label: 'BOTTOM ROW (frames 5 to 8), PULLING A TOY APART', poses: piece.grab },
+        ]
+      : [{ label: 'frames 1 to 4', poses: piece.cycle }],
+  };
+});
 
-const WALK_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => ({
-  // The id the renderer looks up: `crawler.walk`, alongside the still `crawler`.
-  id: `${piece.id}.walk`,
-  aspect: '1:1',
-  // Four frames in one image, so 1K gives each frame 512 — the same resolution
-  // every other sprite gets. 512 here would be 256 a frame, visibly softer.
-  size: '1K',
-  // `mirrored` is why the game gets left-facing kids out of right-facing art.
-  sheet: { cols: 2, rows: 2, align: piece.align ?? 'floor', mirrored: true },
-  subject: piece.subject,
-  poses: piece.cycle,
-  look: piece.look,
-  outfit: piece.outfit,
-}));
-
-export const PIECES = [...BASE_PIECES, ...WALK_SHEETS, ...GRAB_SHEETS];
+export const PIECES = [...BASE_PIECES, ...MOTION_SHEETS];
 
 /**
  * The full prompt for one piece.
@@ -703,8 +729,12 @@ export function promptFor(piece) {
   if (piece.faces) {
     return `${KEY_BACKGROUND} ${FACE_SHEET_RULES} The character: ${piece.subject} The four moods: ${piece.faces} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00.`;
   }
-  if (piece.sheet) {
-    return `${KEY_BACKGROUND} ${SHEET_RULES} The character: ${piece.subject}${look(piece)} The four poses: ${piece.poses} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
+  if (piece.rows) {
+    const grid = `${piece.sheet.cols} columns by ${piece.sheet.rows} row${piece.sheet.rows > 1 ? 's' : ''}`;
+    const rows = piece.rows
+      .map((row) => `${row.label}: ${row.poses}`)
+      .join(' ');
+    return `${KEY_BACKGROUND} ${MOTION_RULES(grid, piece.sheet.rows)} The character: ${piece.subject}${look(piece)} ${rows} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
   }
   if (piece.background === 'none') {
     return `${piece.subject} ${DRAW_STYLE}. This is a full-bleed background image: it must fill the entire frame edge to edge, with no border and no chroma-key colour anywhere.`;

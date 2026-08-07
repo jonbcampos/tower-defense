@@ -28,25 +28,16 @@
     "menu",
     "yard",
     "room",
-    "crawler.walk",
-    "toddler.walk",
-    "runner.walk",
-    "raincoat.walk",
-    "blanket.walk",
-    "balloon.walk",
-    "puffy.walk",
-    "slider.walk",
-    "wagon.walk",
-    "bigkid.walk",
-    "crawler.grab",
-    "toddler.grab",
-    "runner.grab",
-    "raincoat.grab",
-    "blanket.grab",
-    "puffy.grab",
-    "slider.grab",
-    "wagon.grab",
-    "bigkid.grab"
+    "crawler.motion",
+    "toddler.motion",
+    "runner.motion",
+    "raincoat.motion",
+    "blanket.motion",
+    "balloon.motion",
+    "puffy.motion",
+    "slider.motion",
+    "wagon.motion",
+    "bigkid.motion"
   ],
   "ext": "jpg",
   "opaque": [
@@ -60,119 +51,104 @@
       "rows": 2,
       "align": "center"
     },
-    "crawler.walk": {
-      "cols": 2,
+    "crawler.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "toddler.walk": {
-      "cols": 2,
+    "toddler.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "runner.walk": {
-      "cols": 2,
+    "runner.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "raincoat.walk": {
-      "cols": 2,
+    "raincoat.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "blanket.walk": {
-      "cols": 2,
+    "blanket.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "balloon.walk": {
-      "cols": 2,
-      "rows": 2,
+    "balloon.motion": {
+      "cols": 4,
+      "rows": 1,
       "align": "center",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk"
+      ]
     },
-    "puffy.walk": {
-      "cols": 2,
+    "puffy.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "slider.walk": {
-      "cols": 2,
+    "slider.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "wagon.walk": {
-      "cols": 2,
+    "wagon.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     },
-    "bigkid.walk": {
-      "cols": 2,
+    "bigkid.motion": {
+      "cols": 4,
       "rows": 2,
       "align": "floor",
-      "mirrored": true
-    },
-    "crawler.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "toddler.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "runner.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "raincoat.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "blanket.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "puffy.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "slider.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "wagon.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
-    },
-    "bigkid.grab": {
-      "cols": 2,
-      "rows": 2,
-      "align": "floor",
-      "mirrored": true
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
     }
   }
 }

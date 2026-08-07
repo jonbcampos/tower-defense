@@ -51,6 +51,21 @@ interface SheetSpec {
    * in a stated direction, and a mirror being a free and total fix.
    */
   mirrored?: boolean;
+  /**
+   * Register each ROW of the grid as its own animation, by id suffix.
+   *
+   * `['walk', 'grab']` on a 4x2 sheet called `toddler.motion` publishes
+   * `toddler.walk` from the top row and `toddler.grab` from the bottom, and
+   * nothing under `toddler.motion` at all.
+   *
+   * This exists because two cycles drawn in two separate calls are two
+   * different children. The outfits drifted, then the hair, then the leg
+   * length — and pinning each of those in the prompt fixed that detail and
+   * moved the drift somewhere else, because the model holds a character
+   * together WITHIN an image and simply does not across two. One image with a
+   * row per animation is the only version of this that cannot drift.
+   */
+  rowIds?: readonly string[];
 }
 
 interface SpriteIndex {
@@ -170,7 +185,7 @@ export function loadSprites(baseUrl: string): void {
           // falls back to the still. Never register a partial cycle: three good
           // frames and one hole flickers, which is worse than not animating.
           const cut = sliceSheet(cutOutBackground(image), grid);
-          if (cut) sheets.set(id, cut);
+          if (cut) registerSheet(id, cut, grid);
         } else {
           sprites.set(id, opaque.has(id) ? toCanvas(image) : cutOutBackground(image));
         }
@@ -352,6 +367,27 @@ function median(values: number[]): number {
 
 function clamp(value: number, low: number, high: number): number {
   return value < low ? low : value > high ? high : value;
+}
+
+/**
+ * Publish a sliced sheet under one id, or one id per row.
+ *
+ * The row split is what lets a single generated image carry two animations of
+ * the same character — see `rowIds`.
+ */
+function registerSheet(id: string, frames: HTMLCanvasElement[], spec: SheetSpec): void {
+  const rowIds = spec.rowIds;
+  if (!rowIds || rowIds.length === 0) {
+    sheets.set(id, frames);
+    return;
+  }
+  const cols = Math.max(1, Math.floor(spec.cols));
+  // `toddler.motion` -> `toddler`, so the rows publish as `toddler.walk` etc.
+  const base = id.includes('.') ? id.slice(0, id.lastIndexOf('.')) : id;
+  rowIds.forEach((suffix, row) => {
+    const slice = frames.slice(row * cols, row * cols + cols);
+    if (slice.length === cols) sheets.set(`${base}.${suffix}`, slice);
+  });
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {

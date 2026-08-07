@@ -66,17 +66,18 @@ const TARGETS = {
    */
   background: 1280,
   /**
-   * Walk sheets, which are 2x2 — so this is 256 pixels per frame, against a kid
-   * drawn about 35 tall.
+   * Per FRAME of a sheet, not per sheet. A 2x2 comes out 512 wide and a 4x2
+   * comes out 1024, so a frame is always 256 against a kid drawn about 35 tall.
+   * Fixing the sheet width instead would have quartered the 4-wide grids.
    */
-  sheet: 512,
+  sheetFrame: 256,
   /** Single subjects: a toy or a kid, drawn about 30-50 pixels tall. */
   sprite: 256,
 };
 
 function targetFor(piece) {
   if (piece.background === 'none') return TARGETS.background;
-  if (piece.sheet) return TARGETS.sheet;
+  if (piece.sheet) return TARGETS.sheetFrame * Math.max(1, piece.sheet.cols);
   return TARGETS.sprite;
 }
 

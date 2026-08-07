@@ -881,3 +881,36 @@ wave is tanks WITH a crowd rather than tanks instead of one.
 **Revisit if:** a world other than the bedroom should host it. Endless is dry
 ground today, which quietly means the Duck Ring is dead weight in a loadout that
 contains every toy you own.
+
+## 41. Both cycles come out of one image, one row each
+
+Watching the glossary's walk-and-grab pairs side by side: the toddler walked
+bare-legged and grabbed in shorts and shoes; the runner changed trousers *and*
+hairstyle. Not a smooth transition, and not fixable by asking harder.
+
+The history is worth keeping because it is three attempts at the same wrong
+idea. Two sheets per kid meant two calls, and two calls meant two children.
+First the outfits drifted, so decision 39 wrote the outfit down. Then the same
+toddler came back bare-legged in one sheet and dressed in the other. Then the
+hair. **Every fix corrected the detail it named and moved the drift somewhere
+else**, because the model holds a character together WITHIN an image and does
+not across two — which is exactly the finding decision 26 already recorded and
+then failed to apply to a second animation.
+
+So both cycles are now one 4x2 image: walking on the top row, grabbing on the
+bottom. `SheetSpec.rowIds` tells the loader to publish the rows as
+`<kid>.walk` and `<kid>.grab`, so nothing downstream changed at all — the
+renderer still asks for the same two ids it always did.
+
+The general rule, stated properly this time: **anything that has to look like
+the same character must be drawn in the same picture.** Not described the same,
+not pinned the same — drawn in the same picture. Adding a third animation means
+a 4x3 grid, not a third file.
+
+The shrink target became per-FRAME rather than per-sheet at the same time, or a
+four-wide grid would have been resampled to 128 pixels a frame.
+
+**Revisit if:** a grid gets big enough that individual frames lose detail. Eight
+cells on a 2K 16:9 frame is about 690x770 each, which is comfortable; sixteen
+would not be, and at that point the split is by CHARACTER — one sheet per kid
+per world, say — never by animation.
