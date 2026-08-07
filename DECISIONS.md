@@ -1613,3 +1613,51 @@ to column two everywhere and broke four clean levels.
 
 **Revisit if:** something is ever given the ability to damage a float directly.
 `destroyToy`'s cascade is unreachable today and deliberately kept.
+
+## 60. Endless deals a hand, not the cupboard
+
+Reported as "the broom causes an issue in endless, there are cards we can't get
+to". The broom was innocent. `beginEndless` dealt `unlockedBy(LEVELS.length)` —
+every toy in the game — into a tray that is eight cards wide, so from the ninth
+card on they were drawn off the right-hand edge of the frame, behind the broom
+and past the board. That was fine when the game had ten toys and has been broken
+since the backyard shipped the eleventh.
+
+Two smaller wrongs came out with it. The same line handed out toys she had never
+unlocked, while `rosterFor` correctly held the KIDS back to ones she had met —
+two different definitions of "what she has" in one function. And the endless gate
+lived as a private `BEDROOM_LEVELS = 10` next to the button that reads it, where
+nothing else could see it; it is now `ENDLESS_UNLOCKED_AT` in `endless.ts`.
+
+### What the hand is
+
+Eight cards, drawn per run, in `endlessKit`:
+
+- **No floats.** The endless board is a dry bedroom. A Duck Ring and a Shelf are
+  prerequisites for terrain this mode does not have, and a dead card in a hand of
+  eight is a real loss.
+- **Two anchors, always: the cheapest producer and the cheapest attacker** — in
+  practice the Glitter Jar and the Bubble Wand. Not "a producer and two
+  attackers", which was the first version: every authored level is held to
+  opening with a producer PLUS a defender out of the starting purse, and a random
+  hand whose cheapest two are a Sparkle Fountain and a Bubble Machine fails that
+  on wave one. The first draw I looked at did exactly this.
+- **One more attacker, then random.** Capping was forced; re-rolling was the
+  chance it bought. "What did I get this time" is the mode's only novelty and it
+  costs nothing.
+
+Dealt in `TOY_ORDER`, never in draw order. Where a card sits is the thing she
+remembers, and shuffling the layout as well as the contents would make every run
+open with re-reading the tray.
+
+### The check that was missing
+
+`validateTrayContracts` already proved eight cards FIT. What no tier could see
+was a runtime loadout asking for more than eight, because contracts read config
+and the trials only ever started levels from `LEVELS`. The new trial sweeps every
+unlock point from the gate upward, twelve hands each, and asserts every card is
+drawn inside the narrowest frame — plus the opening-hand rule, which is the one
+that caught the anchor bug.
+
+**Revisit if:** a second endless variant lands on wet or bare terrain. The float
+exclusion is hardcoded to this mode's dry bedroom, not derived from its world.

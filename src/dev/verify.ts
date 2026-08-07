@@ -25,11 +25,18 @@
 
 import { FIXED_DT, DIFFICULTIES, DIFFICULTY_ORDER, STUCK_SECONDS, type DifficultyId } from '../game/config';
 import { COL_COUNT, HALFWAY_COL, LANE_COUNT, cellCentreX, colAtX, squeezeX } from '../game/config';
+import { MAX_LOADOUT_SLOTS, MIN_VIRTUAL_W } from '../game/config';
 import { ENEMIES, answersIn, type Enemy, type EnemyKind } from '../game/enemies';
-import { LEVELS, levelById, type Level } from '../game/levels';
+import { LEVELS, levelById, unlockedBy, type Level } from '../game/levels';
 import { GameState } from '../game/state';
-import { TOYS, TOY_ORDER, toyDealsDamage, type ToyId } from '../game/toys';
-import { buildEndless } from '../game/endless';
+import { TOYS, TOY_ORDER, toyDealsDamage, toyIncome, type ToyId } from '../game/toys';
+import {
+  buildEndless,
+  endlessKit,
+  ENDLESS_START_SPARKLES,
+  ENDLESS_UNLOCKED_AT,
+} from '../game/endless';
+import { broomRect, trayCards } from '../ui/tray';
 import { Rng } from '../core/rng';
 import { freshSave, loadSave, recordResult, starsFor, writeSave } from '../core/save';
 
@@ -1133,7 +1140,11 @@ function trialEndlessEnds(id: DifficultyId): TrialResult {
   const state = new GameState();
   const owned = [...TOY_ORDER];
   const run = buildEndless(owned, LEVELS.length, DIFFICULTIES[id], new Rng(11));
-  state.start(run.level, id, owned, 11, run.grow, run.toughnessAt);
+  // The kit, not the cupboard — the same eight cards `beginEndless` deals. This
+  // trial used to hand the bot all twenty, which is a hand no player can ever
+  // be given and made the mode look far more survivable than it is.
+  const kit = endlessKit(owned, new Rng(11));
+  state.start(run.level, id, kit, 11, run.grow, run.toughnessAt);
 
   const policy = goodBot(run.level);
   const limit = 120 * 3000;
@@ -1153,6 +1164,68 @@ function trialEndlessEnds(id: DifficultyId): TrialResult {
         ? `still going at wave ${reached} after 3000s — the ramp never catches up`
         : `ended at wave ${reached}`,
     pass: state.phase !== 'playing' && reached >= 5,
+  };
+}
+
+/**
+ * Every card endless deals must be reachable, and the hand must be playable.
+ *
+ * Written after the mode shipped nine to twenty cards into an eight-card tray:
+ * the extras were drawn off the right-hand edge of the frame, behind the broom
+ * and past the board, so the game was showing her a Bubble Machine it would not
+ * let her pick up. `validateTrayContracts` already proves eight cards FIT — what
+ * it cannot see is a runtime loadout that asks for more than eight, which is
+ * exactly what happened.
+ *
+ * Swept across every unlock point rather than at the top, because the hand is
+ * drawn from what you own and the failure was a function of owning a lot.
+ */
+function trialEndlessFitsTheTray(): TrialResult {
+  const problems: string[] = [];
+  let widest = 0;
+  for (let unlocked = ENDLESS_UNLOCKED_AT; unlocked <= LEVELS.length; unlocked++) {
+    const owned = unlockedBy(unlocked);
+    // Several seeds per unlock point: the hand is random, and a cap that held
+    // for one draw and not another is the bug this is here to catch.
+    for (let seed = 0; seed < 12; seed++) {
+      const kit = endlessKit(owned, new Rng(unlocked * 1000 + seed));
+      widest = Math.max(widest, kit.length);
+      const where = `unlocked=${unlocked} seed=${seed}`;
+      if (kit.length > MAX_LOADOUT_SLOTS) problems.push(`${where}: ${kit.length} cards`);
+      if (new Set(kit).size !== kit.length) problems.push(`${where}: duplicate cards`);
+      if (kit.some((toy) => TOYS[toy].layer === 'float')) problems.push(`${where}: dealt a float`);
+      if (kit.every((toy) => toyIncome(toy) === 0)) problems.push(`${where}: no producer`);
+      if (kit.filter(toyDealsDamage).length < 2) problems.push(`${where}: under two damage cards`);
+      // The same opening-hand rule every authored level is held to: a producer
+      // AND a defender out of the starting purse. A hand can satisfy every
+      // check above and still be unopenable if its cheapest two happen to be a
+      // Sparkle Fountain and a Bubble Machine, and wave one does not wait.
+      for (const id of DIFFICULTY_ORDER) {
+        const difficulty = DIFFICULTIES[id];
+        const price = (toy: ToyId): number => Math.round(TOYS[toy].cost * difficulty.toyCostScale);
+        const producer = Math.min(...kit.filter((toy) => toyIncome(toy) > 0).map(price));
+        const defender = Math.min(...kit.filter(toyDealsDamage).map(price));
+        const purse = ENDLESS_START_SPARKLES + difficulty.startSparkleBonus;
+        if (purse < producer + defender) {
+          problems.push(`${where} ${difficulty.label}: opens with ${purse}, needs ${producer + defender}`);
+        }
+      }
+      // A card can only be tapped if it is drawn inside the frame, on the
+      // narrowest one. This is the check the contract could not make.
+      const cards = trayCards(kit);
+      const last = cards[cards.length - 1];
+      if (last && last.x + last.w >= broomRect(MIN_VIRTUAL_W).x) problems.push(`${where}: off frame`);
+    }
+  }
+  return {
+    trial: 'endless deals a tray you can reach',
+    level: 'endless',
+    difficulty: 'normal',
+    detail:
+      problems.length === 0
+        ? `every hand at every unlock point fits: widest was ${widest} of ${MAX_LOADOUT_SLOTS} cards`
+        : `${problems.length} bad hands, e.g. ${problems[0]}`,
+    pass: problems.length === 0,
   };
 }
 
@@ -1184,6 +1257,7 @@ export function verify(): TrialResult[] {
   results.push(trialSqueakRedirectsThenWearsOut());
   results.push(trialSqueakFunnelsInward());
   results.push(trialMagnetStripsArmour());
+  results.push(trialEndlessFitsTheTray());
   for (const id of DIFFICULTY_ORDER) results.push(trialEndlessEnds(id));
 
   const failed = results.filter((r) => !r.pass);

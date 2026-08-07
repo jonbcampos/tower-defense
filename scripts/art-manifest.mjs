@@ -694,6 +694,28 @@ const BASE_PIECES = [
       'Silhouette: a bucket with a raised arm leaning back over it.',
   },
   {
+    // Not a toy — the tidy-up button in the corner of the tray.
+    //
+    // It was drawn in code, on the argument that a button is INTERFACE and
+    // should look like the buttons around it rather than like a painted object.
+    // That argument turned out to be wrong in this one place, because the things
+    // around it are not buttons: it sits shoulder to shoulder with eight cards
+    // holding painted toys, and a two-stroke flat icon beside them reads as the
+    // one thing in the tray that isn't finished.
+    //
+    // Kept small and simple in the prompt for the reason the old comment gave —
+    // it is drawn at twenty pixels, and a broom with a detailed woven head at
+    // that size is a brown smudge. The procedural painter stays as the fallback.
+    id: 'broom',
+    aspect: '1:1',
+    subject:
+      'a small hand brush standing upright and leaning slightly to the LEFT: a short honey-brown ' +
+      'wooden handle with a rounded top, and a wide splayed head of soft golden straw bristles ' +
+      'bound with a band of dusty pink cloth. A few loose sparkles drifting off it. ' +
+      'Silhouette: a stick with a broad triangular skirt at the bottom, wider than it is deep. ' +
+      'Not a witch\'s broom, not a long-handled floor broom — a little dustpan brush.',
+  },
+  {
     // The only piece with no green screen: it IS the background.
     id: 'room',
     aspect: '16:9',

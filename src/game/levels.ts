@@ -72,11 +72,11 @@ export interface World {
 }
 
 export const WORLDS: Record<WorldId, World> = {
-  bedroom: { id: 'bedroom', name: 'The Bedroom', lanes: LANE_COUNT, trickleScale: 1, terrain: 'dry', background: 'room' },
+  bedroom: { id: 'bedroom', name: 'Bedroom', lanes: LANE_COUNT, trickleScale: 1, terrain: 'dry', background: 'room' },
   // Outdoors, in the sun, with the paddling pool out. The trickle is a touch
   // higher because there is daylight rather than one bedside lamp — a small
   // nudge that pays for the Duck Rings the terrain forces you to buy.
-  backyard: { id: 'backyard', name: 'The Backyard', lanes: LANE_COUNT, trickleScale: 1.15, terrain: 'pool', background: 'yard' },
+  backyard: { id: 'backyard', name: 'Backyard', lanes: LANE_COUNT, trickleScale: 1.15, terrain: 'pool', background: 'yard' },
   // Bath time. Steam hides the far columns, so the board is the same size and
   // you can only use half of it with any confidence. The trickle is back to
   // normal — the pool's extra was paying for Duck Rings, and there are none here.
@@ -91,7 +91,7 @@ export const WORLDS: Record<WorldId, World> = {
   // own floor. Kids walk over bare floor now, and seven of these ten levels
   // failed the moment they had to be won with toys instead. This is what the
   // world actually costs.
-  attic: { id: 'attic', name: 'The Attic', lanes: LANE_COUNT, trickleScale: 1.45, terrain: 'joists', background: 'attic' },
+  attic: { id: 'attic', name: 'Attic', lanes: LANE_COUNT, trickleScale: 1.45, terrain: 'joists', background: 'attic' },
 };
 
 /** Worlds in the order they are played. Also the order of the level-select tabs. */

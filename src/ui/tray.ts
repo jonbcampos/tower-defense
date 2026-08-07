@@ -25,6 +25,7 @@ import type { GameState } from '../game/state';
 import { TOYS, TOY_ORDER, type ToyId } from '../game/toys';
 import { PALETTE, alpha } from '../render/palette';
 import { drawToyArt } from '../render/toys';
+import { drawSprite, sprite } from '../render/sprites';
 import { drawText } from './text';
 
 const CARD_W = 42;
@@ -141,7 +142,23 @@ function drawBroom(ctx: CanvasRenderingContext2D, armed: boolean, time: number):
   roundedRect(ctx, r.x, r.y, r.w, r.h, 5);
   ctx.fill();
 
-  drawBroomIcon(ctx, r.x + r.w / 2, r.y + r.h / 2, armed);
+  // The painted brush if it generated, the drawn one if it didn't — the same
+  // fallback rule every toy follows. It sits shoulder to shoulder with eight
+  // cards of painted art, and matching them is worth more here than matching
+  // the flat icons on the menu buttons, which are a screen away.
+  const image = sprite('broom');
+  if (image) {
+    ctx.save();
+    ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
+    // Armed, it sweeps. The plate and the pulsing outline already shout, but
+    // they shout in the same language as every other selected thing; a broom
+    // that is actually moving says which tool is in your hand.
+    if (armed) ctx.rotate(Math.sin(time * 9) * 0.18);
+    drawSprite(ctx, image, 0, 0, r.w - 7, r.h - 7);
+    ctx.restore();
+  } else {
+    drawBroomIcon(ctx, r.x + r.w / 2, r.y + r.h / 2, armed);
+  }
 
   ctx.lineWidth = armed ? 2 : 1;
   ctx.strokeStyle = armed ? PALETTE.cardReady : PALETTE.cardEdge;
@@ -158,10 +175,9 @@ function drawBroom(ctx: CanvasRenderingContext2D, armed: boolean, time: number):
 /**
  * A dustpan brush: a handle and a splayed head of bristles.
  *
- * Drawn rather than generated, unlike every toy. It is a piece of INTERFACE and
- * not a thing on the board, so it wants to look like the buttons around it —
- * flat, small and legible at 20 pixels — rather than like a painted object
- * sitting in a card.
+ * The fallback, now that there is a painted one. Kept for the same reason every
+ * toy keeps its procedural painter: the sprites are optional, and a game run
+ * from a checkout with no `public/sprites` must still have a broom button.
  */
 function drawBroomIcon(ctx: CanvasRenderingContext2D, x: number, y: number, armed: boolean): void {
   ctx.save();

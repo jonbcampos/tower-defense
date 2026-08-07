@@ -17,6 +17,7 @@ import {
 } from '../game/config';
 import { ENEMIES, ENEMY_ORDER } from '../game/enemies';
 import { LEVELS, LEVEL_COUNT, WORLDS, WORLD_ORDER, type WorldId } from '../game/levels';
+import { ENDLESS_UNLOCKED_AT } from '../game/endless';
 import { TOYS, TOY_ORDER, type ToyId } from '../game/toys';
 import { PALETTE, alpha } from '../render/palette';
 import { drawToyArt } from '../render/toys';
@@ -110,13 +111,10 @@ export function endlessButton(save: Save): MenuRect {
     h: 22,
     label: 'ENDLESS',
     sub: '',
-    enabled: save.unlocked > BEDROOM_LEVELS,
+    enabled: save.unlocked >= ENDLESS_UNLOCKED_AT,
     icon: 'again',
   };
 }
-
-/** Clearing the bedroom is the gate. */
-const BEDROOM_LEVELS = 10;
 
 /** Title: pick a difficulty, which is also the button that starts. */
 export function titleMenu(): MenuRect[] {
@@ -150,6 +148,19 @@ const CARD_H = 56;
 const CARD_GAP = 8;
 
 /**
+ * Top of the world tabs, and the one number the whole select screen hangs off.
+ *
+ * The screen used to be measured from the top down and it read as top-heavy:
+ * the title sat 24px from the edge, the tabs 4px under the title, and the two
+ * rows of cards left a 44px band of nothing above the BACK button. Anchoring
+ * the tabs here and deriving the title and the cards from it lets the block sit
+ * where it should — a little more air above the title than below the cards,
+ * which is what "centred" looks like when there is a button pinned to the
+ * bottom edge.
+ */
+const SELECT_TOP = 54;
+
+/**
  * Level select, one world at a time.
  *
  * It used to be every level in one grid, which fitted exactly as long as there
@@ -173,7 +184,7 @@ export function levelMenu(save: Save, world: WorldId): MenuRect[] {
     return {
       id: `level:${level.id}`,
       x: startX + col * (CARD_W + CARD_GAP),
-      y: 74 + row * (CARD_H + 10),
+      y: SELECT_TOP + 30 + row * (CARD_H + 10),
       w: CARD_W,
       h: CARD_H,
       label: String(level.id),
@@ -193,7 +204,7 @@ export function levelMenu(save: Save, world: WorldId): MenuRect[] {
     rects.push({
       id: `world:${id}`,
       x: tabX + index * (tabW + 8),
-      y: 44,
+      y: SELECT_TOP,
       w: tabW,
       h: 22,
       label: WORLDS[id].name,
@@ -481,13 +492,13 @@ export function drawLevelSelect(
   time: number,
 ): void {
   drawScrim(ctx, 0.82);
-  drawText(ctx, 'PICK A LEVEL', SCREEN.w / 2, 32, {
+  drawText(ctx, 'PICK A LEVEL', SCREEN.w / 2, SELECT_TOP - 14, {
     size: 16,
     align: 'center',
     color: PALETTE.hudText,
     glow: true,
   });
-  drawText(ctx, DIFFICULTIES[difficulty].label, SCREEN.w - 10, 32, {
+  drawText(ctx, DIFFICULTIES[difficulty].label, SCREEN.w - 10, SELECT_TOP - 14, {
     size: 10,
     align: 'right',
     color: PALETTE.hudAccent,

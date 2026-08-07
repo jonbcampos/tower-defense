@@ -14,7 +14,7 @@ import {
 } from './core/save';
 import { DIFFICULTIES, cellAt, loadoutSlotsFor, type DifficultyId } from './game/config';
 import { LEVELS, levelById, unlockedBy, type WorldId } from './game/levels';
-import { buildEndless, ENDLESS_ID, type EndlessRun } from './game/endless';
+import { buildEndless, endlessKit, ENDLESS_ID, type EndlessRun } from './game/endless';
 import { GameState, validateDesignContracts, type GameEvent } from './game/state';
 import { TOYS, type ToyId } from './game/toys';
 import { Particles } from './render/particles';
@@ -273,11 +273,18 @@ function availableToys(): ToyId[] {
  */
 function beginEndless(): void {
   currentLevelId = ENDLESS_ID;
-  const owned = unlockedBy(LEVELS.length);
+  // Toys she has actually unlocked, on the same rule as the kid roster in
+  // `rosterFor`. This used to ask for `unlockedBy(LEVELS.length)` — every toy in
+  // the game — so a first endless run straight after the bedroom was dealt attic
+  // cards, while the kids walking in were correctly held back to ones she had
+  // met. Two different definitions of "what she has" in one function.
+  const owned = unlockedBy(save.unlocked);
   const seed = (Math.random() * 0xffffffff) >>> 0;
   endless = buildEndless(owned, save.unlocked, DIFFICULTIES[save.difficulty], new Rng(seed));
-  picked = [...owned];
-  state.start(endless.level, save.difficulty, owned, seed, endless.grow, endless.toughnessAt);
+  // A tray's worth, not the whole cupboard. See `endlessKit`.
+  const kit = endlessKit(owned, new Rng(seed ^ 0x5bf03635));
+  picked = [...kit];
+  state.start(endless.level, save.difficulty, kit, seed, endless.grow, endless.toughnessAt);
   particles.reset();
   resetHud();
   setUnlockBanner('');

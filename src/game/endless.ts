@@ -28,11 +28,11 @@
  * reason to expect.
  */
 
-import { LANE_COUNT, POOL } from './config';
+import { LANE_COUNT, LEVELS_PER_WORLD, MAX_LOADOUT_SLOTS, POOL } from './config';
 import type { Difficulty } from './config';
 import { ENEMIES, type EnemyKind } from './enemies';
 import { firstAppearance, type Level, type Wave, type WaveBeat } from './levels';
-import type { ToyId } from './toys';
+import { TOYS, TOY_ORDER, toyDealsDamage, toyIncome, type ToyId } from './toys';
 import type { Rng } from '../core/rng';
 
 /**
@@ -41,6 +41,9 @@ import type { Rng } from '../core/rng';
  * and an endless run is neither unlockable nor star-rated.
  */
 export const ENDLESS_ID = 0;
+
+/** What the purse opens with. Exported so a trial can hold the hand to it. */
+export const ENDLESS_START_SPARKLES = 200;
 
 /** How many waves to keep generated ahead of the one being played. */
 const LOOKAHEAD = 6;
@@ -132,7 +135,7 @@ export function buildEndless(
     unlocks: [],
     recommended: unlockedToys,
     blocked: [],
-    startSparkles: 200,
+    startSparkles: ENDLESS_START_SPARKLES,
     // Mutable on purpose, and the one place in this codebase a level's waves
     // are not frozen content. `growEndless` appends to it.
     waves: [],
@@ -155,6 +158,83 @@ export function buildEndless(
       return toughness(index + 1);
     },
   };
+}
+
+/**
+ * The lowest `save.unlocked` at which endless is offered — clearing the bedroom.
+ *
+ * Here rather than in the menu that draws the button, because two things depend
+ * on it: whether the button lights up, and how far down the campaign the trials
+ * bother checking the hand endless deals. The gate lived next to the button and
+ * the trial swept from level one, which is how the first version of that trial
+ * failed on a hand drawn from the single toy you own at level one — a state the
+ * mode can never actually be started in.
+ */
+export const ENDLESS_UNLOCKED_AT = LEVELS_PER_WORLD + 1;
+
+/**
+ * The hand endless deals you: a tray's worth of toys, never more.
+ *
+ * Endless used to deal EVERYTHING you owned, which was fine when that was ten
+ * toys and quietly broken by the time it was twenty — the tray is eight cards
+ * wide, so the ninth card onwards was drawn off the right-hand edge, under the
+ * broom and past the frame. Cards you cannot reach are worse than cards you do
+ * not have: the mode looked like it was offering you the Bubble Machine and
+ * then refused to hand it over.
+ *
+ * Three rules, in order:
+ *
+ *  - **Floats are dropped.** The endless board is a dry bedroom, so a Duck Ring
+ *    and a Shelf have nothing to do there. They are prerequisites for terrain
+ *    this mode does not have, and a dead card in a hand of eight is a real loss.
+ *  - **The two anchors are always dealt** — the cheapest producer and the
+ *    cheapest damage card she owns, which in practice means the Glitter Jar and
+ *    the Bubble Wand. Not merely "a producer and two attackers": the campaign
+ *    holds every level to opening with a producer PLUS a defender out of the
+ *    starting purse, and a hand whose cheapest two are a Sparkle Fountain and a
+ *    Bubble Machine fails that on wave one. Random is fine; unable to open is
+ *    not. They are also the two cards she has known since level two, which is
+ *    no bad thing to find in a hand she did not choose.
+ *  - **One more attacker, then the rest is random, re-rolled every run.** This
+ *    is the reason to cap rather than to fix a list: "what did I get this time"
+ *    is the mode's own small novelty, and it costs nothing.
+ *
+ * Returned in TOY_ORDER, never in the order they were drawn. Where a card sits
+ * in the tray is the thing she actually remembers — the jar is always first —
+ * and shuffling the layout as well as the contents would make every run start
+ * with re-reading the tray.
+ */
+export function endlessKit(owned: readonly ToyId[], rng: Rng): ToyId[] {
+  const usable = owned.filter((id) => TOYS[id].layer !== 'float');
+  const slots = Math.min(MAX_LOADOUT_SLOTS, usable.length);
+
+  const bag = [...usable];
+  for (let i = bag.length - 1; i > 0; i--) {
+    const j = rng.int(0, i);
+    [bag[i], bag[j]] = [bag[j] as ToyId, bag[i] as ToyId];
+  }
+
+  const kit = new Set<ToyId>();
+  const cheapest = (want: (id: ToyId) => boolean): ToyId | undefined =>
+    usable.filter(want).sort((a, b) => TOYS[a].cost - TOYS[b].cost)[0];
+  // The anchors come off `usable` rather than the shuffled bag on purpose:
+  // "cheapest" has to mean cheapest, not cheapest-of-the-first-few.
+  for (const anchor of [cheapest((id) => toyIncome(id) > 0), cheapest(toyDealsDamage)]) {
+    if (anchor && kit.size < slots) kit.add(anchor);
+  }
+
+  const take = (want: (id: ToyId) => boolean, count: number): void => {
+    for (const id of bag) {
+      if (kit.size >= slots || count <= 0) return;
+      if (kit.has(id) || !want(id)) continue;
+      kit.add(id);
+      count--;
+    }
+  };
+  take(toyDealsDamage, 1);
+  take(() => true, slots);
+
+  return TOY_ORDER.filter((id) => kit.has(id));
 }
 
 /** Every kid she has actually met, cheapest first. */
