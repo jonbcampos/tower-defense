@@ -1295,3 +1295,75 @@ picture was wrong.
 **Revisit if:** a world wants weather that is not steam. The predicate is named
 for the answer rather than the cause, so a second kind of weather wants a second
 predicate rather than an argument to this one.
+
+## 54. A broom, because taking a toy back had no answer after four seconds
+
+Decision 43 took deletion off a plain tap: a Glitter Jar makes sparkles, so the
+most natural thing a five-year-old does is tap one to collect from it, and doing
+that deleted the jar. Restricting the refund to the most recently placed toy
+fixed the accident, and left a gap — after the grace window a toy was permanent
+until a kid pulled it apart.
+
+That was survivable in the bedroom, where cells are plentiful. The attic makes
+it untenable: every cell costs a Shelf before it costs anything else, so a Water
+Gun in the wrong row now wastes 125 sparkles *and* a cell you paid to create.
+The world made the gap urgent, and the answer is Plants vs Zombies' shovel.
+
+**The fix for the original bug was never "remove the capability" — it was
+"remove the accident".** Making deletion modal does both: you pick the broom up
+first, and nobody picks up a broom by accident. It is mutually exclusive with a
+card in hand, so there is never a tap whose meaning depends on something
+off-screen.
+
+### What it does and does not pay
+
+Nothing, normally. The cell is what you are reclaiming, not the sparkles, and a
+broom that refunded would make the board a scratchpad and the economy a
+suggestion. The single exception is a toy still inside its refund window, which
+pays exactly what tapping it would have — the two tools overlap for a few
+seconds, a child will not know which one she is holding, and the same intention
+must not be worth 60% or 0% depending on which button she happened to press.
+
+It also does not count as a toy LOST. Three stars means "cleared without a toy
+being taken from you", and choosing to tidy one away is a different event from a
+kid pulling it apart. That one would have rotted silently: the only way to
+discover it would be to play a level perfectly and be told you hadn't.
+
+### Ground, then floor, then float
+
+One sweep takes the toy and leaves the Shelf, so you can swap a Water Gun
+without paying 25 to rebuild the thing it was standing on. A second sweep takes
+the shelf. That ordering is most of the reason the tool is pleasant to use in
+the attic rather than merely necessary.
+
+While fixing this I found the refund had the same blind spot in reverse: it
+looked at ground-or-floor only, so a Duck Ring or a Shelf could never be tapped
+back. In the attic, laying a shelf in the wrong cell is the single most likely
+fumble in the world, and it was the one placement with no undo at all. Both now
+go through `topOf`.
+
+### Loud when armed
+
+It is the only control in the game that destroys something, so being armed is
+impossible to miss: the button fills in, its outline pulses, and every cell
+holding something lights up in the warning colour with a marching dashed border.
+Compare a held card, which gets a thin ring — picking a card up is reversible
+and this is not. Tapping bare floor with the broom in hand is not a mistake, it
+is changing your mind, so it just puts the broom away with the same sound as
+putting a card back rather than a red X.
+
+### Where it lives
+
+Anchored to the right edge of the FRAME, not to the end of the cards. The tray
+grows by one card at every world boundary, so a broom that sat after the last
+card would move three times over a campaign, and a tool whose position changes
+is a tool nobody builds a habit for. A contract proves it cannot collide with
+eight cards — checked at `MIN_VIRTUAL_W` rather than the live width, because the
+only frame where they could ever meet is the narrowest one, and a check that
+measured whatever window happened to be open would pass on a desktop and ship a
+collision to a phone. Same mistake decision 46 caught in the overflow check.
+
+**Revisit if:** she starts using it to dodge damage — sweeping a wall the instant
+before it breaks, so the kid has nothing to chew. There is no cooldown today
+because that is a strategy no five-year-old will find, and a cooldown on a tidy-
+up tool is a confusing thing to explain.

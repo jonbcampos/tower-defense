@@ -43,7 +43,7 @@ import {
   titleMenu,
   type GuideTab,
 } from './ui/screens';
-import { hitTestCard, validateTrayContracts } from './ui/tray';
+import { hitTestBroom, hitTestCard, validateTrayContracts } from './ui/tray';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement | null;
 if (!canvas) throw new Error('#game canvas missing');
@@ -337,10 +337,24 @@ function routeGameTap(tap: Tap): void {
     return;
   }
 
+  if (hitTestBroom(tap.x, tap.y)) {
+    state.armSweep();
+    audio.play('select');
+    return;
+  }
+
   if (state.collectSparkleAt(tap.x, tap.y) > 0) return;
 
   const cell = cellAt(tap.x, tap.y);
   if (!cell) return;
+
+  // The broom goes before the card check because the two are never both in
+  // hand — see `armSweep`. Arming and then tapping bare floor is not a mistake,
+  // it is changing your mind, so it just puts the broom away.
+  if (state.sweeping) {
+    if (!state.sweep(cell.lane, cell.col)) audio.play('select');
+    return;
+  }
 
   if (state.selected) {
     state.tryPlace(cell.lane, cell.col);
@@ -357,6 +371,7 @@ function routeKey(action: KeyAction): void {
     return;
   }
   if (action === 'cancel') {
+    // Puts down whichever is in hand. `selectCard(null)` clears the broom too.
     state.selectCard(null);
     return;
   }
@@ -391,6 +406,12 @@ function presentEvent(event: GameEvent): void {
     case 'refund':
       audio.play('refund');
       addPopup(event.x, event.y, `+${event.value}`);
+      break;
+    case 'sweep':
+      // No popup. A sweep pays nothing back, and a floating "+0" would be a
+      // worse answer than none — it would read as the game short-changing her.
+      audio.play('sweep');
+      particles.place(event.x, event.y, random);
       break;
     case 'collect':
       audio.play('collect');

@@ -772,6 +772,98 @@ function damageOverBoss(toy: ToyId, level: Level): number {
   return before - boss.hp;
 }
 
+/**
+ * The broom gives the cell back, costs nothing, and is not a toy being lost.
+ *
+ * Three separate claims, and the last is the one that would rot silently: if a
+ * sweep counted as a toy lost, tidying up would quietly cost a star, and the
+ * only way to find out would be to play a whole level perfectly and be told you
+ * hadn't.
+ */
+function trialBroomFreesACell(): TrialResult {
+  const level = levelById(31);
+  const state = new GameState();
+  state.start(level, 'normal', level.recommended, 30);
+
+  // Past the refund window, so this measures the broom and not the undo.
+  state.toys.place('shelf', 2, 4, state.costOf('shelf'));
+  state.toys.place('wand', 2, 4, state.costOf('wand'));
+  for (const toy of [state.toys.at(2, 4)!, state.toys.floatAt(2, 4)!]) {
+    toy.age = 999;
+  }
+  const purseBefore = state.purse;
+
+  // Not armed: a tap does nothing at all.
+  const idle = state.sweep(2, 4);
+
+  state.armSweep(true);
+  const tookToy = state.sweep(2, 4);
+  const toyGone = state.toys.at(2, 4) === null;
+  const shelfKept = state.toys.floatAt(2, 4) !== null;
+
+  state.armSweep(true);
+  state.sweep(2, 4);
+  const shelfGone = state.toys.floatAt(2, 4) === null;
+
+  return {
+    trial: 'the broom takes the toy first, then the shelf, and costs nothing',
+    level: '31 Mind the Gap',
+    difficulty: 'normal',
+    detail: `unarmed sweep did ${
+      idle ? 'SOMETHING' : 'nothing'
+    }; armed took the wand (gone=${toyGone}, shelf still there=${shelfKept}), then the shelf (gone=${shelfGone}); purse ${purseBefore} -> ${
+      state.purse
+    }; toys lost counted ${state.toysLost}`,
+    pass:
+      !idle &&
+      tookToy &&
+      toyGone &&
+      shelfKept &&
+      shelfGone &&
+      state.purse === purseBefore &&
+      state.toysLost === 0,
+  };
+}
+
+/**
+ * Sweeping something you just put down is never worse than undoing it.
+ *
+ * The two tools overlap for a few seconds and a child will not know which one
+ * she is holding. If the broom paid nothing inside the refund window, the same
+ * intention would be worth 60% or 0% depending on which button she happened to
+ * press, which is exactly the kind of rule nobody can learn.
+ */
+function trialBroomHonoursTheRefundWindow(): TrialResult {
+  // A dry level, deliberately. Written against level 31 first, where every
+  // placement needs a Shelf under it — so the wand was refused, nothing was
+  // spent, and both halves dutifully reported a refund of zero and agreed.
+  // A trial can pass by measuring nothing.
+  const level = levelById(5);
+  const byTap = new GameState();
+  byTap.start(level, 'normal', level.recommended, 31);
+  byTap.selectCard('wand');
+  byTap.tryPlace(2, 4);
+  const spent = byTap.purse;
+  byTap.refund(2, 4);
+  const tapGave = byTap.purse - spent;
+
+  const byBroom = new GameState();
+  byBroom.start(level, 'normal', level.recommended, 31);
+  byBroom.selectCard('wand');
+  byBroom.tryPlace(2, 4);
+  byBroom.armSweep(true);
+  byBroom.sweep(2, 4);
+  const broomGave = byBroom.purse - spent;
+
+  return {
+    trial: 'inside the refund window the broom pays what a tap would',
+    level: '5 Lights Out',
+    difficulty: 'normal',
+    detail: `tapping it back gave ${tapGave}, sweeping it gave ${broomGave}`,
+    pass: tapGave > 0 && broomGave === tapGave,
+  };
+}
+
 // --- The verb toys ----------------------------------------------------------
 //
 // Each of these three changes what a DIFFERENT toy does, which means none of
@@ -1047,6 +1139,8 @@ export function verify(): TrialResult[] {
   results.push(trialStarsAreMonotone());
   results.push(trialSaveSurvivesHostility());
   results.push(trialBossResistsBubbles());
+  results.push(trialBroomFreesACell());
+  results.push(trialBroomHonoursTheRefundWindow());
   results.push(trialBathBoostsBubbles());
   results.push(trialSqueakRedirectsThenWearsOut());
   results.push(trialSqueakFunnelsInward());

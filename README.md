@@ -93,6 +93,9 @@ EASY never deletes an enemy type, so a child and a parent are watching the same 
 **8. A mis-tap never costs a sparkle.** An illegal placement gets a red X and its own sound, and
 the purse does not move. The sound matters as much as the refund: silence, to a five-year-old,
 means the game is broken, and she will keep tapping the same wrong cell rather than try another.
+For the same reason nothing is deleted by a plain tap — tapping a toy you just put down undoes
+it, and everything else needs the **broom** picked up first. Deletion is modal because the
+accident was the problem, not the capability.
 
 ### Verifying it
 
@@ -106,7 +109,7 @@ change looks fine on NORMAL and quietly makes HARD impossible.
 __game.verify()
 ```
 
-278 headless trials driving the real `GameState` with a scripted bot, across every level at every
+280 headless trials driving the real `GameState` with a scripted bot, across every level at every
 difficulty — the count grows on its own as levels are added, which is the point. Every one reports **what it measured**, not just pass or fail. EASY and NORMAL are
 held to a deliberately mediocre bot; HARD is held to a competent one, and that difference is the
 definition of the tier.
@@ -272,6 +275,6 @@ that kid keeps its still image and the procedural gait. Nothing has to be true f
 
 Playable end to end: **forty levels across four worlds**, an **endless mode**, twenty toys, ten kids, three
 difficulties, saved progress and stars, an in-game guide, and the screen stays awake while you
-play. All 278 trials and every design contract pass.
+play. All 280 trials and every design contract pass.
 
 Every toy and kid has painted art.

@@ -283,8 +283,32 @@ function drawRows(ctx: CanvasRenderingContext2D, state: GameState, interpolation
  * refused — the red X is the backstop, not the interface.
  */
 function drawPlacementHints(ctx: CanvasRenderingContext2D, state: GameState, input: Input): void {
+  if (state.phase !== 'playing') return;
+
+  // Broom in hand: mark everything it could take, and nothing else. The same
+  // principle as the placement hints below — a child should be able to SEE what
+  // a tap will do before she commits a finger to it — but in a warning colour,
+  // because this is the one action in the game that destroys something.
+  if (state.sweeping) {
+    const pulse = 0.2 + Math.sin(clock * 6) * 0.08;
+    for (let lane = 0; lane < LANE_COUNT; lane++) {
+      for (let col = 0; col < COL_COUNT; col++) {
+        if (!state.canSweep(lane, col)) continue;
+        ctx.fillStyle = alpha(PALETTE.hudWarn, pulse);
+        ctx.fillRect(cellX(col) + 1, laneY(lane) + 1, CELL_W - 2, CELL_H - 2);
+        ctx.strokeStyle = alpha(PALETTE.hudWarn, 0.75);
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.lineDashOffset = -clock * 8;
+        ctx.strokeRect(cellX(col) + 1.5, laneY(lane) + 1.5, CELL_W - 3, CELL_H - 3);
+        ctx.setLineDash([]);
+      }
+    }
+    return;
+  }
+
   const id = state.selected;
-  if (!id || state.phase !== 'playing') return;
+  if (!id) return;
 
   const instant = TOYS[id].role === 'instant';
   const pulse = 0.18 + Math.sin(clock * 6) * 0.07;

@@ -28,6 +28,7 @@ export type Sfx =
   | 'place'
   | 'deny'
   | 'refund'
+  | 'sweep'
   | 'collect'
   | 'bubble'
   | 'water'
@@ -119,6 +120,14 @@ export class Audio {
         break;
       case 'refund':
         this.tone('triangle', 620, 420, t, 0.1, 0.13);
+        break;
+      case 'sweep':
+        // A brush across the floor: two short bands of noise, high and airy,
+        // with no tone at all. Tidying up is neutral — not a reward like a
+        // refund and not a loss like a toy being pulled apart — and the sound
+        // has to sit between those two or it will be read as one of them.
+        this.noise(t, 0.09, 0.07, 2600, 1600);
+        this.noise(t + 0.09, 0.11, 0.05, 1900, 1000);
         break;
       case 'collect':
         // The most frequent happy sound in the game. Bright and very short.

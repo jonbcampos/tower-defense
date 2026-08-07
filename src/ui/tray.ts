@@ -17,6 +17,7 @@ import {
   FORGIVE,
   SCREEN,
   MAX_LOADOUT_SLOTS,
+  MIN_VIRTUAL_W,
   TRAY_H,
   cellCentreX,
 } from '../game/config';
@@ -32,6 +33,36 @@ const CARD_Y = 4;
 const CARD_GAP = 3;
 /** Left edge of the first card, past the purse readout. */
 const CARDS_X = 62;
+
+/**
+ * The broom, parked at the right-hand end of the tray.
+ *
+ * Anchored to the FRAME rather than to the end of the cards, and that is the
+ * whole point. The tray grows by a card at every world boundary, so a broom
+ * that sat after the last card would move three times over a campaign — and a
+ * tool whose position changes is a tool nobody builds a habit for. It is in the
+ * same place on level one and on level forty.
+ */
+const BROOM_W = 34;
+const BROOM_H = 32;
+
+/**
+ * `width` defaults to the live frame. The contract below passes
+ * `MIN_VIRTUAL_W` instead, because the only frame on which the broom and the
+ * cards could ever meet is the narrowest one — and a check that measured
+ * whatever window happened to be open would pass on a desktop and ship a
+ * collision to a phone. Exactly the mistake decision 46 caught in the
+ * card-overflow check.
+ */
+export function broomRect(width = SCREEN.w): { x: number; y: number; w: number; h: number } {
+  return { x: width - BROOM_W - 4, y: CARD_Y + 2, w: BROOM_W, h: BROOM_H };
+}
+
+export function hitTestBroom(x: number, y: number): boolean {
+  const pad = FORGIVE.cardTapPad;
+  const r = broomRect();
+  return x >= r.x - pad && x <= r.x + r.w + pad && y >= r.y - pad && y <= r.y + r.h + pad;
+}
 
 export interface CardRect {
   id: ToyId;
@@ -91,6 +122,80 @@ export function drawTray(ctx: CanvasRenderingContext2D, state: GameState, time: 
     drawCard(ctx, state, card, time);
   }
 
+  drawBroom(ctx, state.sweeping, time);
+}
+
+/**
+ * The broom button, and a loud armed state.
+ *
+ * Loud on purpose. This is the only control in the game that DESTROYS
+ * something, and the one guard against sweeping a 250-sparkle Bubble Machine by
+ * accident is that being armed has to be impossible to miss — the button fills
+ * in, the outline pulses, and every cell holding something lights up. Compare
+ * the card's held state, which is a thin ring: picking a card up is reversible
+ * and this is not.
+ */
+function drawBroom(ctx: CanvasRenderingContext2D, armed: boolean, time: number): void {
+  const r = broomRect();
+  ctx.fillStyle = armed ? PALETTE.hudWarn : PALETTE.card;
+  roundedRect(ctx, r.x, r.y, r.w, r.h, 5);
+  ctx.fill();
+
+  drawBroomIcon(ctx, r.x + r.w / 2, r.y + r.h / 2, armed);
+
+  ctx.lineWidth = armed ? 2 : 1;
+  ctx.strokeStyle = armed ? PALETTE.cardReady : PALETTE.cardEdge;
+  roundedRect(ctx, r.x, r.y, r.w, r.h, 5);
+  ctx.stroke();
+  if (armed) {
+    ctx.strokeStyle = alpha(PALETTE.cardReady, 0.5 + Math.sin(time * 8) * 0.3);
+    ctx.lineWidth = 1;
+    roundedRect(ctx, r.x - 2, r.y - 2, r.w + 4, r.h + 4, 6);
+    ctx.stroke();
+  }
+}
+
+/**
+ * A dustpan brush: a handle and a splayed head of bristles.
+ *
+ * Drawn rather than generated, unlike every toy. It is a piece of INTERFACE and
+ * not a thing on the board, so it wants to look like the buttons around it —
+ * flat, small and legible at 20 pixels — rather than like a painted object
+ * sitting in a card.
+ */
+function drawBroomIcon(ctx: CanvasRenderingContext2D, x: number, y: number, armed: boolean): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.35);
+  const ink = armed ? PALETTE.tray : PALETTE.cardEdge;
+
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, -11);
+  ctx.lineTo(0, 1);
+  ctx.stroke();
+
+  // The head, wider at the bottom, with the bristles drawn as separate strokes
+  // so it reads as a brush rather than as a hammer.
+  ctx.fillStyle = armed ? PALETTE.tray : PALETTE.sparkle;
+  ctx.beginPath();
+  ctx.moveTo(-4, 1);
+  ctx.lineTo(4, 1);
+  ctx.lineTo(6.5, 9);
+  ctx.lineTo(-6.5, 9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = 1;
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * 2.5, 2);
+    ctx.lineTo(i * 4, 9);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawPurse(ctx: CanvasRenderingContext2D, purse: number): void {
@@ -191,6 +296,23 @@ export function validateTrayContracts(): string[] {
   check(
     last.x + last.w < SCREEN.w - 8,
     `${MAX_LOADOUT_SLOTS} cards reach x=${last.x + last.w} on a ${SCREEN.w}px frame — the tray overflows`,
+  );
+
+  // The broom is anchored to the right edge of the frame and the cards grow
+  // from the left, so the two have to be proved not to meet — on the NARROWEST
+  // frame, with the MOST cards, which is the only case where they could.
+  const broom = broomRect(MIN_VIRTUAL_W);
+  check(
+    last.x + last.w < broom.x - 6,
+    `with ${MAX_LOADOUT_SLOTS} cards the last one ends at x=${
+      last.x + last.w
+    } and the broom starts at x=${broom.x} — they collide on the narrowest ${MIN_VIRTUAL_W}px frame`,
+  );
+  check(
+    broom.x + broom.w <= MIN_VIRTUAL_W - 2 && broom.y + broom.h <= BOARD_TOP,
+    `the broom occupies ${broom.x}..${broom.x + broom.w} x ${broom.y}..${
+      broom.y + broom.h
+    }, outside the tray on the narrowest ${MIN_VIRTUAL_W}px frame`,
   );
 
   // A card has to be at least as big as the cells it competes with for thumbs.

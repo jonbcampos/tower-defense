@@ -73,6 +73,7 @@ export type GameEventType =
   | 'place'
   | 'deny'
   | 'refund'
+  | 'sweep'
   | 'drop'
   | 'collect'
   | 'shoot'
@@ -133,6 +134,16 @@ export class GameState {
 
   /** The card currently held, waiting for a cell. */
   selected: ToyId | null = null;
+  /**
+   * The broom is in hand: the next tap on a toy tidies it away.
+   *
+   * Mutually exclusive with `selected`, and deliberately MODAL. Decision 43
+   * took deletion off a plain tap because a Glitter Jar makes sparkles and
+   * tapping one to collect deleted it — the accident was the whole problem, not
+   * the capability. Arming a tool first is what separates the two: nobody picks
+   * up a broom by accident.
+   */
+  sweeping = false;
   /** Seconds until each card can be used again. */
   readonly cooldowns = new Map<ToyId, number>();
 
@@ -235,6 +246,7 @@ export class GameState {
     this.lives = SQUEEZE_LIVES;
     this.elapsed = 0;
     this.selected = null;
+    this.sweeping = false;
     this.cooldowns.clear();
     for (const id of this.loadout) this.cooldowns.set(id, 0);
     this.guardReady.fill(true);
@@ -273,12 +285,73 @@ export class GameState {
 
   /** Pick up a card, or put it back down by selecting it again. */
   selectCard(id: ToyId | null): void {
+    // A card and the broom are never both in hand. Picking either up puts the
+    // other down, so there is never a tap whose meaning depends on something
+    // off-screen.
+    this.sweeping = false;
     if (id === null) {
       this.selected = null;
       return;
     }
     if (!this.loadout.includes(id)) return;
     this.selected = this.selected === id ? null : id;
+  }
+
+  /** Pick the broom up, or put it back. */
+  armSweep(on = !this.sweeping): void {
+    this.selected = null;
+    this.sweeping = on;
+  }
+
+  /** True if a tap here with the broom in hand would take something away. */
+  canSweep(lane: number, col: number): boolean {
+    if (lane < 0 || lane >= LANE_COUNT || col < 0 || col >= COL_COUNT) return false;
+    return this.topOf(lane, col) !== null;
+  }
+
+  /**
+   * The toy a broom would take first: the highest layer that is occupied.
+   *
+   * Ground before floor before float, which is the order a child would pick
+   * things up in and, more usefully, the order that lets her swap a Water Gun
+   * without also losing the Shelf she paid for it to stand on. Two taps takes
+   * the shelf as well.
+   */
+  private topOf(lane: number, col: number): Toy | null {
+    return this.toys.at(lane, col) ?? this.toys.floorAt(lane, col) ?? this.toys.floatAt(lane, col);
+  }
+
+  /**
+   * Tidy a toy away and give the cell back. Returns true if something went.
+   *
+   * The cell is what you are buying, not the sparkles: an ordinary sweep pays
+   * nothing back, because a broom that refunded would turn the whole board into
+   * a scratchpad and the economy into a suggestion. The one exception is a toy
+   * still inside its refund window, which pays exactly what tapping it would
+   * have — sweeping something you put down two seconds ago must never be a
+   * worse deal than undoing it, or the two tools contradict each other.
+   *
+   * It does NOT count as a toy lost. Three stars means "cleared with no toy
+   * taken from you", and choosing to tidy one away is not the same event as a
+   * kid pulling it apart.
+   */
+  sweep(lane: number, col: number): boolean {
+    if (!this.sweeping) return false;
+    const toy = this.topOf(lane, col);
+    if (!toy) {
+      // An empty cell just puts the broom away. No red X: she has not made a
+      // mistake, she has changed her mind, and those must not sound the same.
+      this.sweeping = false;
+      return false;
+    }
+
+    const back = this.isRefundable(lane, col) ? Math.round(toy.paid * this.difficulty.refundShare) : 0;
+    this.purse += back;
+    this.toys.remove(toy);
+    if (this.lastPlaced === cellIndex(lane, col)) this.lastPlaced = -1;
+    this.sweeping = false;
+    this.emit(back > 0 ? 'refund' : 'sweep', cellCentreX(col), laneCentreY(lane), back, lane);
+    return true;
   }
 
   costOf(id: ToyId): number {
@@ -319,7 +392,7 @@ export class GameState {
    */
   isRefundable(lane: number, col: number): boolean {
     if (this.lastPlaced !== cellIndex(lane, col)) return false;
-    const toy = this.toys.at(lane, col) ?? this.toys.floorAt(lane, col);
+    const toy = this.topOf(lane, col);
     return toy !== null && toy.age <= this.difficulty.refundGraceSeconds;
   }
 
@@ -479,7 +552,11 @@ export class GameState {
    */
   refund(lane: number, col: number): boolean {
     if (this.lastPlaced !== cellIndex(lane, col)) return false;
-    const toy = this.toys.at(lane, col) ?? this.toys.floorAt(lane, col);
+    // `topOf` rather than ground-or-floor, so a Duck Ring or a Shelf can be
+    // taken back too. It could not before, which was a real hole and a bad one
+    // in the attic: laying a shelf in the wrong cell is the single most likely
+    // fumble in that world, and it was the one placement with no undo.
+    const toy = this.topOf(lane, col);
     if (!toy) return false;
     if (toy.age > this.difficulty.refundGraceSeconds) return false;
     const back = Math.round(toy.paid * this.difficulty.refundShare);
