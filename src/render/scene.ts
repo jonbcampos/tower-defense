@@ -575,7 +575,16 @@ function drawKidsInLane(
       // `laneShift` is what is left of a slide into this row after a Squeaky
       // Toy. She is already IN this lane as far as everything else is
       // concerned; this only finishes drawing her arrival.
-      drawKid(ctx, enemy, x, centre + fan + enemy.laneShift, clock, state.isFogged(lane, colAtX(enemy.x)));
+      const over = colAtX(enemy.x);
+      drawKid(
+        ctx,
+        enemy,
+        x,
+        centre + fan + enemy.laneShift,
+        clock,
+        state.isFogged(lane, over),
+        state.isWater(lane, over),
+      );
       drawn++;
     }
     previous = cutoff - 1e-9;

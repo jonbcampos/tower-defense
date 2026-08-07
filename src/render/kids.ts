@@ -13,7 +13,7 @@
  * would use and the framing is the only thing that isn't.
  */
 
-import { ENEMIES, type Enemy, type EnemyKind } from '../game/enemies';
+import { ENEMIES, type Enemy, type EnemyDef, type EnemyKind } from '../game/enemies';
 import { PALETTE, alpha, mix } from './palette';
 import { roundRect } from './bedroom';
 import { drawSprite, sprite, spriteFrames } from './sprites';
@@ -106,6 +106,22 @@ export function drawKid(
    * and so cannot pre-build the counter, and drops the part that is only cruel.
    */
   fogged = false,
+  /**
+   * She is wading through the paddling pool.
+   *
+   * Reported from play: "kids walking/running across water is strange", and it
+   * was — a kid crossed the backyard's pool with exactly the stride she uses on
+   * carpet, her feet somewhere under the surface, as though the water were a
+   * blue rug. Nothing about the simulation changes here; the pool has always
+   * restricted what YOU can build and never what she can walk through. This is
+   * only the picture catching up with that.
+   *
+   * Done by clipping rather than by new art. Four more frames per kid, times
+   * ten kids, to show legs nobody can see is not a trade worth making — and a
+   * child cut off at the thigh with a ripple round her is exactly how every
+   * picture book draws someone standing in water.
+   */
+  wading = false,
 ): void {
   const def = ENEMIES[enemy.kind];
   const walk = x * 0.14;
@@ -129,13 +145,34 @@ export function drawKid(
   ctx.save();
   ctx.translate(x, y);
 
+  // Wading: everything below the surface is hidden and the whole body rides a
+  // slow bob. Aerial kids are exempt — a balloon carries you OVER a puddle.
+  const inWater = wading && def.aerial !== true;
+  const waterline = def.height * 0.32;
+  if (inWater) ctx.translate(0, Math.sin(x * 0.09) * 1.2);
+
   // Contact shadow. Floaters get a smaller, fainter one further down — the
   // cheapest possible way to say "this one is off the ground".
   const aerial = def.aerial === true;
-  ctx.fillStyle = alpha(PALETTE.kidOutline, aerial ? 0.16 : 0.3);
-  ctx.beginPath();
-  ctx.ellipse(0, def.height / 2 + (aerial ? 8 : 1), aerial ? 6 : def.width / 2.4, 3, 0, 0, Math.PI * 2);
-  ctx.fill();
+  if (!inWater) {
+    ctx.fillStyle = alpha(PALETTE.kidOutline, aerial ? 0.16 : 0.3);
+    ctx.beginPath();
+    ctx.ellipse(0, def.height / 2 + (aerial ? 8 : 1), aerial ? 6 : def.width / 2.4, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // A dark disc just under the surface instead: her legs, seen through water.
+  if (inWater) {
+    ctx.fillStyle = alpha(PALETTE.waterRim, 0.45);
+    ctx.beginPath();
+    ctx.ellipse(0, waterline + 2, def.width / 2.2, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (inWater) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-def.width * 2, -def.height * 3, def.width * 4, def.height * 3 + waterline);
+    ctx.clip();
+  }
 
   // Generated art wins if it exists — but only for the BODY. The shield, the
   // soaked drip and the slowed blob are drawn over the top either way, because
@@ -169,6 +206,7 @@ export function drawKid(
     const box = def.height * KID_ART_SCALE;
     drawSprite(ctx, fogged ? silhouette(image) : image, 0, 0, box, box);
     ctx.restore();
+    if (inWater) surfaceRipples(ctx, def, waterline, x);
     // No status markers while concealed: a shield or a soaked drip floating over
     // the mound would say more about who is under there than the blanket should.
     if (!veiled) drawStatusMarkers(ctx, enemy, def);
@@ -209,8 +247,43 @@ export function drawKid(
       break;
   }
 
+  if (inWater) surfaceRipples(ctx, def, waterline, x);
   drawStatusMarkers(ctx, enemy, def);
   ctx.restore();
+}
+
+/**
+ * Release the wading clip and draw the surface closing round her.
+ *
+ * Two rings and a couple of bow-wave arcs in front, all driven by distance
+ * travelled rather than a clock, so a kid slowed by a Slushie pushes a slower
+ * wake — the same rule the walk cycle follows, for the same reason.
+ */
+function surfaceRipples(
+  ctx: CanvasRenderingContext2D,
+  def: EnemyDef,
+  waterline: number,
+  travelled: number,
+): void {
+  ctx.restore(); // the clip opened before the body was drawn
+
+  const phase = travelled * 0.12;
+  ctx.strokeStyle = alpha(PALETTE.waterShine, 0.9);
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 2; i++) {
+    const grow = ((phase + i * 0.5) % 1);
+    ctx.globalAlpha = 1 - grow;
+    ctx.beginPath();
+    ctx.ellipse(0, waterline, def.width * (0.4 + grow * 0.45), 2 + grow * 2.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // A bow wave on the leading side. Kids walk left, so it goes in front of her.
+  ctx.strokeStyle = alpha('#ffffff', 0.6);
+  ctx.beginPath();
+  ctx.arc(-def.width * 0.45, waterline, 3.5, Math.PI * 0.75, Math.PI * 1.55);
+  ctx.stroke();
 }
 
 /**

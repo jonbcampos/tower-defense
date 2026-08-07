@@ -115,6 +115,14 @@ held to a deliberately mediocre bot; HARD is held to a competent one, and that d
 definition of the tier.
 
 ```js
+__game.checkArt()
+```
+
+Whether each generated sprite sheet is actually the grid the slicer is about to
+cut it into. Run it after an art run — it is the only check that looks at the
+pictures, and three sheets once shipped sliced to a grid that wasn't there.
+
+```js
 __game.tune({ 'wand.damage': 11, 'runner.crossSeconds': 14 })
 __game.showTuning()
 __game.go(7, 'hard')

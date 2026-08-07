@@ -1,1 +1,170 @@
-{"generated": ["unicorn", "ellie", "jar", "wand", "fort", "sprinkler", "watergun", "nightlight", "slime", "powder", "fountain", "machine", "fan", "ring", "castle", "slushie", "beachball", "soap", "squeak", "magnet", "bear", "crawler", "toddler", "runner", "raincoat", "blanket", "balloon", "puffy", "slider", "wagon", "bigkid", "cushion", "rug", "menu", "yard", "bath", "attic", "boxes", "lobber", "room", "crawler.motion", "toddler.motion", "runner.motion", "raincoat.motion", "blanket.motion", "balloon.motion", "puffy.motion", "slider.motion", "wagon.motion", "bigkid.motion"], "ext": "jpg", "opaque": ["menu", "yard", "bath", "attic", "room"], "sheets": {"ellie": {"cols": 2, "rows": 2, "align": "center"}, "crawler.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "toddler.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "runner.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "raincoat.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "blanket.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "balloon.motion": {"cols": 4, "rows": 1, "align": "center", "mirrored": true, "rowIds": ["walk"]}, "puffy.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "slider.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "wagon.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}, "bigkid.motion": {"cols": 4, "rows": 2, "align": "floor", "mirrored": true, "rowIds": ["walk", "grab"]}}}
+{
+  "generated": [
+    "unicorn",
+    "ellie",
+    "jar",
+    "wand",
+    "fort",
+    "sprinkler",
+    "watergun",
+    "nightlight",
+    "slime",
+    "powder",
+    "fountain",
+    "machine",
+    "fan",
+    "ring",
+    "castle",
+    "slushie",
+    "beachball",
+    "soap",
+    "squeak",
+    "magnet",
+    "bear",
+    "crawler",
+    "toddler",
+    "runner",
+    "raincoat",
+    "blanket",
+    "balloon",
+    "puffy",
+    "slider",
+    "wagon",
+    "bigkid",
+    "cushion",
+    "rug",
+    "menu",
+    "yard",
+    "bath",
+    "attic",
+    "boxes",
+    "lobber",
+    "room",
+    "crawler.motion",
+    "toddler.motion",
+    "runner.motion",
+    "raincoat.motion",
+    "blanket.motion",
+    "balloon.motion",
+    "puffy.motion",
+    "slider.motion",
+    "wagon.motion",
+    "bigkid.motion"
+  ],
+  "ext": "jpg",
+  "opaque": [
+    "menu",
+    "yard",
+    "bath",
+    "attic",
+    "room"
+  ],
+  "sheets": {
+    "ellie": {
+      "cols": 2,
+      "rows": 2,
+      "align": "center"
+    },
+    "crawler.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    },
+    "toddler.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    },
+    "runner.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    },
+    "raincoat.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    },
+    "blanket.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    },
+    "balloon.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "center",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "walk"
+      ]
+    },
+    "puffy.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    },
+    "slider.motion": {
+      "cols": 4,
+      "rows": 3,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab",
+        "grab"
+      ]
+    },
+    "wagon.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    },
+    "bigkid.motion": {
+      "cols": 4,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true,
+      "rowIds": [
+        "walk",
+        "grab"
+      ]
+    }
+  }
+}

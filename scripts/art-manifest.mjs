@@ -388,6 +388,20 @@ const BASE_PIECES = [
       'back. Frame 3: legs swung back behind, body leaning forward. Frame 4: legs apart mid-kick, ' +
       'one up and one down. NEVER draw the body hanging straight down, NEVER draw the arms at the ' +
       "sides, and NEVER attach the string to the child's head or neck.",
+    // A SQUARE sheet, so her cells are tall enough to hold a balloon above a
+    // child. See the note by `aspect` in MOTION_SHEETS.
+    sheetAspect: '1:1',
+    // She is the only kid with no grab cycle — she never stops, because she is
+    // floating — so her sheet's second row continues the float instead. Eight
+    // frames of one action rather than four of each of two, which makes hers
+    // the smoothest cycle in the game and costs nothing extra.
+    cycle2:
+      'the same lively kicking float, continued. In all four frames BOTH HANDS still grip the ' +
+      'string above the head and the arms stay raised. Frame 5: knees tucked up and body twisted ' +
+      'slightly, looking down. Frame 6: one leg stretched down and one tucked, body upright. ' +
+      'Frame 7: both legs stretched down together, toes pointed, body leaning back. Frame 8: legs ' +
+      'scissored, the front one forward and the back one behind, mid-kick. NEVER draw the body ' +
+      "hanging straight down and NEVER attach the string to the child's head or neck.",
   },
   {
     id: 'puffy',
@@ -431,6 +445,21 @@ const BASE_PIECES = [
   {
     id: 'slider',
     aspect: '1:1',
+    // THREE rows, not two, and that is the model's decision rather than mine.
+    //
+    // She is drawn lying down, so her rows are short and a 16:9 sheet has
+    // obvious empty space left in it. Three separate generations — including
+    // one that spelled out the cell count and one that said in as many words
+    // "leave the spare space empty, do not add another row" — all came back
+    // 4x3, the third row a near-duplicate of the second. It is not ignoring the
+    // grid, it is tidying up after it, and it will not be talked out of it.
+    //
+    // So the manifest asks for what it reliably draws. Same lesson as
+    // FACING_RIGHT and the puffy coat's rotation: when the model does something
+    // consistently, encode it rather than argue with it. Rows two and three
+    // both register as `grab`, giving her an eight-frame pull. If a future run
+    // comes back 4x2, `__game.checkArt()` will say so on the first look.
+    sheetRows: 3,
     subject:
       'a laughing child in stripey socks sliding along the floor on their front, arms forward, ' +
       'moving fast to the LEFT, with little speed lines behind. Silhouette: horizontal, low, unlike ' +
@@ -726,12 +755,20 @@ const BASE_PIECES = [
  * matters: the two rows are the same child doing two different things, not two
  * children. That sentence is the entire reason this piece exists.
  */
-const MOTION_RULES = (grid, rowCount) =>
+const MOTION_RULES = (grid, twoActions, cells, cols, rows) =>
   [
     `A SPRITE SHEET laid out as a grid of ${grid}, containing`,
-    rowCount > 1
+    twoActions
       ? 'EIGHT drawings of the SAME single character: the top row is one action and the bottom row is a DIFFERENT action by THE SAME child.'
-      : 'FOUR drawings of the SAME single character.',
+      : 'EIGHT drawings of the SAME single character, all of them the SAME action: an eight-frame cycle, read left to right along the top row and then left to right along the bottom row.',
+    // Said as a count, loudly, because this is the instruction the model has
+    // actually broken. The crawler came back as a 4x4 grid of sixteen figures
+    // and the slider as a 4x3 of twelve; the slicer cut each cell out of a grid
+    // that wasn't there, so every frame contained two children stacked on top of
+    // each other and the whole kid rendered at half size. Reported as "small and
+    // doubled", and nothing in the pipeline noticed for weeks — see `checkArt`.
+    `THE GRID IS EXACTLY ${cols} CELLS ACROSS AND ${rows} CELLS DOWN: ${cells} figures in total, no more and no fewer.`,
+    `Do NOT add a third or fourth row. Do NOT repeat the strip. Do NOT draw more than ${cells} figures.`,
     'Read each row left to right.',
     'The character is IDENTICAL in every single cell — same face, same hair, same height, same',
     'build, same clothes, same colours, same side-on camera. Across the rows as well as along',
@@ -742,6 +779,14 @@ const MOTION_RULES = (grid, rowCount) =>
 
 const SHEET_COMMON = [
   'Centre each figure in its own cell, with its feet at the same height in every cell of a row.',
+  // The sock slider is drawn lying down, so her rows are short and a 16:9 frame
+  // has obvious empty space left over. Twice in a row the model filled it by
+  // adding a third row — a near-duplicate of the second — and the slicer cut
+  // one and a half children into every frame. It is not disobeying the grid so
+  // much as tidying up after it, so the fix is to say the leftover space is
+  // meant to be there.
+  'If the figures are short and leave empty background above or below the rows, LEAVE IT EMPTY.',
+  'Do NOT add another row of drawings to fill up spare space. Empty background is correct.',
   // Two rules the loader cannot rescue you from. A line at a cell edge survives
   // the chroma-key cut and frames every frame in a square; anything crossing a
   // boundary is sliced through the middle and animates as a severed object.
@@ -885,28 +930,66 @@ const FACE_SHEET_RULES = [
  * four frames of her pulling at nothing would be four wasted cells and one
  * baffling glossary entry.
  */
+/**
+ * Every motion sheet is FOUR CELLS ACROSS BY TWO DOWN, on a 16:9 frame, with no
+ * exceptions.
+ *
+ * It used to be 4x1 on a square frame for a character with no grab cycle, which
+ * meant exactly one piece — the Balloon Kid, who never stops to pull a toy
+ * apart because she is floating. The model drew her as 4x2 anyway. A square
+ * frame with four figures in a single strip is not a thing it wants to draw,
+ * and it quietly gave itself a second row.
+ *
+ * The slicer then cut four cells out of a 4x1 grid that wasn't there, so each
+ * "frame" was a whole column: two children stacked, drawn into a box sized for
+ * one, at half scale. Reported as "the balloon girl is small (and doubled)".
+ *
+ * So: ask for the grid the model reliably draws, always. A character with no
+ * grab gets an eight-frame cycle of the one action instead, both rows
+ * registering under the same id — see `rowIds` and `registerSheet`.
+ */
 const MOTION_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => {
   const both = Boolean(piece.grab);
+  const rowCount = piece.sheetRows ?? 2;
+  const rowIds = ['walk'];
+  const rows = [{ label: `TOP ROW (frames 1 to 4)${both ? ', WALKING' : ''}`, poses: piece.cycle }];
+  for (let r = 1; r < rowCount; r++) {
+    const first = r * 4 + 1;
+    const span = `frames ${first} to ${first + 3}`;
+    if (both) {
+      rowIds.push('grab');
+      rows.push({
+        label: `ROW ${r + 1} (${span}), PULLING A TOY APART`,
+        poses: r === 1 ? piece.grab : `${piece.grab} These four continue the same pulling action.`,
+      });
+    } else {
+      rowIds.push('walk');
+      rows.push({
+        label: `ROW ${r + 1} (${span}), THE SAME ACTION CONTINUING`,
+        poses: piece.cycle2 ?? piece.cycle,
+      });
+    }
+  }
   return {
     id: `${piece.id}.motion`,
-    aspect: both ? '16:9' : '1:1',
+    // 16:9 unless the subject says otherwise. Four columns of upright children
+    // in two rows fills a widescreen frame almost exactly, which is why the
+    // walking cast all use it.
+    //
+    // The Balloon Kid does not, and forcing her to cost a regeneration: her
+    // subject is a balloon ABOVE a child, twice as tall as it is wide, and in a
+    // 16:9 sheet each cell is 256x285. The top row's balloons ran off the top of
+    // the picture and the bottom row's were sliced in half by the row boundary.
+    // Her cells have to be tall, so her sheet is square. The rule is that the
+    // frame's shape follows the SUBJECT's shape, not the other way round.
+    aspect: piece.sheetAspect ?? '16:9',
     size: '2K',
-    sheet: {
-      cols: 4,
-      rows: both ? 2 : 1,
-      align: piece.align ?? 'floor',
-      mirrored: true,
-      rowIds: both ? ['walk', 'grab'] : ['walk'],
-    },
+    twoActions: both,
+    sheet: { cols: 4, rows: rowCount, align: piece.align ?? 'floor', mirrored: true, rowIds },
     subject: piece.subject,
     look: piece.look,
     outfit: piece.outfit,
-    rows: both
-      ? [
-          { label: 'TOP ROW (frames 1 to 4), WALKING', poses: piece.cycle },
-          { label: 'BOTTOM ROW (frames 5 to 8), PULLING A TOY APART', poses: piece.grab },
-        ]
-      : [{ label: 'frames 1 to 4', poses: piece.cycle }],
+    rows,
   };
 });
 
@@ -941,11 +1024,13 @@ export function promptFor(piece) {
     return `${KEY_BACKGROUND} ${FACE_SHEET_RULES} The character: ${piece.subject} The four moods: ${piece.faces} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00.`;
   }
   if (piece.rows) {
-    const grid = `${piece.sheet.cols} columns by ${piece.sheet.rows} row${piece.sheet.rows > 1 ? 's' : ''}`;
+    const { cols, rows: rowCount } = piece.sheet;
+    const grid = `${cols} columns by ${rowCount} row${rowCount > 1 ? 's' : ''}`;
     const rows = piece.rows
       .map((row) => `${row.label}: ${row.poses}`)
       .join(' ');
-    return `${KEY_BACKGROUND} ${MOTION_RULES(grid, piece.sheet.rows)} The character: ${piece.subject}${look(piece)} ${rows} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
+    const twoActions = piece.twoActions === true;
+    return `${KEY_BACKGROUND} ${MOTION_RULES(grid, twoActions, cols * rowCount, cols, rowCount)} The character: ${piece.subject}${look(piece)} ${rows} ${DRAW_STYLE}, clean crisp edges suitable for cutting out against pure green #00FF00. ${FACING_RIGHT}`;
   }
   if (piece.background === 'none') {
     return `${piece.subject} ${DRAW_STYLE}. This is a full-bleed background image: it must fill the entire frame edge to edge, with no border and no chroma-key colour anywhere.`;

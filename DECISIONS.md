@@ -1456,3 +1456,100 @@ on it, because the jar has its own offset, and the whole cell looks loose.
 **Revisit if:** a world wants a floor that is neither solid nor absent. The
 boarding, the void and the Shelf are three states of one surface and they only
 work because there are exactly three.
+
+## 57. Three sprite sheets were cut to a grid that wasn't there
+
+Reported from play as "the balloon girl is small (and doubled)", then "the
+double image is also there for the crawler". Both true, and a third sheet had it
+as well.
+
+The manifest tells the slicer how many rows a sheet has. The model draws
+whatever grid it likes. When those disagree, `sliceSheet` cuts a grid that does
+not exist, and every "frame" comes out holding two children stacked on top of
+one another — then gets scaled to fit a box meant for one, which is why the kid
+also shrinks. Three ways to get there, and all three had happened:
+
+- **The crawler** was asked for 4x2 and drawn 4x4.
+- **The sock slider** was asked for 4x2 and drawn 4x3.
+- **The balloon** was asked for 4x1 — the only kid with no grab cycle, because
+  she is floating and never stops — and drawn 4x2. A square frame with four
+  figures in one strip is not a layout the model wants, so it quietly gave
+  itself a second row.
+
+### The fixes, in order of how much they generalise
+
+**Ask for the grid the model reliably draws.** Every motion sheet is 4x2 now,
+with no exceptions, and a character with no grab gets an eight-frame cycle of
+the one action instead of four. Two rows naming the same animation concatenate
+rather than one overwriting the other — see `registerSheet`.
+
+**Say the cell count out loud.** The prompt now states the grid as a number of
+figures and forbids extra rows explicitly. That fixed the crawler.
+
+**Stop arguing when it will not budge.** The slider is drawn lying down, so her
+rows are short and a widescreen sheet has empty space left over; three generations
+running, including one that said "leave the spare space empty", came back 4x3
+with the third row a near-duplicate. So her manifest asks for 4x3 and both lower
+rows register as her grab cycle. Same lesson as `FACING_RIGHT` and the puffy
+coat's rotation: when the model does something consistently, encode it.
+
+**The frame's shape follows the SUBJECT's shape.** Forcing the balloon to 16:9
+made her cells 256x285, and her subject is a balloon ABOVE a child — twice as
+tall as it is wide. The top row's balloons ran off the picture and the bottom
+row's were sliced by the row boundary. Her sheet is square; everyone else's is
+widescreen because four upright children in two rows fills 16:9 almost exactly.
+
+### And a checker, because nothing could have caught this
+
+`__game.checkArt()`. It counts bands of content down each sheet and compares
+them to the grid the slicer will cut. Neither existing tier could ever have
+found this: the design contracts are arithmetic over config and the trials drive
+the simulation, and neither has any idea what a picture looks like — correctly,
+because the game is playable with no generated art at all. So this is a third,
+separate check, run by hand after an art run.
+
+Its first version allowed anything under twice the row count, on the theory that
+a stray band was probably an internal gap in a character. It passed the slider
+at three bands on a two-row grid — the exact fault it was written for. A checker
+with a tolerance wide enough to cover its own bug is worse than none, because it
+certifies the thing it missed. It now demands an exact match, and the one
+character with genuine gaps in her art is named in `DETACHED` with the reason.
+
+**Revisit if:** a sheet needs a grid other than 4x2 or 4x3. The row count and the
+aspect are both per-piece overrides now, so that is data rather than code — but
+every new value is a new thing the model can get wrong, so check it.
+
+## 58. Kids wade through the pool and walk a plank in the attic
+
+"Kids walking/running across water is strange. just as I have to assume
+walking/running over nothing is also odd." Both right, and both were the picture
+failing to keep up with rules the simulation has always had.
+
+The pool has never restricted where a kid can WALK — it restricts what you can
+build, which is one rule rather than two. But she crossed it with the same
+stride she uses on carpet, feet somewhere under the surface, as though the water
+were a blue rug. She is now clipped at the thigh with two ripple rings and a bow
+wave closing round her, her contact shadow swapped for a dark disc just under
+the surface, and a slow bob on the whole body. A Balloon Kid is exempt: a
+balloon carries you over a puddle.
+
+Done by clipping, not by new art. Four more frames per kid across ten kids, to
+show legs nobody can see, is not a trade worth making — and a child cut off at
+the thigh with a ripple round her is how every picture book draws standing in
+water. The ripples are driven by distance travelled rather than a clock, like
+the walk cycle, so a kid slowed by a Slushie pushes a slower wake.
+
+The attic was the same kind of gap. The joists run along the ROW BOUNDARIES, so
+a kid drawn on her row's centre line was striding through the gap between two of
+them. There is now a walkway board down the middle of each row — the plank
+somebody laid to get across the loft — and that is what she is on.
+
+It has to be narrow. The first attempt was a quarter of the row, which with the
+beams either side left only a thin strip of dark and made the attic read as a
+floored room with stripes: the exact opposite of the thing that world is about.
+At a seventh of the row it is obviously a single board over a drop, obviously
+not somewhere you could stand a toy, and the hole still looks like a hole.
+
+**Revisit if:** a world has terrain that changes how kids MOVE rather than how
+they look crossing it. Both of these are presentation over an unchanged
+simulation, and that is what keeps them cheap.

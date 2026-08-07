@@ -584,7 +584,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 
 // Dev-only handle for poking at a live run from the console.
 if (import.meta.env.DEV) {
-  void Promise.all([import('./dev/verify'), import('./dev/tune')]).then(([v, t]) => {
+  void Promise.all([import('./dev/verify'), import('./dev/tune'), import('./dev/art')]).then(([v, t, a]) => {
     (window as unknown as Record<string, unknown>).__game = {
       state,
       input,
@@ -594,6 +594,9 @@ if (import.meta.env.DEV) {
       save,
       startRun,
       verify: v.verify,
+      // Whether the generated sheets match the grid the slicer cuts. Run by
+      // hand after an art run — see the note at the top of dev/art.ts.
+      checkArt: a.checkArt,
       /** Re-run the design contracts on demand, rather than reading them out of
        *  a console buffer that also holds every previous page load's. */
       contracts: () => [...validateDesignContracts(), ...validateTrayContracts()],

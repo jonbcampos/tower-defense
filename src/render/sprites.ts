@@ -142,8 +142,18 @@ export function drawSprite(
   ctx.imageSmoothingEnabled = smoothing;
 }
 
+/**
+ * Where the art was loaded from, remembered so the dev art check can re-fetch
+ * the same sheets without `main.ts` having to hand it the base URL twice.
+ */
+let spriteBase = '';
+export function spriteBaseUrl(): string {
+  return spriteBase;
+}
+
 /** Kick off loading. Safe to call once at startup; never throws, never blocks. */
 export function loadSprites(baseUrl: string): void {
+  spriteBase = baseUrl;
   void (async () => {
     let index: SpriteIndex;
     try {
@@ -408,10 +418,21 @@ function registerSheet(id: string, frames: HTMLCanvasElement[], spec: SheetSpec)
   const cols = Math.max(1, Math.floor(spec.cols));
   // `toddler.motion` -> `toddler`, so the rows publish as `toddler.walk` etc.
   const base = id.includes('.') ? id.slice(0, id.lastIndexOf('.')) : id;
+
+  // Rows that name the SAME animation are concatenated into one longer cycle
+  // rather than the later one replacing the earlier. That is what lets a
+  // character with only one action — the Balloon Kid, who never stops to grab
+  // because she is floating — still be asked for as the 4x2 grid the model
+  // reliably draws, and get an eight-frame float out of it.
+  const byId = new Map<string, HTMLCanvasElement[]>();
   rowIds.forEach((suffix, row) => {
     const slice = frames.slice(row * cols, row * cols + cols);
-    if (slice.length === cols) sheets.set(`${base}.${suffix}`, slice);
+    if (slice.length !== cols) return;
+    const existing = byId.get(suffix);
+    if (existing) existing.push(...slice);
+    else byId.set(suffix, [...slice]);
   });
+  for (const [suffix, cycle] of byId) sheets.set(`${base}.${suffix}`, cycle);
 }
 
 function loadImage(url: string): Promise<HTMLImageElement> {

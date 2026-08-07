@@ -216,6 +216,30 @@ export function drawJoists(
       ctx.fillRect(x + 1, y + 5, CELL_W - 2, CELL_H - 10);
     }
 
+    // A walkway board down the middle of the row.
+    //
+    // Reported alongside the water: "walking/running over nothing is also odd",
+    // and it was. The beams run along the ROW boundaries, so a kid drawn on her
+    // row's centre line was striding through the gap between two of them. This
+    // is the board somebody has laid along each joist to get across the loft,
+    // and it is what she is actually walking on.
+    //
+    // One board wide, and no wider. At a quarter of the row it plus the two
+    // beams left only a thin strip of dark either side, and the attic read as a
+    // floored room with stripes — which is the exact opposite of the thing the
+    // world is about. A single narrow plank over a drop is what an attic
+    // actually has, it is obviously not somewhere you could stand a toy, and it
+    // leaves the hole still looking like a hole.
+    const walk = Math.round(CELL_H * 0.14);
+    const walkY = y + Math.round((CELL_H - walk) / 2);
+    ctx.fillStyle = PALETTE.plank;
+    ctx.fillRect(left, walkY, BOARD_W, walk);
+    ctx.fillStyle = alpha(PALETTE.plankSeam, 0.5);
+    ctx.fillRect(left, walkY, BOARD_W, 1);
+    ctx.fillRect(left, walkY + walk - 1, BOARD_W, 1);
+    ctx.fillStyle = alpha(PALETTE.scrim, 0.25);
+    ctx.fillRect(left, walkY + walk, BOARD_W, 2);
+
     // The joists themselves, along the row boundaries and unbroken across the
     // board — a beam that stopped at every cell edge would read as a grid of
     // planks rather than as long timbers with nothing between them. Drawn
