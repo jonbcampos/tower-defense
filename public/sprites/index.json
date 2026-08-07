@@ -26,6 +26,7 @@
     "cushion",
     "rug",
     "menu",
+    "yard",
     "room",
     "crawler.walk",
     "toddler.walk",
@@ -41,6 +42,7 @@
   "ext": "jpg",
   "opaque": [
     "menu",
+    "yard",
     "room"
   ],
   "sheets": {

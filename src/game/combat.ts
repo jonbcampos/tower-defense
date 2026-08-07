@@ -24,6 +24,16 @@ export interface Shot {
   hitsAir: boolean;
   /** Can find a kid under a blanket. True for anything that sprays. */
   seesHidden: boolean;
+  /** Seconds of lingering slow this hit inflicts. 0 for everything but the Slushie. */
+  slowFor: number;
+  /**
+   * How many more kids this shot can pass through before it stops.
+   *
+   * 0 is the normal case: hit one and vanish. The Beach Ball sets it, and the
+   * difference matters most against a queue stacked on one wall — a shot that
+   * stops on the first body is the reason a pile-up is dangerous.
+   */
+  pierce: number;
   /**
    * Travels left and damages TOYS instead of kids. Only the Big Kid's thrown
    * stuffie uses this.
@@ -35,6 +45,11 @@ export interface Shot {
    */
   hostile: boolean;
   active: boolean;
+}
+
+export interface ShotExtras {
+  slowFor?: number;
+  pierce?: number;
 }
 
 export class ShotPool {
@@ -52,6 +67,8 @@ export class ShotPool {
         speed: 0,
         hitsAir: false,
         seesHidden: false,
+        slowFor: 0,
+        pierce: 0,
         hostile: false,
         active: false,
       });
@@ -67,6 +84,10 @@ export class ShotPool {
     hitsAir: boolean,
     seesHidden: boolean,
     hostile = false,
+    // An options bag rather than two more positionals. Eight was already the
+    // limit of what a call site can be read at a glance, and `fire(x, lane, 20,
+    // 'water', 150, false, false, false, 2, 0)` is not a thing anyone can check.
+    extras: ShotExtras = {},
   ): Shot | null {
     const item = this.items.find((s) => !s.active);
     if (!item) return null;
@@ -80,6 +101,8 @@ export class ShotPool {
     item.hitsAir = hitsAir;
     item.seesHidden = seesHidden;
     item.hostile = hostile;
+    item.slowFor = extras.slowFor ?? 0;
+    item.pierce = extras.pierce ?? 0;
     item.active = true;
     return item;
   }

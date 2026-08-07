@@ -45,7 +45,7 @@ import {
   type GuideTab,
 } from '../ui/screens';
 import { freshSave, type Save } from '../core/save';
-import { LEVELS, type WorldId } from '../game/levels';
+import { LEVELS, WORLDS, type WorldId } from '../game/levels';
 
 /**
  * Presentation-only state, mirrored here rather than read from storage or the
@@ -120,7 +120,7 @@ export const sceneRenderer: Renderer = {
     // as a bedroom.
     const inPlay = state.phase === 'playing' || state.phase === 'won' || state.phase === 'lost';
 
-    drawRoom(ctx, inPlay);
+    drawRoom(ctx, inPlay, WORLDS[state.level.world].background);
     // The door goes down before the kids, so a kid at the doorway is walking
     // OUT of it rather than standing on top of it.
     if (inPlay) drawNook(ctx, ellieMood(state.lives, state.phase === 'won'));

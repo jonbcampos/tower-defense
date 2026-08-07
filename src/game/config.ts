@@ -286,6 +286,15 @@ export const STUCK_SECONDS = 35;
  * then demands that reduced total still exceed the target's health by 25%.
  * Together they mean "comfortably", not "exactly".
  */
+/**
+ * How fast a chilled kid walks, as a fraction of normal.
+ *
+ * Weaker than Sticky Slime's, deliberately. Slime is a cell you gave up a
+ * building slot for and a kid has to be standing on it; a chill follows her
+ * down the lane for free once a Slushie Cup has landed one hit.
+ */
+export const SLUSH_FACTOR = 0.62;
+
 export const KILL_SAFETY = 0.65;
 export const KILL_MARGIN = 1.25;
 

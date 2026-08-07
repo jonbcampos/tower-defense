@@ -116,6 +116,12 @@ export function drawToyArt(
     case 'castle':
       drawCastle(ctx, body, def.accent);
       break;
+    case 'slushie':
+      drawSlushie(ctx, body, def.accent, t);
+      break;
+    case 'beachball':
+      drawBeachBall(ctx, body, def.accent, t);
+      break;
     case 'powder':
       drawPowder(ctx, body, def.accent);
       break;
@@ -412,6 +418,71 @@ function drawNightlight(ctx: CanvasRenderingContext2D, body: string, accent: str
  * perspective reads as a hoop stood on its edge, and then the Water Gun above
  * it looks like it is falling through.
  */
+/** A paper cup of blue ice with a straw, frosted at the rim. */
+function drawSlushie(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(-8, -6);
+  ctx.lineTo(8, -6);
+  ctx.lineTo(6, 12);
+  ctx.lineTo(-6, 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // The ice, domed above the rim so it reads as full rather than empty.
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.ellipse(0, -6, 8, 4.5, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.fillRect(-8, -6, 16, 4);
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.beginPath();
+  ctx.moveTo(5, -9);
+  ctx.lineTo(8, -20);
+  ctx.stroke();
+  // A cold shimmer, so it is doing something when it is not firing.
+  ctx.fillStyle = alpha('#ffffff', 0.4 + Math.sin(t * 2.2) * 0.2);
+  ctx.fillRect(-5, -4, 3, 1.5);
+  ctx.fillRect(1, -1, 4, 1.5);
+}
+
+/** A striped ball, spinning. The stripes are what make the spin visible. */
+function drawBeachBall(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {
+  const spin = t * 1.4;
+  ctx.save();
+  ctx.translate(0, 3);
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(0, 0, 11, 0, Math.PI * 2);
+  ctx.fill();
+  // Wedges, clipped to the ball, rotating. A stripe that ran off the edge
+  // would read as a crack rather than as a panel.
+  ctx.save();
+  ctx.clip();
+  ctx.fillStyle = body;
+  for (let i = 0; i < 3; i++) {
+    const a = spin + (i * Math.PI * 2) / 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, 12, a, a + 0.62);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(0, 0, 11, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = alpha('#ffffff', 0.55);
+  ctx.beginPath();
+  ctx.ellipse(-4, -5, 3, 2, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 /** A sandcastle: three towers and a wall, squat and obviously solid. */
 function drawCastle(ctx: CanvasRenderingContext2D, body: string, accent: string): void {
   ctx.fillStyle = body;

@@ -416,6 +416,25 @@ const BASE_PIECES = [
       'on a pink floor cushion on the left. Warm, inviting and detailed. No people, no text.',
   },
   {
+    // World 2's board. Same job and same rules as `room` below — flat,
+    // orthographic, quiet — because the reason that one is composed the way it
+    // is has nothing to do with it being indoors. A backyard drawn in charming
+    // perspective would be exactly as unplayable as the bedroom was.
+    id: 'yard',
+    aspect: '16:9',
+    background: 'none',
+    size: '2K',
+    subject:
+      'A FLAT ORTHOGRAPHIC GAME BACKGROUND with NO PERSPECTIVE and NO VANISHING POINT. ' +
+      'The TOP ONE SIXTH of the image is a wooden garden fence of vertical planks with a soft ' +
+      'sunny sky and a few leafy branches showing above it. The REMAINING FIVE SIXTHS below it is ' +
+      'plain, even, slightly textured green lawn, flat and uniform, filling the whole width. ' +
+      'Straight-on and perfectly horizontal: no ceiling, no side walls, no corners, no horizon ' +
+      'line, no furniture, no toys, no people, no paddling pool, no flowerbeds, no path. ' +
+      'Rich and slightly deep in colour so that pale characters placed on top of it stand out. ' +
+      'Warm afternoon light, soft and even, no hotspots and no cast shadows.',
+  },
+  {
     // The only piece with no green screen: it IS the background.
     id: 'room',
     aspect: '16:9',

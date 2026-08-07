@@ -25,6 +25,8 @@ export type ToyId =
   | 'machine'
   | 'ring'
   | 'castle'
+  | 'slushie'
+  | 'beachball'
   | 'sweeper';
 
 /**
@@ -87,7 +89,17 @@ export interface ToyDef {
    * lane is unlimited on purpose — a range circle is one more thing to explain,
    * and "it shoots down the row" is a rule a five-year-old already knows.
    */
-  shoot?: { damage: number; interval: number; kind: DamageKind; lanes: number; speed: number };
+  shoot?: {
+    damage: number;
+    interval: number;
+    kind: DamageKind;
+    lanes: number;
+    speed: number;
+    /** Seconds of lingering slow each hit adds. The Slushie Cup's whole point. */
+    slowFor?: number;
+    /** Extra kids each shot passes through before stopping. The Beach Ball's. */
+    pierce?: number;
+  };
 
   /** Instants: damage applied to a whole lane the moment it is used. */
   instant?: { damage: number; kind: DamageKind; lanes: number; reveals: boolean };
@@ -333,6 +345,42 @@ export const TOYS: Record<ToyId, ToyDef> = {
     accent: '#c9a666',
   },
 
+  slushie: {
+    id: 'slushie',
+    name: 'Slushie Cup',
+    blurb: 'Every splash leaves them cold, and cold kids walk slowly.',
+    role: 'shooter',
+    layer: 'ground',
+    cost: 150,
+    recharge: 0,
+    hp: 400,
+    // Weaker per shot than a Water Gun on purpose. What you are buying is the
+    // chill, and a toy that slowed AND out-damaged the thing it sits next to
+    // would simply replace it.
+    shoot: { damage: 12, interval: 1.6, kind: 'water', lanes: 1, speed: 150, slowFor: 3 },
+    hitsAir: false,
+    color: '#7ee0f0',
+    accent: '#e8fbff',
+  },
+
+  beachball: {
+    id: 'beachball',
+    name: 'Beach Ball',
+    blurb: 'Bounces right through a whole line of kids instead of stopping.',
+    role: 'shooter',
+    layer: 'ground',
+    cost: 200,
+    recharge: 0,
+    hp: 400,
+    // Slow and infrequent, because its value is entirely in a queue. Against a
+    // single kid it is a worse Bubble Wand for four times the price; against
+    // five stacked on a Sand Castle it hits all of them.
+    shoot: { damage: 14, interval: 2.2, kind: 'bubble', lanes: 1, speed: 110, pierce: 3 },
+    hitsAir: false,
+    color: '#ff8fc7',
+    accent: '#fff3c4',
+  },
+
   ring: {
     id: 'ring',
     name: 'Duck Ring',
@@ -389,6 +437,8 @@ export const TOY_ORDER: readonly ToyId[] = [
   // slot in the loadout picker that nobody can use.
   'ring',
   'castle',
+  'slushie',
+  'beachball',
 ];
 
 /** Damage per second a shooter lands on a single kid standing in front of it. */

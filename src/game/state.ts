@@ -25,6 +25,7 @@ import {
   JUICE,
   KILL_MARGIN,
   KILL_SAFETY,
+  SLUSH_FACTOR,
   LANE_COUNT,
   POOL,
   SPARKLE,
@@ -491,6 +492,8 @@ export class GameState {
         def.speed,
         TOYS[toy.id].hitsAir,
         seesHidden,
+        false,
+        { slowFor: def.slowFor ?? 0, pierce: def.pierce ?? 0 },
       );
       fired = true;
     }
@@ -554,7 +557,19 @@ export class GameState {
       if (!target) continue;
 
       const result = applyDamage(target, shot.damage, shot.kind, this.difficulty);
-      shot.active = false;
+      // A hit that lands leaves its chill even if it did no damage — being
+      // immune to a Slushie's water should not also make you immune to cold.
+      if (shot.slowFor > 0) target.slowFor = Math.max(target.slowFor, shot.slowFor);
+      // Piercing shots carry on. Decremented rather than a boolean so a Beach
+      // Ball has a stated number of kids in it and cannot mow down a whole
+      // wave; the shot also has to move past this target, or it would hit the
+      // same one again on the next step.
+      if (shot.pierce > 0) {
+        shot.pierce -= 1;
+        shot.x = target.x - enemyHalfWidth(target) - 5;
+      } else {
+        shot.active = false;
+      }
       if (result.shrugged && result.dealt <= 0) {
         this.emit('shrug', target.x, laneCentreY(target.lane), 0, target.lane);
       } else {
@@ -594,6 +609,8 @@ export class GameState {
         }
       }
 
+      if (enemy.slowFor > 0) enemy.slowFor = Math.max(0, enemy.slowFor - dt);
+
       if (!enemy.grabbing) {
         let factor = 1;
         if (!def.ignoresSlow && !def.aerial) {
@@ -603,6 +620,11 @@ export class GameState {
             if (floor) factor = TOYS[floor.id].slow?.factor ?? 1;
           }
         }
+        // A Slushie's chill. It stacks with slime by taking the WORSE of the
+        // two rather than multiplying: two slows that compound turn a Sock
+        // Slider into a statue, and the fastest kid in the game standing still
+        // is not a fight, it is a pause.
+        if (enemy.slowFor > 0 && !def.ignoresSlow) factor = Math.min(factor, SLUSH_FACTOR);
         enemy.x -= enemySpeed(enemy.kind, this.difficulty.enemySpeedScale) * factor * dt;
       }
 

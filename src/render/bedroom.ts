@@ -34,11 +34,13 @@ import { drawSprite, sprite, spriteFrames } from './sprites';
  * five rows of gameplay off — and trying to make one image do both makes a
  * lovely title screen and an unplayable board.
  */
-export function drawRoom(ctx: CanvasRenderingContext2D, inPlay = true): void {
+export function drawRoom(ctx: CanvasRenderingContext2D, inPlay = true, backdrop = 'room'): void {
   // A generated room replaces the wall and floor wholesale, but the lane lines
   // are drawn over it either way — they are the grid, not decoration, and a
   // painting of a carpet does not tell you where a cell ends.
-  const room = inPlay ? sprite('room') : (sprite('menu') ?? sprite('room'));
+  const room = inPlay
+    ? (sprite(backdrop) ?? sprite('room'))
+    : (sprite('menu') ?? sprite('room'));
   if (room) {
     const smoothing = ctx.imageSmoothingEnabled;
     ctx.imageSmoothingEnabled = true;

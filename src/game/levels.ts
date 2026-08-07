@@ -54,14 +54,22 @@ export interface World {
    * all until a Duck Ring floats there, and then behave like dry ground.
    */
   terrain: 'dry' | 'pool';
+  /**
+   * The generated backdrop for this world's board, by sprite id.
+   *
+   * Falls back to the bedroom's, and then to the hand-drawn floor, so a world
+   * whose art has not been generated yet is playable and merely wrong-looking
+   * rather than blank. That is how the backyard shipped its first five levels.
+   */
+  background: string;
 }
 
 export const WORLDS: Record<WorldId, World> = {
-  bedroom: { id: 'bedroom', name: 'The Bedroom', lanes: LANE_COUNT, trickleScale: 1, terrain: 'dry' },
+  bedroom: { id: 'bedroom', name: 'The Bedroom', lanes: LANE_COUNT, trickleScale: 1, terrain: 'dry', background: 'room' },
   // Outdoors, in the sun, with the paddling pool out. The trickle is a touch
   // higher because there is daylight rather than one bedside lamp — a small
   // nudge that pays for the Duck Rings the terrain forces you to buy.
-  backyard: { id: 'backyard', name: 'The Backyard', lanes: LANE_COUNT, trickleScale: 1.15, terrain: 'pool' },
+  backyard: { id: 'backyard', name: 'The Backyard', lanes: LANE_COUNT, trickleScale: 1.15, terrain: 'pool', background: 'yard' },
 };
 
 /** Worlds in the order they are played. Also the order of the level-select tabs. */
@@ -490,7 +498,7 @@ export const LEVELS: readonly Level[] = [
     world: 'backyard',
     name: 'Two Puddles',
     teaches: 'Two wet rows. Rings cost cells, not just sparkles.',
-    unlocks: [],
+    unlocks: ['slushie'],
     recommended: ['jar', 'wand', 'ring', 'powder', 'sprinkler'],
     blocked: [],
     water: merge(rect(1, 1, 3, 7), rect(3, 3, 3, 7)),
@@ -526,7 +534,7 @@ export const LEVELS: readonly Level[] = [
     world: 'backyard',
     name: 'Pool Party',
     teaches: 'Only the edges are dry.',
-    unlocks: [],
+    unlocks: ['beachball'],
     recommended: ['jar', 'ring', 'sprinkler', 'machine', 'powder'],
     blocked: [],
     // Three whole lanes of water. The two dry lanes are the outer ones, so the
@@ -558,6 +566,112 @@ export const LEVELS: readonly Level[] = [
       w([k('slider', 2), k('slider', 4, 2), k('wagon', 3, 3), o(k('runner', 1, 3))]),
       w([k('wagon', 2), k('slider', 0, 2), k('puffy', 4, 2), o(k('slider', 3, 3))]),
       wBig([k('slider', 2), k('slider', 3, 1), k('slider', 4, 1), k('wagon', 0, 3), k('puffy', 1, 3), o(k('bigkid', 3, 5))], 30),
+    ],
+  },
+
+  {
+    id: 16,
+    world: 'backyard',
+    name: 'Cold Feet',
+    teaches: 'A slushie makes them slow, and slow is as good as far away.',
+    unlocks: [],
+    recommended: ['jar', 'ring', 'slushie', 'wand', 'fort'],
+    blocked: [],
+    // Two narrow channels. The lanes are long, which is what makes a slow
+    // worth more than damage here: a chilled kid spends the whole lane chilled.
+    water: merge(rect(0, 0, 2, 6), rect(4, 4, 2, 6)),
+    startSparkles: 250,
+    waves: [
+      w([k('runner', 0), k('runner', 4, 2)]),
+      w([k('slider', 2), k('runner', 0, 2), k('runner', 4, 2), o(k('toddler', 1, 3))]),
+      w([k('slider', 0), k('slider', 4, 2), k('puffy', 2, 3), o(k('runner', 3, 3))]),
+      wBig([k('slider', 0), k('slider', 2, 1), k('slider', 4, 1), k('puffy', 1, 3), k('runner', 3, 3)], 28),
+    ],
+  },
+  {
+    id: 17,
+    world: 'backyard',
+    name: 'Queue Here',
+    teaches: 'One wall, one beach ball, and a line of kids behind it.',
+    unlocks: [],
+    recommended: ['jar', 'ring', 'castle', 'beachball', 'watergun'],
+    blocked: [],
+    // Only one dry column to build a wall on in the middle lanes, which is what
+    // forces the queue the Beach Ball exists to punish.
+    water: merge(rect(1, 3, 2, 4), rect(1, 3, 6, 8)),
+    startSparkles: 275,
+    waves: [
+      w([k('toddler', 2), k('toddler', 2, 2), k('toddler', 2, 2)]),
+      w([k('puffy', 2), k('toddler', 1, 2), k('toddler', 1, 2), o(k('toddler', 3, 3))]),
+      w([k('wagon', 2), k('toddler', 2, 2), k('toddler', 2, 2), k('runner', 0, 3), o(k('runner', 4, 3))]),
+      wBig([k('puffy', 1), k('puffy', 2, 1), k('puffy', 3, 1), k('toddler', 2, 3), k('toddler', 2, 2), o(k('wagon', 0, 4))], 30),
+    ],
+  },
+  {
+    id: 18,
+    world: 'backyard',
+    name: 'Sprinkler Season',
+    teaches: 'Balloons, over a pool you cannot build in.',
+    unlocks: [],
+    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'wand'],
+    blocked: rect(2, 2, 7, 8),
+    water: merge(rect(0, 4, 4, 6)),
+    startSparkles: 275,
+    waves: [
+      w([k('balloon', 1), k('balloon', 3, 2)]),
+      w([k('balloon', 0), k('balloon', 2, 1), k('balloon', 4, 1), o(k('runner', 1, 3))]),
+      w([k('balloon', 1), k('balloon', 3, 1), k('raincoat', 2, 3), k('slider', 0, 2), o(k('balloon', 4, 3))]),
+      wBig([k('balloon', 0), k('balloon', 1, 1), k('balloon', 3, 1), k('balloon', 4, 1), k('puffy', 2, 3), o(k('balloon', 2, 4))], 30),
+    ],
+  },
+  {
+    id: 19,
+    world: 'backyard',
+    name: 'Everything Is Wet',
+    teaches: 'Rings everywhere. Choose which rows you can afford.',
+    unlocks: [],
+    recommended: ['jar', 'ring', 'watergun', 'sprinkler', 'machine'],
+    blocked: [],
+    // Every column from 2 outward, in every lane. You cannot open the whole
+    // board; the level is the question of which two rows you give up.
+    water: rect(0, 4, 2, 8),
+    startSparkles: 325,
+    waves: [
+      w([k('toddler', 0), k('toddler', 4, 2), k('runner', 2, 3)]),
+      w([k('slider', 1), k('slider', 3, 2), k('runner', 2, 3), o(k('runner', 0, 3))]),
+      w([k('wagon', 2), k('puffy', 0, 2), k('puffy', 4, 2), k('balloon', 1, 3), o(k('blanket', 3, 3))]),
+      wBig([k('wagon', 1), k('wagon', 3, 2), k('puffy', 2, 2), k('slider', 0, 3), k('slider', 4, 1), o(k('balloon', 2, 4))], 32),
+    ],
+  },
+  {
+    id: 20,
+    world: 'backyard',
+    name: 'The Big Kid Outdoors',
+    teaches: 'Everything the backyard taught, in one go.',
+    unlocks: [],
+    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'watergun'],
+    // His lane is dry all the way, so he cannot be held at a ring — he has to
+    // be fought, and the pool is what stops you reinforcing round him.
+    blocked: [],
+    water: merge(rect(0, 1, 3, 8), rect(3, 4, 3, 8)),
+    startSparkles: 350,
+    waves: [
+      w([k('toddler', 2), k('runner', 0, 2), k('runner', 4, 2)]),
+      w([k('balloon', 1), k('balloon', 3, 2), k('slider', 2, 3), o(k('puffy', 0, 3))]),
+      wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 2, 3), o(k('balloon', 0, 3)), o(k('slider', 4, 3))], 30),
+      w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
+      wBig(
+        [
+          k('bigkid', 2),
+          k('puffy', 1, 4),
+          k('puffy', 3, 4),
+          k('slider', 0, 3),
+          k('slider', 4, 2),
+          o(k('wagon', 2, 5)),
+          o(k('balloon', 1, 3)),
+        ],
+        36,
+      ),
     ],
   },
 
