@@ -11,6 +11,7 @@ import {
   DIFFICULTIES,
   DIFFICULTY_ORDER,
   SCREEN,
+  SQUEEZE_LIVES,
   VIRTUAL_H,
   type DifficultyId,
 } from '../game/config';
@@ -627,7 +628,11 @@ export function drawResult(
       drawStar(ctx, SCREEN.w / 2 + (i - 1) * 38, 120, size, i < stars ? PALETTE.star : PALETTE.starEmpty);
     }
   } else {
-    drawText(ctx, 'three kids got a cuddle. try a different row.', SCREEN.w / 2, 120, {
+    // Just say what happened. An earlier version added "try a different row",
+    // which is advice the game cannot actually stand behind: you lose when three
+    // kids reach the unicorn ANYWHERE, so the row is rarely the thing that went
+    // wrong, and a five-year-old told to change rows will dutifully change rows.
+    drawText(ctx, `${SQUEEZE_LIVES} kids got a cuddle.`, SCREEN.w / 2, 120, {
       size: 9,
       align: 'center',
       color: PALETTE.hudDim,
