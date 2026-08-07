@@ -37,7 +37,16 @@
     "puffy.walk",
     "slider.walk",
     "wagon.walk",
-    "bigkid.walk"
+    "bigkid.walk",
+    "crawler.grab",
+    "toddler.grab",
+    "runner.grab",
+    "raincoat.grab",
+    "blanket.grab",
+    "puffy.grab",
+    "slider.grab",
+    "wagon.grab",
+    "bigkid.grab"
   ],
   "ext": "jpg",
   "opaque": [
@@ -106,6 +115,60 @@
       "mirrored": true
     },
     "bigkid.walk": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "crawler.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "toddler.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "runner.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "raincoat.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "blanket.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "puffy.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "slider.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "wagon.grab": {
+      "cols": 2,
+      "rows": 2,
+      "align": "floor",
+      "mirrored": true
+    },
+    "bigkid.grab": {
       "cols": 2,
       "rows": 2,
       "align": "floor",

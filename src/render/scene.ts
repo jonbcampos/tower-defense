@@ -421,7 +421,7 @@ function drawKidsInLane(
 
       const fan = STACK_FAN[Math.min(depth, STACK_FAN.length - 1)]! * STACK_STEP;
       const x = enemy.prevX + (enemy.x - enemy.prevX) * interpolation;
-      drawKid(ctx, enemy, x, centre + fan);
+      drawKid(ctx, enemy, x, centre + fan, clock);
       drawn++;
     }
     previous = cutoff - 1e-9;

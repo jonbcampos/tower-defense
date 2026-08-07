@@ -18,6 +18,14 @@ import { PALETTE, alpha, mix } from './palette';
 import { roundRect } from './bedroom';
 import { drawSprite, sprite, spriteFrames } from './sprites';
 
+/**
+ * Frames a second for a grab cycle.
+ *
+ * Faster than the walk, which lands around three. A tug is a quick repeated
+ * action rather than a stride, and at three it reads as slow motion.
+ */
+const GRAB_FPS = 6;
+
 /** How faded a kid under an unrevealed blanket is. Visible, but not readable. */
 const CONCEALED_ALPHA = 0.75;
 
@@ -48,7 +56,13 @@ const KID_ART_SCALE = 2;
  * own position rather than a timer, so a slowed kid visibly takes smaller,
  * slower steps instead of moon-walking at full animation speed.
  */
-export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, y: number): void {
+export function drawKid(
+  ctx: CanvasRenderingContext2D,
+  enemy: Enemy,
+  x: number,
+  y: number,
+  time: number,
+): void {
   const def = ENEMIES[enemy.kind];
   const walk = x * 0.14;
   const step = Math.sin(walk) * 2;
@@ -86,8 +100,18 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
   // Three layers, best first: a real frame cycle, a still, then the painters
   // below. Each is independently optional, so a half-finished art run gives some
   // kids cycles, some kids stills and some kids rectangles — all playable.
-  const cycle = spriteFrames(`${enemy.kind}.walk`);
-  const image = cycle ? frameFor(cycle, def, walkPx) : sprite(enemy.kind);
+  // A kid who has stopped to pull a toy apart gets her own cycle, played on a
+  // CLOCK. Everything else here is driven by distance travelled so that a
+  // slowed kid plods — but a grabbing kid is not travelling at all, so the walk
+  // cycle freezes on whichever frame she happened to arrive on. That freeze is
+  // the bug this fixes, and it is the one place a timer is the right answer.
+  const grabbing = enemy.grabbing ? spriteFrames(`${enemy.kind}.grab`) : null;
+  const cycle = grabbing ?? spriteFrames(`${enemy.kind}.walk`);
+  const image = grabbing
+    ? (grabbing[Math.floor(time * GRAB_FPS) % grabbing.length] ?? grabbing[0]!)
+    : cycle
+      ? frameFor(cycle, def, walkPx)
+      : sprite(enemy.kind);
   if (image) {
     ctx.save();
     // Sprites can't be tinted the way a fill can, so a hurt kid flashes by going
@@ -96,7 +120,7 @@ export function drawKid(ctx: CanvasRenderingContext2D, enemy: Enemy, x: number, 
     let fade = veiled ? CONCEALED_ALPHA : 1;
     if (enemy.hurt > 0) fade *= 1 - Math.min(0.45, enemy.hurt * 3);
     ctx.globalAlpha = fade;
-    if (cycle) settleFrame(ctx, enemy, def, walkPx);
+    if (cycle) settleFrame(ctx, enemy, def, walkPx, grabbing !== null);
     else applyGait(ctx, enemy, def, walkPx);
     const box = def.height * KID_ART_SCALE;
     drawSprite(ctx, image, 0, 0, box, box);
@@ -292,8 +316,11 @@ function settleFrame(
   enemy: Enemy,
   def: (typeof ENEMIES)[EnemyKind],
   walkPx: number,
+  drawnGrab = false,
 ): void {
-  if (enemy.grabbing) {
+  // With a real grab cycle on screen the shove is already drawn, and adding
+  // this one on top gives her two conflicting rhythms at once.
+  if (enemy.grabbing && !drawnGrab) {
     // Standing still tugging at a toy. The frame is frozen, so all of the
     // motion has to come from here or she looks paused rather than busy.
     const feet = def.height * 0.85;

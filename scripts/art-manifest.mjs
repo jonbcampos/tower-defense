@@ -50,6 +50,15 @@ const DRAW_STYLE = [
 export const STYLE = `${KEY_BACKGROUND} ${DRAW_STYLE}`;
 
 /**
+ * ## Why every kid has an explicit `outfit`
+ *
+ * A character now has more than one sheet — a walk and a grab — and the model
+ * picks clothes freely from a description that does not name them. It picked
+ * differently each time, so the toddler wore dusty rose shorts while walking
+ * and light blue ones while pulling a toy apart, and changed clothes the
+ * instant she stopped. Naming the outfit is what keeps one kid one kid across
+ * every sheet she appears in. Add the field before adding a third animation.
+ *
  * `id` must match the ToyId / EnemyKind / scenery name the renderer looks up.
  * Adding a new toy means adding its entry here as well as in `toys.ts`.
  *
@@ -202,6 +211,8 @@ const BASE_PIECES = [
       'the bottom or the legs, no second colour anywhere on it. ' +
       'Silhouette: low and wide, close to the ground.',
     look: 'light golden-brown skin and soft dark brown hair',
+    outfit: 'a plain sage-green one-piece romper and small tan boots',
+    grab: 'tugging at a toy while still down on hands and knees. Frame 1: reaching out with one hand and pulling, arm stretched. Frame 2: rocked back on her knees, both hands gripping, hauling towards herself. Frame 3: reaching out with the OTHER hand and pulling. Frame 4: rocked back again, hauling. She never stands up and never leaves the ground.',
     cycle:
       'a crawl. Frame 1: left hand and right knee reaching forward, body stretched long. ' +
       'Frame 2: gathered up, both hands under the shoulders, bottom raised highest. ' +
@@ -215,6 +226,8 @@ const BASE_PIECES = [
       'a cheerful toddler in an orange t-shirt walking to the LEFT, seen from the side, ' +
       'both arms stretched out in front wanting a hug, big head, stubby legs mid-step.',
     look: 'warm honey-brown skin and dark brown hair — a Hispanic toddler',
+    outfit: 'a plain orange short-sleeved t-shirt, dusty rose shorts and mint-green shoes',
+    grab: 'pulling something apart with both hands. Frame 1: arms stretched right out, leaning forward, just grabbing hold. Frame 2: leaning back hard with both elbows bent, hauling it towards himself. Frame 3: arms out again, leaning forward, having lost his grip. Frame 4: leaning back hauling, one foot lifted with the effort.',
     cycle:
       'a toddling walk. Frame 1: the NEAR leg is forward and planted, the FAR leg trails behind, ' +
       'body at its lowest. Frame 2: the legs pass and overlap, up on the toes, body at its ' +
@@ -228,6 +241,8 @@ const BASE_PIECES = [
       'an excited child in a pink top running fast to the LEFT, body leaning forward, ' +
       'one arm trailing behind, hair blown back. Silhouette: tilted forward, clearly sprinting.',
     look: 'deep brown skin and black hair worn in two big afro puffs',
+    outfit: 'a dusty pink sleeveless top, mauve-purple shorts, white socks and mint-green trainers',
+    grab: 'skidded to a stop and yanking at something. Frame 1: braced with both feet planted wide, arms out, grabbing. Frame 2: leaning right back, both arms bent, pulling hard. Frame 3: braced and grabbing again, other foot forward. Frame 4: leaning back pulling, hair flying with the effort.',
     cycle:
       'a full run. Frame 1: the NEAR leg reaches far forward and the FAR leg stretches far back, ' +
       'both feet off the ground, fully extended. Frame 2: the NEAR foot is planted underneath and ' +
@@ -244,6 +259,8 @@ const BASE_PIECES = [
       'pointed, water droplets visibly bouncing off the shiny coat. Silhouette: a bell-shaped coat ' +
       'with a sharp pointed hood — the most distinctive outline in the set.',
     look: 'fair skin and auburn hair, mostly hidden by the hood',
+    outfit: 'a bright yellow hooded raincoat, grey leggings and yellow wellington boots',
+    grab: 'pulling at something in her shiny coat. Frame 1: both arms out of the sleeves and stretched forward, gripping. Frame 2: leaning back, hood tipping, hauling it towards her. Frame 3: arms forward again, coat swinging. Frame 4: leaning back hauling, one welly boot lifted. The hood stays UP and pointed in all four.',
     cycle:
       'a walk in a stiff plastic coat. Frame 1: left welly boot forward and planted, the coat hem ' +
       'swung back. Frame 2: boots together, the coat hanging straight and still. Frame 3: right ' +
@@ -257,6 +274,8 @@ const BASE_PIECES = [
       'a child completely hidden under a draped lilac blanket, like a little ghost, shuffling to ' +
       'the LEFT with only bare feet showing at the bottom. No face at all. Silhouette: a soft mound.',
     look: 'medium brown skin on the bare feet that show under the hem',
+    outfit: 'a plain lilac blanket draped over her, and nothing else visible but bare feet',
+    grab: 'a mound under a blanket, wrestling with something. Frame 1: the mound leaning forward, two small hands poking out of the front of the blanket and gripping. Frame 2: the mound rocked back, hauling, the blanket stretched taut. Frame 3: leaning forward again. Frame 4: rocked back hauling, one bare foot showing. Still no face in any frame.',
     cycle:
       'a blind shuffle. Frame 1: leaning left, the left bare foot poking out from under the hem. ' +
       'Frame 2: upright and gathered, the blanket settling, both feet hidden. Frame 3: leaning ' +
@@ -310,6 +329,7 @@ const BASE_PIECES = [
     // a pom-pom that swings, which is a bright dot against a dark coat and so
     // is the one part of this character still readable at thirty pixels.
     look: 'deep brown skin and black hair, only a little face showing',
+    outfit: 'an enormous periwinkle-blue quilted puffer coat, a lilac and cream woolly hat with a big cream pom-pom, and tan boots',
     // NO LEAN in these frames, on purpose, and do not put one back.
     //
     // A waddle is a side-to-side roll, and asking for one cost two generations:
@@ -322,6 +342,7 @@ const BASE_PIECES = [
     // off the ground, and how tall she is — and the roll is applied as a
     // rotation in `settleFrame`, which cannot flip anything. See ROLLED_BY_HAND
     // in src/render/kids.ts; the two halves only work together.
+    grab: 'too padded to bend, shoving at something with both stiff arms. Frame 1: both padded arms straight out, pushing. Frame 2: whole body leaned in behind the push, boots braced. Frame 3: arms out again, rocked back slightly. Frame 4: leaning in hard, the pom-pom flung forward. She stays BOLT UPRIGHT in all four: no leaning sideways, no tipping.',
     cycle:
       'a heavy plod, too padded to bend at the waist. She stands BOLT UPRIGHT and PERFECTLY ' +
       'VERTICAL in all four frames — no leaning, no tipping, no tilting whatsoever, in any frame. ' +
@@ -341,6 +362,8 @@ const BASE_PIECES = [
       'moving fast to the LEFT, with little speed lines behind. Silhouette: horizontal, low, unlike ' +
       'every other child in the set who is upright.',
     look: 'fair freckled skin and ginger hair',
+    outfit: 'a mint-green t-shirt, purple shorts and pink-and-white striped socks',
+    grab: 'still flat on her front, hauling at something with both arms. Frame 1: both arms stretched forward, hands gripping. Frame 2: elbows bent, pulling it under her chin. Frame 3: arms stretched forward again. Frame 4: elbows bent pulling, socked feet kicking up behind. Horizontal and low to the floor in every frame.',
     cycle:
       'a belly slide, horizontal in all four frames — this child never stands up. Frame 1: both ' +
       'legs kicked wide apart behind. Frame 2: legs together and trailing straight. Frame 3: legs ' +
@@ -356,6 +379,8 @@ const BASE_PIECES = [
       'wheels of the same design in every frame. Nothing trails behind it: no rope, no string, no ' +
       'line on the floor. Silhouette: wide, with two round wheels.',
     look: 'warm honey-brown skin and dark curly hair — a Hispanic child',
+    outfit: 'a cream hooded top, dusty pink trousers and grey shoes, riding a red wagon with cream wheels',
+    grab: 'still sitting in her wagon, leaning out to whack at something with the cardboard shield. Frame 1: shield raised high above her head. Frame 2: shield swung down and forward. Frame 3: shield raised high again. Frame 4: shield swung down. The wagon stays level and both wheels stay on the ground.',
     cycle:
       'a roll over carpet — wheels, not steps. The wheel spokes are rotated a quarter turn further ' +
       'in each successive frame. Frame 1: the wagon level. Frame 2: the front wheel up on a bump, ' +
@@ -370,6 +395,8 @@ const BASE_PIECES = [
       'flung wide open for an enormous hug, a plush toy tucked under one arm. Friendly and boisterous, ' +
       'never scary. Silhouette: tall and very wide.',
     look: 'medium brown skin and dark curly hair',
+    outfit: 'a dusty purple long-sleeved top over a cream t-shirt, pale pink trousers and grey shoes',
+    grab: 'a big child pulling a toy apart with both hands. Frame 1: both arms stretched right out, grabbing hold. Frame 2: leaning back with all his weight, elbows bent, hauling. Frame 3: arms out again. Frame 4: leaning back hauling, one foot off the ground. The green plush bunny stays tucked under the SAME arm, the one nearest the viewer, in all four frames.',
     cycle:
       'a slow heavy stride. Frame 1: the NEAR leg planted far forward, the whole body dropped low ' +
       'onto it, landing hard. Frame 2: pushing off, legs passing, body at its highest. Frame 3: ' +
@@ -608,6 +635,29 @@ const FACE_SHEET_RULES = [
   'Nothing else in the picture: no floor, no shadow, no furniture, no props.',
 ].join(' ');
 
+/**
+ * The grab sheets: a kid pulling a toy apart, one per character.
+ *
+ * Separate from the walk cycle because it is a different action, and separate
+ * from `cycle` in the data because not every kid has one — the Balloon Kid
+ * never stops and the Big Kid throws instead.
+ *
+ * These are the one animation in the game driven by a CLOCK rather than by
+ * distance travelled. Everything else is position-driven so that a slowed kid
+ * plods; a grabbing kid is not moving at all, so position would freeze the
+ * cycle on one frame, which is exactly the bug this fixes.
+ */
+const GRAB_SHEETS = BASE_PIECES.filter((piece) => piece.grab).map((piece) => ({
+  id: `${piece.id}.grab`,
+  aspect: '1:1',
+  size: '1K',
+  sheet: { cols: 2, rows: 2, align: piece.align ?? 'floor', mirrored: true },
+  subject: piece.subject,
+  poses: piece.grab,
+  look: piece.look,
+  outfit: piece.outfit,
+}));
+
 const WALK_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => ({
   // The id the renderer looks up: `crawler.walk`, alongside the still `crawler`.
   id: `${piece.id}.walk`,
@@ -620,9 +670,10 @@ const WALK_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => ({
   subject: piece.subject,
   poses: piece.cycle,
   look: piece.look,
+  outfit: piece.outfit,
 }));
 
-export const PIECES = [...BASE_PIECES, ...WALK_SHEETS];
+export const PIECES = [...BASE_PIECES, ...WALK_SHEETS, ...GRAB_SHEETS];
 
 /**
  * The full prompt for one piece.
@@ -643,7 +694,9 @@ export const PIECES = [...BASE_PIECES, ...WALK_SHEETS];
  * what the hand-drawn fallback painters use, and the two are meant to agree.
  */
 function look(piece) {
-  return piece.look ? ` Skin and hair: ${piece.look}.` : '';
+  const skin = piece.look ? ` Skin and hair: ${piece.look}.` : '';
+  const kit = piece.outfit ? ` Outfit, exactly and in every frame: ${piece.outfit}.` : '';
+  return `${skin}${kit}`;
 }
 
 export function promptFor(piece) {

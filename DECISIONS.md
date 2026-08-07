@@ -789,3 +789,59 @@ visible — the game plays exactly as before and the screen dims as it used to.
 whole session. `release()` exists and nothing calls it; holding it throughout is
 the simpler behaviour and, for a game a child puts down by locking the phone,
 probably the right one.
+
+## 37. World 2 is a terrain rule, and the ring costs a card
+
+The backyard's paddling pool: a water cell holds nothing until a Duck Ring
+floats on it, and then behaves like dry ground. Water is deliberately NOT
+blocked — a kid wades through it exactly as she walks anywhere else — so it is
+one rule instead of two and the pool obstructs the player without needing a
+second set of swimming kids.
+
+The consequence that mattered and was not obvious: **every backyard loadout
+spends one of its five slots on the ring**, so the exam levels have one fewer
+defensive card than the bedroom's did. Water-immunity plus two tanks plus a
+floater does not fit in four. Levels 19 and 20 lost their raincoats over it,
+and the contracts are what said so — twenty problems on the first draft, all
+real.
+
+Destroying a ring destroys what stood on it. The alternative is a Water Gun
+hovering over open water, which would be the only place in the game where a toy
+sits somewhere it could never have been placed; and an indestructible ring
+would make the pool lanes the safest on the board rather than the dearest.
+
+**Revisit if:** a world ever wants a prerequisite that is NOT a card — the
+Attic's shelves are the next one, and paying a slot twice over may be a slot
+too many.
+
+## 38. Grabbing is a clock, and everything else is a distance
+
+Every animation in this game is driven by how far a kid has walked, so that a
+slowed kid plods instead of moonwalking. A kid who stops to pull a toy apart is
+not walking at all, so her cycle froze on whichever frame she arrived on — she
+stood dead still, shoving, for the eight seconds it took to eat a Pillow Fort.
+
+Each kid now has a second sheet, `<kid>.grab`, played on a **timer**. It is the
+one place a clock is correct, precisely because position has stopped carrying
+information. The procedural shove that used to paper over the freeze is
+suppressed when a real grab cycle exists, or she has two rhythms at once.
+
+The Balloon Kid has no grab sheet and needs none: her `grabDps` is zero and she
+never stops.
+
+## 39. Every kid's outfit is written down
+
+A second sheet per character exposed something the first one hid. Asked twice
+for "a cheerful toddler in an orange t-shirt", the model chose the rest of the
+clothes freely and chose differently each time — dusty rose shorts and mint
+shoes in the walk, light blue shorts and red shoes in the grab. In play she
+changed clothes the instant she stopped to chew.
+
+Every kid now carries an explicit `outfit` string, and every sheet derived from
+that kid quotes it. It is the same lesson as the per-frame colour lock one level
+up: the model will hold a character together inside one image and will not hold
+one across two, so anything that must match across sheets has to be *stated*
+rather than left to it.
+
+**Revisit if:** a third animation is added — a leaving pose, a startled pose.
+Write the outfit first; it is much cheaper than nine regenerations.
