@@ -83,10 +83,15 @@ export const WORLDS: Record<WorldId, World> = {
   bathroom: { id: 'bathroom', name: 'Bath Time', lanes: LANE_COUNT, trickleScale: 1, terrain: 'steam', background: 'bath' },
   // The attic. No floor, so every single cell costs a Shelf before it costs
   // anything else — which means half as many toys for the same sparkles. The
-  // trickle is a fifth higher to pay for exactly that and no more: the point of
-  // the world is that toys are expensive in CELLS and in taps, and handing back
-  // enough money to ignore it would turn the rule into set dressing.
-  attic: { id: 'attic', name: 'The Attic', lanes: LANE_COUNT, trickleScale: 1.2, terrain: 'joists', background: 'attic' },
+  // trickle is nearly half again to pay for that.
+  //
+  // It was a fifth higher and the world played fine, on a lie: a bare Shelf
+  // used to be chewable, so every toy the player LOST left a 400-health wall
+  // standing where it had been, and the attic was quietly being defended by its
+  // own floor. Kids walk over bare floor now, and seven of these ten levels
+  // failed the moment they had to be won with toys instead. This is what the
+  // world actually costs.
+  attic: { id: 'attic', name: 'The Attic', lanes: LANE_COUNT, trickleScale: 1.45, terrain: 'joists', background: 'attic' },
 };
 
 /** Worlds in the order they are played. Also the order of the level-select tabs. */
@@ -1048,7 +1053,7 @@ export const LEVELS: readonly Level[] = [
     recommended: ['jar', 'shelf', 'sprinkler', 'machine', 'powder', 'lobber', 'watergun', 'wand'],
     blocked: [],
     clutter: cells([1, 5], [2, 6], [3, 5]),
-    startSparkles: 350,
+    startSparkles: 450,
     waves: [
       w([k('blanket', 2), k('toddler', 0, 3)]),
       w([k('blanket', 1), k('blanket', 3, 2), o(k('runner', 2, 3))]),
@@ -1104,17 +1109,34 @@ export const LEVELS: readonly Level[] = [
     // rows, and in a world where every cell needs a shelf under it, adding a
     // chest of drawers on top of that was just removing the level.
     blocked: [],
-    clutter: cells([1, 5], [2, 6], [3, 5]),
-    startSparkles: 575,
-    // Wagons cost 240 points of health each before anything else, and in the
-    // attic every gun aimed at one is standing on a shelf. Three a wave routed
-    // a competent bot on HARD in 104 seconds; the lesson is the magnet, and
-    // teaching it does not need a queue.
+    // All three stacks at column six. At five they capped a flat gun's reach at
+    // five cells in the two rows the wagons use most, and this level's answer is
+    // a 240-health tank you have to out-damage.
+    clutter: cells([1, 6], [2, 6], [3, 6]),
+    startSparkles: 775,
+    // Three Wagon Kids, down from six.
+    //
+    // Each is 240 points of health before anything else, and in the attic every
+    // gun aimed at one is standing on a shelf. Six was the level quietly
+    // trusting the player to build the magnet — which a person will, because
+    // the level is about it, and which neither bot ever does, because a magnet
+    // deals no damage and both bots are built to ignore toys that cannot hurt
+    // anything. That rule is worth more than this level's density, so the level
+    // gave way. At four it flipped between passing and failing on fifty
+    // sparkles either way, which is a level tuned to a knife edge rather than a
+    // level that works; three has room in it.
     waves: [
-      w([k('wagon', 2), k('runner', 0, 3)]),
-      w([k('wagon', 1), k('toddler', 3, 2), o(k('slider', 2, 3))]),
-      w([k('wagon', 0), k('runner', 2, 2), k('wagon', 4, 3), o(k('balloon', 1, 3))]),
-      wBig([k('wagon', 1), k('wagon', 3, 2), k('puffy', 2, 3), k('runner', 0, 3), o(k('slider', 4, 3))], 32),
+      // No Wagon Kid in wave one. She is 240 points of health arriving before
+      // anything is built, and losing here was costing three hearts inside the
+      // first fifty seconds — on NORMAL, where the bot is deliberately mediocre.
+      // Every other level in the game introduces its headline kid in wave two.
+      w([k('toddler', 2), k('runner', 0, 3)], 26),
+      w([k('wagon', 1), k('toddler', 3, 3), o(k('slider', 2, 3))]),
+      w([k('toddler', 0), k('runner', 2, 4), k('wagon', 4, 3), o(k('balloon', 1, 4))]),
+      // One wagon in the last wave, not two. Five of them across four waves was
+      // the level trusting the magnet to be built, and neither bot builds a toy
+      // that deals no damage — a rule worth keeping, so the level gives instead.
+      wBig([k('wagon', 2), k('puffy', 0, 4), k('runner', 4, 4)], 38),
     ],
   },
   {
@@ -1125,13 +1147,17 @@ export const LEVELS: readonly Level[] = [
     unlocks: [],
     recommended: ['jar', 'shelf', 'lobber', 'machine', 'sprinkler', 'watergun', 'powder', 'castle'],
     blocked: merge(rect(0, 0, 7, 8), rect(4, 4, 7, 8)),
-    clutter: cells([1, 4], [2, 5], [3, 4]),
-    startSparkles: 450,
+    // Boxes at column four are the worst place on the board for them — a flat
+    // gun at the back then covers a third of its row — and stacking that on the
+    // densest wave list in the world made this the level that fell over first
+    // once bare shelves stopped being free walls. Pushed back a column each.
+    clutter: cells([1, 5], [2, 6], [3, 5]),
+    startSparkles: 675,
     waves: [
-      w([k('runner', 1), k('runner', 3, 1), k('slider', 2, 3)]),
-      w([k('raincoat', 0), k('balloon', 2, 2), k('wagon', 4, 2), o(k('blanket', 1, 3))]),
-      wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 2, 3), o(k('balloon', 0, 3)), o(k('slider', 4, 3))], 30),
-      w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
+      w([k('runner', 1), k('slider', 2, 3), o(k('runner', 3, 2))]),
+      w([k('raincoat', 0), k('balloon', 2, 3), k('wagon', 4, 3), o(k('blanket', 1, 4))]),
+      wBig([k('puffy', 1), k('wagon', 2, 4), o(k('balloon', 0, 4))], 38),
+      w([k('slider', 0), k('slider', 4, 2), k('blanket', 2, 3), o(k('balloon', 1, 3))], 34),
     ],
   },
   {
@@ -1148,9 +1174,10 @@ export const LEVELS: readonly Level[] = [
     clutter: cells([0, 5], [1, 5], [3, 5], [4, 5]),
     // The largest opening hand in the game, and it has to be: this is the
     // bathroom's boss wave in a world where every toy is standing on 25
-    // sparkles of shelf. 475 lost it on NORMAL and on HARD; 600 still lost HARD
-    // by a single kid at the very end of the boss wave.
-    startSparkles: 675,
+    // sparkles of shelf. Every number here has been set by the trials rather
+    // than by feel: 475 lost NORMAL and HARD, 600 still lost HARD by one kid,
+    // and 675 lost it again once the floor stopped fighting for you.
+    startSparkles: 775,
     waves: [
       w([k('toddler', 1), k('runner', 3, 2), k('slider', 0, 3)]),
       w([k('balloon', 2), k('blanket', 4, 2), k('raincoat', 1, 3), o(k('runner', 3, 3))]),
@@ -1159,14 +1186,12 @@ export const LEVELS: readonly Level[] = [
       wBig(
         [
           k('bigkid', 2),
-          k('puffy', 1, 4),
-          k('puffy', 3, 4),
-          k('slider', 0, 3),
-          k('slider', 4, 2),
-          o(k('wagon', 2, 5)),
-          o(k('balloon', 1, 3)),
+          k('puffy', 1, 7),
+          k('slider', 0, 6),
+          k('slider', 4, 5),
+          o(k('puffy', 3, 6)),
         ],
-        40,
+        50,
       ),
     ],
   },

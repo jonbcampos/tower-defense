@@ -121,13 +121,39 @@ function openLanes(level: Level): number[] {
  * Column 0 stays reserved for producers; column 1 is the emergency slot.
  */
 function placementCol(state: GameState, lane: number, targetCol: number): number {
-  if (targetCol > 2) {
-    const behind = firstFreeCol(state, lane, 2, targetCol - 1);
+  // Never behind a stack of boxes.
+  //
+  // A flat shot dies at the first stack it meets, so a gun placed further back
+  // than one cannot touch a kid beyond it. Without this the attic's bots
+  // dutifully filled columns two to four with Water Guns that spent the level
+  // thudding into cardboard, and three levels read as unwinnable when what had
+  // actually been found was a bot that cannot see boxes.
+  //
+  // Terrain, not strategy — the same reason `tryPlace` lays a Shelf first. It
+  // teaches the bot nothing about WHERE the good cells are, only which ones are
+  // not pointless.
+  let back = 2;
+  for (let col = Math.min(targetCol, COL_COUNT) - 1; col >= 0; col--) {
+    if (state.isClutter(lane, col)) {
+      back = col + 1;
+      break;
+    }
+  }
+
+  // With no boxes in the row `back` is 2 and every line below is identical to
+  // what it was — including column one staying the emergency slot. That
+  // property is the whole point: this must not change a single placement on the
+  // thirty levels that have no clutter in them. The first attempt raised the
+  // emergency slot to two as well and broke four of them.
+  const emergency = back > 2 ? back : 1;
+
+  if (targetCol > back) {
+    const behind = firstFreeCol(state, lane, back, targetCol - 1);
     if (behind >= 0) return behind;
   }
-  const emergency = firstFreeCol(state, lane, 1, Math.max(1, targetCol - 1));
-  if (emergency >= 0) return emergency;
-  return firstFreeCol(state, lane, 2, COL_COUNT - 1);
+  const near = firstFreeCol(state, lane, emergency, Math.max(emergency, targetCol - 1));
+  if (near >= 0) return near;
+  return firstFreeCol(state, lane, back, COL_COUNT - 1);
 }
 
 /**
@@ -292,6 +318,14 @@ function laneIsSafeForProducer(state: GameState, lane: number): boolean {
  * instant fired into any lane where a kid has crossed the halfway column.
  * Still no walls, no slime and no sweeper.
  *
+ * It was briefly given a fourth — a wall thrown down in front of a kid it could
+ * not yet afford to shoot — to see whether that was what the attic's last three
+ * levels needed. It made things WORSE, and broke five bathroom levels that had
+ * been passing: sparkles spent on a wall are sparkles not spent on the gun, so
+ * the bot bought time it then had nothing to use. That is the lesson already
+ * written three inches up this file, in the weak bot, about feeding a Raincoat
+ * Kid free toys. Both bots save up, and it was right the first time.
+ *
  * Used where "cleared it" isn't the bar — the pool trials, which want a level
  * played hard enough to stress them.
  */
@@ -299,7 +333,12 @@ function goodBot(level: Level): Policy {
   const lanes = openLanes(level);
   const producers = level.recommended.filter((id) => TOYS[id].produce !== undefined);
   const instants = level.recommended.filter((id) => TOYS[id].role === 'instant');
-  const walls = level.recommended.filter((id) => TOYS[id].role === 'wall');
+  // Real walls only. `wall` is this codebase's catch-all role, so it also
+  // covers the Duck Ring and the Shelf — and since kids now walk over bare
+  // floor, a bot filling spare cells with those is building nothing at all.
+  const walls = level.recommended.filter(
+    (id) => TOYS[id].role === 'wall' && TOYS[id].layer !== 'float',
+  );
   const panicLine = cellCentreX(HALFWAY_COL);
 
   return (state) => {

@@ -569,10 +569,11 @@ export const TOYS: Record<ToyId, ToyDef> = {
    * so this is not "some cells cost extra" but "everything costs extra". That
    * is the whole world, and it is why the tray grows to eight here.
    *
-   * Priced at 25, exactly like the ring, for the same reason: a prerequisite
-   * you have to save up for reads as a tax rather than as a move. The
-   * interesting question is which cells are worth opening, not whether you can
-   * afford to open one.
+   * Fifteen, where the Duck Ring is twenty-five, and the difference is the
+   * point. The pool charges its toll on a dozen cells; the attic charges it on
+   * all forty-five, so the same price is not the same tax at all — it is the
+   * difference between "which cells are worth opening" and "you may have half
+   * as many toys". At 25 the world could not be won without help.
    */
   shelf: {
     id: 'shelf',
@@ -580,11 +581,11 @@ export const TOYS: Record<ToyId, ToyDef> = {
     blurb: 'The attic has no floor! Lay a shelf down, then build on top of it.',
     role: 'wall',
     layer: 'float',
-    cost: 25,
+    cost: 15,
     recharge: 0,
-    // Tougher than the ring, because in the attic EVERY toy is standing on one
-    // and losing a shelf takes whatever was on it. In the pool that happens in
-    // three lanes; here it would happen everywhere.
+    // Health is nearly decorative now: kids walk over bare floor, and a shelf
+    // with a toy on it is protected by the toy. It matters only if something is
+    // ever given the ability to damage a float directly.
     hp: 400,
     hitsAir: false,
     // Exactly `PALETTE.plank` and `PALETTE.plankSeam`, the timber the attic's

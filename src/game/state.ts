@@ -983,9 +983,23 @@ export class GameState {
       if (!def.aerial) {
         const frontCol = colAtX(enemy.x - enemyHalfWidth(enemy));
         if (frontCol >= 0 && frontCol < COL_COUNT) {
-          // The ring counts as something to pull at, so a lone Duck Ring is not
-          // an invisible wall a kid walks straight through.
-          const toy = this.toys.at(enemy.lane, frontCol) ?? this.toys.floatAt(enemy.lane, frontCol);
+          // ONLY the ground layer. A bare Shelf or Duck Ring is floor, and kids
+          // walk over floor.
+          //
+          // They used to stop and pull it up, which was wrong twice over. It
+          // looked wrong — a child tearing up floorboards to get at a unicorn —
+          // and it was quietly the best wall in the game: a Shelf is 400 health
+          // for 25 sparkles, sixteen per sparkle against a Pillow Fort's eight
+          // and a Sand Castle's nine and a half. Since it is also the attic's
+          // prerequisite you always have a stack of them, so both actual wall
+          // toys were pointless in two of the four worlds.
+          //
+          // Reported as a kid who destroyed a Glitter Jar and then "kept trying
+          // to break the glitter that was left" — which was the shelf under it,
+          // taking another twenty-five seconds. A toy standing on a float is
+          // still chewed normally; what survives is the floor it stood on, and
+          // that is the point of paying for the cell once.
+          const toy = this.toys.at(enemy.lane, frontCol);
           const bite = toy ? TOYS[toy.id].divert?.bite : undefined;
           if (toy && bite !== undefined && this.divert(enemy, toy, bite)) {
             // Diverted: she does not stop, and she does not chew. She has found
@@ -1154,11 +1168,16 @@ export class GameState {
     this.toysLost += 1;
     this.emit('toy-lost', cellCentreX(col), laneCentreY(lane), 0, lane);
 
-    // A ring going under takes whatever was standing on it. Leaving a Water Gun
+    // A float going under takes whatever was standing on it: leaving a Water Gun
     // hovering over open water would be the one place in the game where a toy
-    // sits somewhere it could never have been placed, and the alternative —
-    // making the ring indestructible — turns the pool lanes into the safest
-    // ones on the board rather than the most expensive.
+    // sits somewhere it could never have been placed.
+    //
+    // Currently unreachable, and deliberately kept. Nothing damages a float any
+    // more — kids walk over bare floor and the Big Kid's stuffie only looks at
+    // the ground layer — so in practice a Duck Ring or a Shelf now lasts until
+    // it is swept. The day something can hurt one, this is the rule it has to
+    // obey, and rediscovering it by watching a gun float on open water would be
+    // a worse afternoon than leaving five lines here.
     if (wasFloat) {
       const above = this.toys.at(lane, col);
       if (above) this.destroyToy(above);

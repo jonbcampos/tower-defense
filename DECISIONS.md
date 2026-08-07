@@ -1553,3 +1553,63 @@ not somewhere you could stand a toy, and the hole still looks like a hole.
 **Revisit if:** a world has terrain that changes how kids MOVE rather than how
 they look crossing it. Both of these are presentation over an unchanged
 simulation, and that is what keeps them cheap.
+
+## 59. A bare Shelf is floor, and kids walk over floor
+
+Reported as a kid who destroyed a Glitter Jar and then "kept trying to break the
+glitter that was left", with the guess that it was the shelf underneath. It was.
+A trace: the jar died at ten seconds, and then the kid spent another
+twenty-five chewing the boards it had been standing on.
+
+Kids used to grab a float toy — a Duck Ring or a Shelf — when nothing was on
+top of it. That was wrong twice over.
+
+**It looked wrong.** A child tearing up floorboards to get at a unicorn is not
+a thing, and in the attic the "floor" is the world's whole premise.
+
+**It was quietly the best wall in the game.** A Shelf was 400 health for 25
+sparkles: sixteen per sparkle, against a Pillow Fort's eight and a Sand Castle's
+nine and a half. Since it is also the attic's prerequisite you always have a
+stack of them, so both actual wall toys were pointless in two of the four
+worlds. The Duck Ring was twelve per sparkle — also better than either.
+
+Now only the ground layer is grabbable. A toy standing on a float is chewed
+normally; what survives is the floor it stood on, which is the point of paying
+for the cell once.
+
+### It was load-bearing, which is the interesting part
+
+Seven of the attic's ten levels failed immediately. Every toy the player LOST
+had been leaving a 400-health blocker standing exactly where it had been, so the
+world was being defended by its own floor, and the levels had been tuned around
+that without anyone knowing. Putting it right took: the Shelf down to 15
+sparkles (the pool charges its toll on a dozen cells, the attic on all
+forty-five — the same price is not the same tax), the attic's trickle up to
+1.45, six levels' opening hands raised, and the last three levels thinned.
+
+### Two wrong turns worth recording
+
+I taught the good bot to drop a wall in front of a kid it could not afford to
+shoot. It made things worse and broke five bathroom levels that had been
+passing: sparkles spent on a wall are sparkles not spent on the gun. That is the
+lesson already written in the weak bot about feeding a Raincoat Kid free toys,
+and I had to learn it twice.
+
+I then taught both bots to buy a Magnet Wand against an armoured kid. It barely
+moved and made HARD slightly worse, for the same reason — the magnet displaced a
+gun. Reverted. **Tuning the bot until the levels pass is how a broken game gets
+certified**, and twice in one afternoon is a pattern rather than an accident.
+Level 38 gave way instead: six Wagon Kids down to three, and none in wave one.
+
+### One bot change that WAS right
+
+`placementCol` now refuses to put a shooter behind a stack of boxes. A flat shot
+dies at the first stack it meets, so those guns spent the level thudding into
+cardboard while three levels read as unwinnable. That is terrain rather than
+strategy — the same category as `tryPlace` learning to lay a Shelf first — and
+the test of it is that it changes nothing on the thirty levels with no clutter.
+The first attempt failed that test: it raised the emergency slot from column one
+to column two everywhere and broke four clean levels.
+
+**Revisit if:** something is ever given the ability to damage a float directly.
+`destroyToy`'s cascade is unreachable today and deliberately kept.
