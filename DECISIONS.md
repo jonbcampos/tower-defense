@@ -944,3 +944,52 @@ the rule must keep saying. Lighter fog, darker silhouette.
 rather than by building. Both are bigger changes than this one: the Fan being a
 placed toy is what makes clearing a row cost a cell, which is the decision the
 level is actually asking about.
+
+## 43. Only the toy you just placed can be tapped back
+
+Reported from play: "when you tap a glitter jar is it supposed to go away? I
+tapped them and they disappeared and I had to pay to reset them."
+
+Yes, it was — and it was wrong. Tap-with-nothing-held refunded any toy still
+inside its grace window, and a Glitter Jar *makes sparkles*, so the single most
+natural thing a five-year-old does is tap the jar to collect from it. Tapping it
+deleted it. On EASY the sparkles came back in full, so it cost nothing but the
+placement; it still felt like a punishment for the correct instinct, and it
+broke decision 7's promise that a mis-tap never costs anything in the worst
+available way — the mis-tap cost a whole toy.
+
+Refund is now restricted to the **most recently placed** toy. That is what the
+feature was always for: "that went in the wrong cell, let me move it" is only
+ever about the thing you just put down. Every other toy on the board is inert to
+a tap, which is what a child expects a toy on a board to be.
+
+It also grew a dashed ring that pulses on the one refundable toy. A forgiveness
+feature nobody can see is a feature nobody uses, and a rule you can only learn
+by triggering it by accident is worse than no rule.
+
+**Revisit if:** somebody wants to move an established toy. That is a different
+feature — a sell, at a loss, probably needing a held press — and it should not
+be reached by the same gesture as "undo".
+
+## 44. A patterned floor will always be drawn in perspective
+
+The bathroom's first backdrop came back as a tiled floor receding to a vanishing
+point, which fought the flat five-lane grid exactly the way the bedroom's first
+attempt did, and its wall band took the top third instead of the top sixth. The
+board stopped reading as a board.
+
+The bedroom and the backyard work because their floors are PLAIN. That is not a
+coincidence and it is the general rule: a floor with a regular pattern on it
+gets drawn receding, because that is what a patterned floor looks like in every
+reference the model has, and no amount of FLAT ORTHOGRAPHIC in capitals
+outranks it. The room is identified by its WALL, in the top sixth of the frame,
+where perspective cannot hurt anything.
+
+The second attempt fixed the floor and drew a child standing in the middle of
+it, despite "no people" — so the emptiness now gets its own sentence in capitals
+listing the things a person could be called. Worth the words: a figure baked
+into the backdrop would have stood on the board forever.
+
+**Revisit if:** a world genuinely needs a patterned floor. The answer then is to
+draw the pattern in code as a tiling function, the way `drawWater` does, not to
+ask for it in a picture.

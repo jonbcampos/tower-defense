@@ -150,6 +150,10 @@ export class GameState {
   private readonly guardTimer: number[] = new Array<number>(LANE_COUNT).fill(0);
 
   /** Cells this level's furniture covers. */
+  /**
+   * Cell index of the most recent placement, or -1. The only refundable toy.
+   */
+  private lastPlaced = -1;
   private growWaves: ((index: number) => void) | null = null;
   private toughness: ((index: number) => number) | null = null;
   private blocked = new Set<number>();
@@ -215,6 +219,7 @@ export class GameState {
     this.shots.reset();
     this.sparkles.reset();
 
+    this.lastPlaced = -1;
     this.blocked = new Set(level.blocked);
     this.water = new Set(WORLDS[level.world].terrain === 'pool' ? (level.water ?? []) : []);
     this.purse = level.startSparkles + this.difficulty.startSparkleBonus;
@@ -281,6 +286,19 @@ export class GameState {
 
   isBlocked(lane: number, col: number): boolean {
     return this.blocked.has(cellIndex(lane, col));
+  }
+
+  /**
+   * True where a tap would take a toy back — so the renderer can SAY so.
+   *
+   * A forgiveness feature nobody can see is a feature nobody uses, and one
+   * whose rule ("the last one, for a few seconds") has to be discovered by
+   * accident is worse than none.
+   */
+  isRefundable(lane: number, col: number): boolean {
+    if (this.lastPlaced !== cellIndex(lane, col)) return false;
+    const toy = this.toys.at(lane, col) ?? this.toys.floorAt(lane, col);
+    return toy !== null && toy.age <= this.difficulty.refundGraceSeconds;
   }
 
   /** Paddling pool. Buildable, but only on top of a Duck Ring. */
@@ -374,6 +392,8 @@ export class GameState {
       this.fireInstant(id, lane);
     } else {
       this.toys.place(id, lane, col, cost);
+      // Only the most recent placement can be taken back. See `refund`.
+      this.lastPlaced = cellIndex(lane, col);
       this.emit('place', cellCentreX(col), laneCentreY(lane), cost, lane);
     }
 
@@ -389,7 +409,22 @@ export class GameState {
    * within eight seconds on EASY, 60% within four on the rest — long enough to
    * fix a fumble, short enough that it isn't a strategy.
    */
+  /**
+   * Take back the toy you have only just put down.
+   *
+   * ONLY the most recently placed one, and only inside the grace window. It
+   * used to be any toy young enough, and that was a trap: a Glitter Jar makes
+   * sparkles, so the most natural thing a five-year-old does is tap the jar to
+   * collect from it — and tapping it deleted it. Reported as exactly that, and
+   * it broke decision 7's promise that a mis-tap never costs anything, in the
+   * worst possible way: the mis-tap cost a whole toy.
+   *
+   * Restricting it to the last placement keeps the feature doing its actual job
+   * — "that went in the wrong cell, let me move it" is always about the thing
+   * you just put down — and makes every other toy on the board inert to a tap.
+   */
   refund(lane: number, col: number): boolean {
+    if (this.lastPlaced !== cellIndex(lane, col)) return false;
     const toy = this.toys.at(lane, col) ?? this.toys.floorAt(lane, col);
     if (!toy) return false;
     if (toy.age > this.difficulty.refundGraceSeconds) return false;
@@ -397,6 +432,7 @@ export class GameState {
     this.purse += back;
     this.cooldowns.set(toy.id, 0);
     this.toys.remove(toy);
+    this.lastPlaced = -1;
     this.emit('refund', cellCentreX(col), laneCentreY(lane), back, lane);
     return true;
   }

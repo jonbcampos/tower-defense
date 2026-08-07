@@ -511,15 +511,34 @@ const BASE_PIECES = [
     aspect: '16:9',
     background: 'none',
     size: '2K',
+    // NO TILED FLOOR. The first version had one and it came back in perspective
+    // — a converging grid of floor tiles, which is the exact thing the bedroom's
+    // prompt was rewritten to avoid, and it fought the flat five-lane grid
+    // badly enough that the board stopped reading as a board.
+    //
+    // The lesson generalises to every world after this: a floor with a REGULAR
+    // PATTERN on it will always be drawn receding, because that is what a
+    // patterned floor looks like in every reference the model has. The floor
+    // must be plain. The room is identified by its WALL, which is at the top of
+    // the frame where perspective cannot hurt anything.
     subject:
       'A FLAT ORTHOGRAPHIC GAME BACKGROUND with NO PERSPECTIVE and NO VANISHING POINT. ' +
-      'The TOP ONE SIXTH of the image is a bathroom wall of small square mint-green tiles with a ' +
-      'row of darker trim tiles running horizontally along its bottom edge. The REMAINING FIVE ' +
-      'SIXTHS below it is a plain, even bathroom floor of larger cream and pale grey tiles, flat ' +
-      'and uniform, filling the whole width. Straight-on and perfectly horizontal: no ceiling, no ' +
-      'side walls, no corners, no horizon line, no bath, no sink, no toilet, no towels, no mat, ' +
-      'no people. CLEAR AND CRISP with no steam, no mist and no fog anywhere. Soft even lighting, ' +
-      'no hotspots, no reflections, no cast shadows.',
+      'ONLY THE TOP ONE SIXTH of the image is wall: a band of small square mint-green bathroom ' +
+      'tiles with a row of darker teal trim tiles along its bottom edge. That band must be thin — ' +
+      'it fills the top sixth and no more. ' +
+      'ALL of the REMAINING FIVE SIXTHS is a PLAIN, EVEN, UNTILED floor of soft muted teal-grey, ' +
+      'flat and uniform, filling the whole width, with only a faint mottled texture. ' +
+      'The floor has NO TILES, NO GRID, NO SQUARES, NO GROUT LINES and NO PATTERN of any kind — ' +
+      'it is one continuous colour, like smooth vinyl. Do not draw any lines on the floor. ' +
+      'THE PICTURE IS COMPLETELY EMPTY except for the wall band and the floor. ' +
+      'ABSOLUTELY NO PEOPLE: no child, no girl, no boy, no adult, no figure, no character of any ' +
+      'kind anywhere in the image. It is an empty room with nobody in it. ' +
+      'Also no ceiling, no side walls, no corners, no horizon, no bath, no sink, no toilet, no ' +
+      'towels, no mat, no furniture, no objects, no plants and no decorations. ' +
+      'CLEAR AND CRISP with no steam, no mist and no fog anywhere — the game draws its own steam ' +
+      'on top and needs the picture underneath to be clear. ' +
+      'The floor must be deep enough in tone that pale characters placed on it stand out. ' +
+      'Soft even lighting, no hotspots, no reflections, no cast shadows.',
   },
   {
     // The only piece with no green screen: it IS the background.

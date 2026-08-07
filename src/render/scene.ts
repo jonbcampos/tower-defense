@@ -146,6 +146,7 @@ export const sceneRenderer: Renderer = {
     drawPlacementHints(ctx, state, input);
     // Ground toys and kids together, one row at a time. See drawRows.
     drawRows(ctx, state, interpolation);
+    if (inPlay) drawUndoRing(ctx, state);
     drawSparkles(ctx, state);
     drawShots(ctx, state, interpolation);
     particles.draw(ctx);
@@ -176,6 +177,34 @@ export const sceneRenderer: Renderer = {
     drawOverlays(ctx, state);
   },
 };
+
+/**
+ * A ring round the one toy a tap would take back.
+ *
+ * Small, dashed, and it fades as the grace window runs out, so the thing that
+ * is about to expire looks like it is about to expire. Without it the refund is
+ * a rule you can only learn by triggering it, and triggering it by accident is
+ * exactly the bug this marker exists alongside.
+ */
+function drawUndoRing(ctx: CanvasRenderingContext2D, state: GameState): void {
+  for (let lane = 0; lane < LANE_COUNT; lane++) {
+    for (let col = 0; col < COL_COUNT; col++) {
+      if (!state.isRefundable(lane, col)) continue;
+      const x = cellCentreX(col);
+      const y = laneCentreY(lane);
+      ctx.save();
+      ctx.strokeStyle = alpha(PALETTE.cardReady, 0.75 + Math.sin(clock * 5) * 0.2);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.lineDashOffset = -clock * 8;
+      ctx.beginPath();
+      ctx.arc(x, y, 17, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      return; // There is only ever one.
+    }
+  }
+}
 
 function drawLaneFlashes(ctx: CanvasRenderingContext2D, state: GameState): void {
   for (let lane = 0; lane < LANE_COUNT; lane++) {
