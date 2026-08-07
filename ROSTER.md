@@ -279,12 +279,49 @@ a rest, which children like.
 - **`ARC_HEIGHT` is a fixed 26px.** A lob crossing two cells and one crossing
   seven rise the same amount, because the arc is measured against the distance
   left to run. Fine today; wrong-looking if a short-range lobber ever exists.
+- **The Pillow Fort is the only wall with a recharge.** Twelve seconds, while the
+  Duck Ring, the Fan, the Squeaky Toy, the Soap Dish, the Shelf and the Sand
+  Castle all have none — a player can lay Sand Castles as fast as she can afford
+  them, and that is the rule rather than the exception. Asked about, and correct
+  as it stands: walls are limited by CELLS and by price, not by a timer, and the
+  Castle's 125 sparkles per cell is the cost. The Fort is the odd one out and it
+  is the cheap one, which is the wrong way round if the recharge is doing any
+  work at all. Left alone because nothing is currently broken by it and the
+  campaign is tuned around the number as it is.
+- **`hasTargetIn` runs its aerial pass for every shooter,** not just the ones with
+  `hitsAir`. A Water Gun in a lane holding nothing but a Balloon Kid therefore
+  fires a bubble that cannot hit her and restarts its own reload — the second
+  loop's comment says "an air-capable toy also fires at floaters" but nothing
+  checks air capability. Wasted shots only, never a wrong hit, and the reload it
+  burns is one it would have spent on an empty lane anyway. Spotted while
+  answering a question about the Bubble Machine; parked rather than fixed because
+  changing it changes shooter timing in every level the trials are tuned against.
 
 ### Not content: debts to pay
 
 - **Rotate the Gemini API key.** It was leaked into a transcript once. The
   generate-art script has no `--key=` flag and refuses to run unless
   `.env.local` is gitignored, but the key itself is still the old one.
+- **Regenerate `bigkid.motion`.** Reported as "the big kid's clothes change as
+  the walk cycle continues", and they do: walk frames 1 and 3 wear a closed purple
+  top with the green bunny on his chest, frames 2 and 4 an open purple jacket over
+  a cream tee with no bunny at all. At walking speed his jacket does itself up and
+  undoes itself twice a second and the bunny blinks.
+
+  He is the only child in the cast whose outfit layers one garment over another,
+  and the shared consistency rules could not catch it: they forbid *changing* a
+  colour or adding a panel, and nothing changed colour — the ambiguity is in "a
+  top OVER a t-shirt", which describes two consistent garments and never says how
+  much of the lower one shows. The manifest now states the layering as a visible
+  fact about the picture ("the jacket is ALWAYS open, a wide panel of cream is
+  visible in every frame"), in both the outfit line and the cycle line, and keeps
+  the open jacket because that is what the model drew in six of the eight frames.
+
+  The prompt is fixed; the file on disk is not, and cannot be until someone with
+  a key runs `npm run art -- --only=bigkid.motion --force` — one billed call. The
+  still `bigkid.jpg` is worth doing in the same run for the same reason, though
+  nothing sees it while the sheet exists. Check the result with
+  `__game.checkArt()` and by eye before committing.
 - ~~Back-port the `viewport.ts` NaN fix~~ — **done**. Both siblings floor the
   window at one pixel, and `src/core/viewport.ts` is byte-identical across all
   three games again.

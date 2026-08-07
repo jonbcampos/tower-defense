@@ -66,8 +66,23 @@ import { Rng } from '../core/rng';
  * `update()` early-returns unless this is `'playing'`, so the menu phases cost
  * the simulation nothing and the renderer gets one field to switch on instead
  * of a parallel screen-state machine that could disagree with this one.
+ *
+ * `'paused'` is a run that is still entirely intact — every toy, kid, shot and
+ * sparkle is where it was. It gets its freeze for free from the early return,
+ * which is the whole reason to spend a phase on it rather than a boolean: a
+ * `paused` flag would have to be checked separately by everything that ticks,
+ * and the first thing anyone forgot to check would keep running under the
+ * scrim.
  */
-export type Phase = 'title' | 'select' | 'loadout' | 'guide' | 'playing' | 'won' | 'lost';
+export type Phase =
+  | 'title'
+  | 'select'
+  | 'loadout'
+  | 'guide'
+  | 'playing'
+  | 'paused'
+  | 'won'
+  | 'lost';
 
 export type GameEventType =
   | 'place'

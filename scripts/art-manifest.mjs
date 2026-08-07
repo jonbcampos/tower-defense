@@ -498,14 +498,41 @@ const BASE_PIECES = [
       'flung wide open for an enormous hug, a plush toy tucked under one arm. Friendly and boisterous, ' +
       'never scary. Silhouette: tall and very wide.',
     look: 'medium brown skin and dark curly hair',
-    outfit: 'a dusty purple long-sleeved top over a cream t-shirt, pale pink trousers and grey shoes',
+    // He is the only child in the cast wearing one garment OVER another, and he
+    // is the only one whose sheet came back in two different outfits: frames 1
+    // and 3 of his walk wore a closed purple top with no cream showing, frames 2
+    // and 4 an open purple jacket over a cream tee. Reported as "his clothes
+    // change as the walk cycle continues", and correctly — at walking speed the
+    // jacket does up and undoes itself twice a second.
+    //
+    // The shared rules did not catch it, and could not have: they forbid
+    // CHANGING a colour or adding a panel, and nothing changed colour. The
+    // ambiguity is in "a top OVER a t-shirt", which describes two perfectly
+    // consistent garments and never says how much of the lower one you can see.
+    // So the layering is now stated as a visible fact about the picture rather
+    // than as a fact about his wardrobe.
+    //
+    // Which of the two readings to keep was the model's call, on the rule this
+    // file keeps relearning: six of the eight frames it drew — all four grabs
+    // and two of the walks — had the jacket open, so the open jacket is what is
+    // written down.
+    outfit:
+      'an unfastened dusty purple jacket worn open over a cream t-shirt, with pale pink trousers ' +
+      'and grey shoes. The jacket is ALWAYS open and never fastened, and a wide panel of the cream ' +
+      't-shirt is visible down the centre of his chest in every single frame',
     grab: 'a big child pulling a toy apart with both hands. Frame 1: both arms stretched right out, grabbing hold. Frame 2: leaning back with all his weight, elbows bent, hauling. Frame 3: arms out again. Frame 4: leaning back hauling, one foot off the ground. The green plush bunny stays tucked under the SAME arm, the one nearest the viewer, in all four frames.',
     cycle:
       'a slow heavy stride. Frame 1: the NEAR leg planted far forward, the whole body dropped low ' +
       'onto it, landing hard. Frame 2: pushing off, legs passing, body at its highest. Frame 3: ' +
       'THE OPPOSITE OF FRAME 1 — the FAR leg planted far forward, body dropped low, landing hard. ' +
       'Frame 4: pushing off, legs passing, body at its highest. ' +
-      'Both arms stay flung wide open for a hug in every frame. He carries a small green plush ' +
+      'Both arms stay flung wide open for a hug in every frame. ' +
+      // Said here as well as in the outfit, because the outfit line describes a
+      // character and this one describes THIS SHEET, and it is between frames of
+      // one sheet that he changed.
+      'His jacket hangs open with the cream t-shirt showing beneath it in all four frames: it is ' +
+      'never done up, never closed over, and the cream is never hidden. ' +
+      'He carries a small green plush ' +
       'bunny tucked under the SAME arm — the one NEAREST the viewer — in ALL FOUR frames, in the ' +
       'same spot and at the same size. The bunny must never swap arms, move, or vanish.',
   },

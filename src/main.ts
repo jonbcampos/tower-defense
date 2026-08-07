@@ -29,7 +29,7 @@ import {
   setSaveForDisplay,
   setUnlockBanner,
 } from './render/scene';
-import { addPopup, resetHud, updateHud } from './ui/hud';
+import { addPopup, hitTestPause, resetHud, updateHud, validateHudContracts } from './ui/hud';
 import {
   guideButton,
   guideMenu,
@@ -38,6 +38,7 @@ import {
   levelMenu,
   loadoutMenu,
   muteButton,
+  pauseMenu,
   resultMenu,
   setMutedDisplay,
   titleMenu,
@@ -67,7 +68,11 @@ loadSprites(import.meta.env.BASE_URL);
  * break silently otherwise — a levelling change that makes HARD unwinnable
  * looks exactly like a levelling change that doesn't.
  */
-for (const problem of [...validateDesignContracts(), ...validateTrayContracts()]) {
+for (const problem of [
+  ...validateDesignContracts(),
+  ...validateTrayContracts(),
+  ...validateHudContracts(),
+]) {
   console.error(`[design] ${problem}`);
 }
 
@@ -208,6 +213,22 @@ function routeMenuTap(tap: Tap): void {
     return;
   }
 
+  if (state.phase === 'paused') {
+    // The pause button itself stays drawn and stays live, so pressing it twice
+    // is a no-op rather than a trap. A child who taps it by accident gets out
+    // of the panel exactly the way she got into it.
+    if (hitTestPause(tap.x, tap.y)) {
+      resumeRun();
+      return;
+    }
+    const hit = hitTestMenu(pauseMenu(), tap.x, tap.y);
+    if (!hit) return;
+    audio.play('select');
+    if (hit.id === 'resume') resumeRun();
+    else leaveRun();
+    return;
+  }
+
   if (state.phase === 'won' || state.phase === 'lost') {
     const won = state.phase === 'won';
     // Endless has no NEXT, and `beginSetup` would look up level 0 and throw.
@@ -327,6 +348,54 @@ function startRun(loadout: readonly ToyId[]): void {
   input.clear();
 }
 
+/**
+ * Stop the clock. The run is untouched — see the `'paused'` note on `Phase`.
+ *
+ * Whatever is in her hand stays in it. Picking a card up, changing your mind
+ * about where it goes and wanting a moment to think is the most likely reason
+ * to press this at all, and a pause that quietly put the card back would be a
+ * pause that punished the thing it is for.
+ */
+function pauseRun(): void {
+  if (state.phase !== 'playing') return;
+  audio.play('select');
+  state.phase = 'paused';
+}
+
+function resumeRun(): void {
+  state.phase = 'playing';
+  // The same rule as PLAY on the loadout screen: drop the tap that dismissed
+  // the panel, or the first frame back places a toy under wherever the thumb
+  // happened to be — and here that thumb is over the middle of her own board.
+  input.clear();
+}
+
+/**
+ * Leave a run in progress.
+ *
+ * Endless keeps its score, and that is deliberate. The score is "waves
+ * survived", she survived them, and `recordEndless` only ever raises the best —
+ * so recording here can help her and cannot cost her anything. Stopping is not
+ * losing, and a mode that quietly threw away twelve waves because she pressed
+ * LEAVE instead of playing on until she was squeezed would be teaching her to
+ * sit through an ending she doesn't want.
+ *
+ * A campaign level records nothing, for the same reason it records nothing on a
+ * loss: stars are for finishing.
+ */
+function leaveRun(): void {
+  if (currentLevelId === ENDLESS_ID) {
+    const reached = state.waves.index;
+    if (recordEndless(save, reached)) writeSave(save);
+    setSaveForDisplay(save);
+    setEndlessScore(reached, save.endlessBest);
+  }
+  endless = null;
+  setUnlockBanner('');
+  state.phase = 'select';
+  input.clear();
+}
+
 // --- Gameplay taps ----------------------------------------------------------
 
 /**
@@ -337,6 +406,14 @@ function startRun(loadout: readonly ToyId[]): void {
  * far worse outcome than failing to place a toy she can simply tap again.
  */
 function routeGameTap(tap: Tap): void {
+  // First, and safe to be first: the button sits in the footer's left corner,
+  // where no cell, no card and no sparkle can reach — sparkles only ever fall on
+  // cell centres, and column zero is centred well right of it.
+  if (hitTestPause(tap.x, tap.y)) {
+    pauseRun();
+    return;
+  }
+
   const card = hitTestCard(state.loadout, tap.x, tap.y);
   if (card) {
     state.selectCard(card.id);
@@ -373,13 +450,27 @@ function routeGameTap(tap: Tap): void {
 }
 
 function routeKey(action: KeyAction): void {
+  if (state.phase === 'paused') {
+    // Escape both opens and closes it, which is what a keyboard player expects
+    // and what makes it safe to press without looking.
+    if (action === 'cancel' || action === 'confirm') resumeRun();
+    return;
+  }
   if (state.phase !== 'playing') {
     if (action === 'confirm' && (state.phase === 'won' || state.phase === 'lost')) beginSetup();
     return;
   }
   if (action === 'cancel') {
-    // Puts down whichever is in hand. `selectCard(null)` clears the broom too.
-    state.selectCard(null);
+    // Escape empties your hand first and only pauses once it is already empty.
+    // Putting a card down is the far commoner intent, and a key that sometimes
+    // stops the game and sometimes doesn't is still better than one that stops
+    // it while you are mid-placement.
+    if (state.selected || state.sweeping) {
+      // Puts down whichever is in hand. `selectCard(null)` clears the broom too.
+      state.selectCard(null);
+      return;
+    }
+    pauseRun();
     return;
   }
   if (action === 'confirm') return;
@@ -606,7 +697,11 @@ if (import.meta.env.DEV) {
       checkArt: a.checkArt,
       /** Re-run the design contracts on demand, rather than reading them out of
        *  a console buffer that also holds every previous page load's. */
-      contracts: () => [...validateDesignContracts(), ...validateTrayContracts()],
+      contracts: () => [
+        ...validateDesignContracts(),
+        ...validateTrayContracts(),
+        ...validateHudContracts(),
+      ],
       tune: t.tune,
       showTuning: t.showTuning,
       // Lets a test drive the real loop body when rAF is unavailable — e.g. a

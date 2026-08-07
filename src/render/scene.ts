@@ -51,6 +51,7 @@ import {
   drawLevelSelect,
   drawLoadout,
   drawEndlessResult,
+  drawPauseScreen,
   drawResult,
   drawScrim,
   drawTitle,
@@ -141,7 +142,15 @@ export const sceneRenderer: Renderer = {
     // as a plain empty room. Level one's furniture covers four whole lanes, and
     // a title screen sitting on top of that reads as a broken level rather than
     // as a bedroom.
-    const inPlay = state.phase === 'playing' || state.phase === 'won' || state.phase === 'lost';
+    // 'paused' counts as in play, and that is the point of the screen: the room,
+    // the toys, the kids and the tray all stay exactly where they were, dimmed
+    // but legible, so the panel reads as the game holding your place rather than
+    // as the run having ended.
+    const inPlay =
+      state.phase === 'playing' ||
+      state.phase === 'paused' ||
+      state.phase === 'won' ||
+      state.phase === 'lost';
 
     drawRoom(ctx, inPlay, WORLDS[state.level.world].background);
     // The attic's floor — boarded at the edges, open joists across the play
@@ -645,6 +654,9 @@ function drawOverlays(ctx: CanvasRenderingContext2D, state: GameState): void {
     }
     case 'playing':
       drawBigWaveWarning(ctx, state);
+      break;
+    case 'paused':
+      drawPauseScreen(ctx);
       break;
   }
 }

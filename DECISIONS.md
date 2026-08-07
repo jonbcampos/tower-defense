@@ -1692,3 +1692,74 @@ Toy, the Sticky Slime and the Balloon Kid's mint cuffs all survive untouched.
 **Revisit if:** a piece ever legitimately contains a patch of near-#00FF00 that
 is enclosed by its own subject. Nothing does today, and the palette is the reason
 the key is that colour in the first place.
+
+## 62. A way out of a level, and it is a rest rather than a quit
+
+Reported as: "I accidentally hit a level and had to choose to complete or close
+the app." That was exactly true. Every screen in the game had a way back except
+the one you spend all your time on — from `'playing'` the only exits were winning,
+losing, or killing the tab.
+
+### The button is in the footer, not the tray
+
+The tray is full on the narrowest frame — purse, eight cards, broom — but that is
+the smaller reason. The tray is where a thumb goes *on purpose*, forty times a
+run, and "stop the game" should not live one card-width from "place a Bubble
+Machine". The footer's left corner is the least-travelled pixel on the screen:
+no cell reaches it (column zero is centred at x=90), no sparkle can fall there
+(they only ever drop on cell centres), and the hearts beside it are read rather
+than pressed. The hearts move right by 24px to make room, which is the whole
+cost.
+
+It is drawn **quiet** — dim outline, no fill, no pulse — and that is the exact
+inverse of the broom two decisions ago. The broom shouts because arming it is one
+tap from destroying a 250-sparkle toy. This button destroys nothing: it stops the
+clock and asks a question, and both answers are safe.
+
+### Pausing is a phase, not a flag
+
+`'paused'` joins the `Phase` union, so it inherits the early return in
+`update()` that every menu phase already has. A `paused` boolean would have to be
+checked separately by everything that ticks, and the first thing anyone forgot to
+check would keep running under the scrim.
+
+The run is not touched. Toys, kids, shots, sparkles, cooldowns and whatever card
+is in her hand are all exactly where they were — including the card, because
+"I picked something up and want a moment to think about where it goes" is the
+most likely reason to press this at all, and a pause that quietly put the card
+back would punish the thing it exists for.
+
+The scrim is 0.6 rather than the result card's 0.78, on purpose: seeing your own
+board dimmed but legible is what makes KEEP PLAYING the obvious answer. It is the
+difference between "the game stopped" and "the game is holding your place". The
+panel does not repeat the level name for the same reason — the footer is still
+on screen underneath and still says it.
+
+### There is no "are you sure"
+
+The panel **is** the confirmation. One tap stopped the game and did nothing else,
+and the run is sitting there intact behind it. Nothing on the screen is red and
+nothing warns: leaving a level is not a mistake, it is a five-year-old deciding
+she is done, and a screen that scolds her for it is a screen she learns to be
+afraid of. LEAVE carries the level-grid icon so it says *where you go* rather
+than that something ends.
+
+### Leaving endless keeps the score
+
+The one asymmetry. Endless scores waves survived, she survived them, and
+`recordEndless` only ever raises the best — so recording on the way out can help
+her and cannot cost her anything. The alternative teaches her to sit through an
+ending she doesn't want in order to keep a number. A campaign level records
+nothing, exactly as it records nothing on a loss: stars are for finishing.
+
+### The check
+
+`validateHudContracts` joins the tray's, on the same rule and for the same reason
+— footer geometry cannot be proved from inside `src/game/` without the simulation
+depending on the screen. It asserts the button is inside the footer, clear of the
+hearts, clear of the centred level name *on the narrowest frame*, and that its
+tap area is at least 30x30.
+
+**Revisit if:** the footer ever gains a fourth thing. It currently holds a
+control, the hearts, the level name and the wave bar, and that is as much as
+26 pixels of height will carry.

@@ -26,6 +26,7 @@ export type IconId =
   | 'levels'
   | 'guide'
   | 'prev'
+  | 'pause'
   | 'easy'
   | 'normal'
   | 'hard';
@@ -131,6 +132,24 @@ export function drawIcon(
       ctx.lineTo(s * 0.5, s * 0.72);
       ctx.closePath();
       ctx.fill();
+      break;
+    }
+
+    case 'pause': {
+      // Two upright bars. It is the one pictogram here that a child will not
+      // arrive already knowing, and it is used anyway: it is the universal
+      // symbol, she will meet it on every other screen she ever touches, and
+      // the alternatives are worse. A '×' means "gone" and this button does not
+      // throw the run away; a door needs a hinge and a handle to read as a door
+      // and neither survives 14px.
+      //
+      // It also passes the different-shape rule trivially — nothing else in the
+      // set is a pair of vertical bars, and its opposite number on the panel it
+      // opens is 'play', which is the shape it is culturally paired with.
+      const bar = s * 0.34;
+      for (const side of [-1, 1]) {
+        ctx.fillRect(side * s * 0.52 - bar / 2, -s * 0.72, bar, s * 1.44);
+      }
       break;
     }
 
