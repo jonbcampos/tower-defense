@@ -1692,3 +1692,312 @@ Toy, the Sticky Slime and the Balloon Kid's mint cuffs all survive untouched.
 **Revisit if:** a piece ever legitimately contains a patch of near-#00FF00 that
 is enclosed by its own subject. Nothing does today, and the palette is the reason
 the key is that colour in the first place.
+
+## 62. A way out of a level, and it is a rest rather than a quit
+
+Reported as: "I accidentally hit a level and had to choose to complete or close
+the app." That was exactly true. Every screen in the game had a way back except
+the one you spend all your time on — from `'playing'` the only exits were winning,
+losing, or killing the tab.
+
+### The button is in the footer, not the tray
+
+The tray is full on the narrowest frame — purse, eight cards, broom — but that is
+the smaller reason. The tray is where a thumb goes *on purpose*, forty times a
+run, and "stop the game" should not live one card-width from "place a Bubble
+Machine". The footer's left corner is the least-travelled pixel on the screen:
+no cell reaches it (column zero is centred at x=90), no sparkle can fall there
+(they only ever drop on cell centres), and the hearts beside it are read rather
+than pressed. The hearts move right by 24px to make room, which is the whole
+cost.
+
+It is drawn **quiet** — dim outline, no fill, no pulse — and that is the exact
+inverse of the broom two decisions ago. The broom shouts because arming it is one
+tap from destroying a 250-sparkle toy. This button destroys nothing: it stops the
+clock and asks a question, and both answers are safe.
+
+### Pausing is a phase, not a flag
+
+`'paused'` joins the `Phase` union, so it inherits the early return in
+`update()` that every menu phase already has. A `paused` boolean would have to be
+checked separately by everything that ticks, and the first thing anyone forgot to
+check would keep running under the scrim.
+
+The run is not touched. Toys, kids, shots, sparkles, cooldowns and whatever card
+is in her hand are all exactly where they were — including the card, because
+"I picked something up and want a moment to think about where it goes" is the
+most likely reason to press this at all, and a pause that quietly put the card
+back would punish the thing it exists for.
+
+The scrim is 0.6 rather than the result card's 0.78, on purpose: seeing your own
+board dimmed but legible is what makes KEEP PLAYING the obvious answer. It is the
+difference between "the game stopped" and "the game is holding your place". The
+panel does not repeat the level name for the same reason — the footer is still
+on screen underneath and still says it.
+
+### There is no "are you sure"
+
+The panel **is** the confirmation. One tap stopped the game and did nothing else,
+and the run is sitting there intact behind it. Nothing on the screen is red and
+nothing warns: leaving a level is not a mistake, it is a five-year-old deciding
+she is done, and a screen that scolds her for it is a screen she learns to be
+afraid of. LEAVE carries the level-grid icon so it says *where you go* rather
+than that something ends.
+
+### Leaving endless keeps the score
+
+The one asymmetry. Endless scores waves survived, she survived them, and
+`recordEndless` only ever raises the best — so recording on the way out can help
+her and cannot cost her anything. The alternative teaches her to sit through an
+ending she doesn't want in order to keep a number. A campaign level records
+nothing, exactly as it records nothing on a loss: stars are for finishing.
+
+### The check
+
+`validateHudContracts` joins the tray's, on the same rule and for the same reason
+— footer geometry cannot be proved from inside `src/game/` without the simulation
+depending on the screen. It asserts the button is inside the footer, clear of the
+hearts, clear of the centred level name *on the narrowest frame*, and that its
+tap area is at least 30x30.
+
+**Revisit if:** the footer ever gains a fourth thing. It currently holds a
+control, the hearts, the level name and the wave bar, and that is as much as
+26 pixels of height will carry.
+
+## 63. The Bubble Machine fires three bubbles whether or not it needs to
+
+Reported as "is the bubble machine supposed to hit 3 rows? doesn't seem to at
+least animate 3 shots". It was hitting three rows, and it was not animating three
+shots, and both were true at once.
+
+Every multi-lane shooter fires only into lanes that have something in them. That
+is right for damage — a bubble down an empty row hits nothing — and it is
+invisible, because **a player cannot see a shot that was skipped**. So the most
+expensive toy in the game, sold on the words "bubbles in three rows at the same
+time", spent most of its life launching one bubble, and looked exactly like the
+50-sparkle Bubble Wand costing five times as much.
+
+Sold on three, so it fires three. `volley` on the shoot definition, data rather
+than a branch, and the Bubble Machine is the only thing in the game that has it.
+
+### It still holds its reload
+
+`fireAt` asks the ordinary question first — is there anything in ANY of my three
+rows — and only then fires all three. A machine that shot at a completely clear
+board would burn its 1.3s reload on nothing and be halfway through it when the
+wave actually arrived, which is the exact bug the held-reload rule exists to
+prevent (it is why `fireAt` returns a boolean at all). What `volley` changes is
+only what happens once the answer is yes.
+
+### The trial counts bubbles, not damage
+
+`trialMachineFiresThree` measures SHOTS IN FLIGHT. Damage would pass just as well
+with one bubble hitting three times, and what was reported was not a damage
+figure — it was what the screen showed. Four cases, because the two failure modes
+point in opposite directions: one kid in its own row, one kid in a row it merely
+covers, three kids, and an empty board wanting zero.
+
+### What it costs
+
+A small buff, taken deliberately. Bubbles fired down an empty row travel toward
+the door and can meet a kid who walks in behind them, so the machine now
+occasionally hits something it previously would not have. All 282 trials pass
+unchanged, including every "winnable by a mediocre bot" and every "doing nothing
+loses". Pool pressure was the other worry and is not close: five machines stacked
+in one column — an absurd board nobody will build — peaks at 30 of 64
+projectiles.
+
+**Not** given to the Sprinkler, the other three-lane shooter. The Sprinkler is
+sold on reaching the floaty ones, which you can watch it do; its three lanes are
+a bonus rather than the pitch, and it costs 100 rather than 250.
+
+**Revisit if:** a fourth or fifth lane-spanning shooter arrives. At that point
+"fire every covered lane" is probably the right default for all of them, and the
+flag should invert.
+
+## 64. A toy that cannot reach her does not shoot at her
+
+Parked one commit ago as a small inefficiency — `hasTargetIn` ran its aerial
+pass for every shooter, not just the ones with `hitsAir`, so a Bubble Wand in a
+lane holding nothing but a Balloon Kid fired a bubble under her every 1.4
+seconds. Wasted shots, never a wrong hit; not worth the risk of retuning.
+
+That was the wrong reading, and the note undersold it by measuring the wrong
+thing. The cost is not the shot. **The cost is what the screen says.**
+
+A wand that fires at a balloon and cannot hurt her looks BROKEN. The child can
+see it trying and see it failing, and the two lessons available from that are
+"this toy doesn't work" and "you have to shoot her more" — one of which sends her
+to the tray to buy another wand. A wand that will not fire at all, sitting there
+fully charged while the balloon drifts past, says the one thing that is both true
+and useful: *this is the wrong toy for her, go and get a different one.* Level six
+is called "Balloons float over your bubbles". This is the frame in which you can
+watch that happen.
+
+So the aerial pass is gated on `hitsAir`. It stays a second pass rather than a
+flag in the first loop for the reason it always was: the common case, a lane full
+of walking children, stays a straight scan.
+
+While in there, the unused `_kind` parameter became `hitsAir`. Damage kind
+belongs to the SHOT, which is where immunity is resolved; what a target scan
+needs to know is only what the shooter can reach.
+
+### The trial found a bug in itself first
+
+`trialBalloonNeedsAir` now counts SHOTS as well as damage, because landing zero
+is only half the claim and the visible half is the other one. Adding the same
+assertion to `trialBlanketHides` — a hidden kid should not draw fire either —
+failed immediately, and the failure was in the measurement, not the game.
+
+`damageOver` runs a real level, so **the level's own wave runner keeps spawning
+children into the lane underneath the test.** That never mattered while it
+measured damage to one named kid; it mattered completely the moment it counted
+shots, because a Water Gun firing at a toddler who wandered in is indistinguishable
+in a tally from one firing at the kid it cannot see. The lane is now swept back to
+one occupant every tick.
+
+That still left exactly one shot, and the last one is worth writing down: the
+sweep runs BEFORE `update` and a spawn happens INSIDE it, so on the tick a kid
+arrives the shooters can see an intruder the harness never had a chance to
+remove. Those ticks are discarded rather than counted. One frame in a few hundred,
+and it was worth a whole shot and an hour of believing the blanket was broken.
+
+Both now read zero, all 282 trials pass, and the blanket half was correct all
+along.
+
+**Revisit if:** a toy is ever added that can hurt something it cannot target —
+a splash, a chain, an area effect. The premise here is that "can this shooter
+reach it" is a property of the shooter alone.
+
+## 65. A bad row of a sheet is thrown away, and a float is not a walk
+
+Reported as "the balloon girl is still having issues — the balloon goes out of
+the square, and she is fast so it looks erratic". Two complaints, one and a half
+causes.
+
+### Half the sheet was never usable
+
+Her frames sliced out as: a child with a balloon **sawn off by a straight line**
+and a stray pink lump by her boots (frames 1-4), then a child with a whole
+balloon at a different size and height (frames 5-8). In the source, the top row's
+balloons run off the top edge of the picture, and the bottom row's are drawn high
+enough to cross the row boundary — so every top-row cell also carries a slice of
+the balloon belonging to the cell below it.
+
+The galling part: **the square sheet was already the fix for this.** Decision-wise
+it is written down in `MOTION_SHEETS` — she used to be 16:9 like everyone else,
+her cells were 256x285, and the balloons ran off the top. Her frame was made
+square so the cells would be tall enough. On a square frame it happened again.
+
+So this stops being a prompt problem and becomes a data problem. `rowIds` gains
+`'skip'`, the loader discards those frames, and her manifest entry gains
+`deadRows: [0]` with the whole story next to it. The prompt is NOT weakened to
+match — it still asks for eight good frames, because that is what should be on
+disk. `deadRows` describes what IS.
+
+What is left is a clean four-frame float, which is exactly what every other
+character has. Better than shipping the bad row, and much better than dropping
+her to a still.
+
+### `--reindex`, so a reading correction is free
+
+`index.json` is generated, and it is where the grid lives — so the fix above was
+unpublishable without an API key, because the only thing that wrote the index was
+a billed generation run. That is backwards. A correction to how a sheet is READ
+is a manifest edit over art that already exists, and paying to redraw the art in
+order to publish the correction is an excellent way to talk yourself out of the
+correction. `--reindex` rewrites the index from the manifest and a directory
+listing, and joins `--dry-run` and `--list` in not demanding a key.
+
+### The other half: she was animating at three times the intended rate
+
+Not a consequence of the bad row, and it would have been wrong even on a perfect
+sheet. `frameFor` divides by the kid's `stride`, and the Balloon Kid had no gait
+entry — so she inherited the DEFAULT, which is the toddler's, the reference
+WALK. A drifting child was turning over poses at the rate of a child taking
+steps, and she covers ground half again as fast as a toddler, so it came out at
+**7.3 frames a second** against the three the cycle is written for. Eight frames
+instead of four is where the last doubling came from.
+
+She has an entry now, at 0.16, and measures 2.25 frames a second — between the
+Puffy Coat's deliberate 1.2 and the toddler's 2.66, which is where a lazy drift
+belongs. Every other field in it is zeroed rather than filled in with plausible
+numbers, because `applyGait` and `settleFrame` both return early for anything
+`aerial` and hand it the float instead. A number that does nothing is worse than
+no number: someone will tune it.
+
+**Revisit if:** a second sheet needs a `deadRows`. One is a bad draw; two is the
+slicer being asked to do something the model cannot reliably supply, and the
+answer then is to cut rows on the CONTENT BANDS `checkArt` already finds rather
+than on an even division of the image.
+
+**Superseded in part by decision 66.** `deadRows` lasted one session: the sheet
+was regenerated and both rows came back whole, so the flag is gone from her entry
+and she is back to eight frames. The mechanism stays in `registerSheet`, and the
+gait fix below it was right and is untouched.
+
+## 66. Three prop-and-framing bugs, and the two that were fixed by changing the subject
+
+"The balloon girl's balloon is still going out of frame" — after decision 65 had
+already thrown away the row where it was clipped. That is the sentence that
+matters, because it means the sheet was never the whole problem.
+
+Six billed calls: both motion sheets and both stills, twice for the Big Kid.
+
+### The balloon was leaving the frame in two different places
+
+**In the sheet**, which decision 65 dealt with by discarding the bad row.
+
+**And on the board**, which no sheet can fix. Kids are drawn at twice their
+collision height and overflow their lane on purpose; above the TOP lane that
+overflow runs into the tray, which is opaque interface painted after the board.
+For everyone on their feet it costs a few pixels of air over a head. For her it
+cost the balloon — she is the one character whose art is mostly the thing above
+her. `tuckUnderTray` pushes floaters down by however much would have been eaten,
+which is 10px in row one and exactly zero everywhere else.
+
+Floaters only, and that is a rule rather than a special case: a child who is
+walking is standing on her lane and may not be moved off it, while a child who is
+floating is at whatever height she is drawn at.
+
+### The subject was the bug, twice
+
+Her long string is what made every problem she has ever had. A balloon, then
+string, then a child is a subject twice as tall as it is wide — so a 16:9 sheet
+clipped the balloons, a square sheet clipped them again, and the square sheet's
+1:2 cells then squeezed her to half the width of the rest of the cast, because
+`drawSprite` fits a frame by its limiting dimension and hers was always height.
+Three attempts at shaping a picture around a subject. **The string is now short**
+and the balloon rides just above her hands: a compact shape, the standard 16:9
+sheet, drawn the same size as everybody else, all eight frames whole.
+
+The Big Kid's bunny went the same way. It appeared in walk frames 1 and 3 and
+vanished from 2 and 4 across three generations — including two after the shared
+prop rule ("appears in ALL FOUR frames, on the SAME side, never swaps sides,
+moves or disappears") was written in capitals for this exact failure. Look at
+what the pose asks for and it stops being mysterious: his walk is both arms flung
+wide open for a hug, which is the entire reason he reads as a hug and not a
+threat, and a toy clamped under one of those arms fights the pose in every frame.
+The model resolved the fight by dropping the toy, just not consistently. So the
+bunny left the walk and stayed in the GRAB, where all four frames have always had
+it — because there it is the thing his hands are ON, and the arms are doing one
+job instead of two.
+
+His clothes, which is what was actually reported, were fixed by the wording alone
+and came back identical in all eight frames.
+
+### The lesson, which this file keeps paying for
+
+When the model will not draw something, the rule that works is not a firmer
+instruction. It is to stop asking. FACING_RIGHT, the Puffy Coat's rotation, the
+Slider's third row, and now a short string and an empty pair of hands: five times
+the fix has been to change what is asked for rather than how loudly.
+
+A useful tell, in hindsight: every one of these was a case where the SUBJECT and
+the POSE wanted different things — a prop needing an arm the hug was using, a
+tall subject in a wide cell. When those two fight, the model picks a winner per
+frame, and per-frame is exactly what an animation cannot survive.
+
+**Revisit if:** a fourth character grows a carried prop. The rule that now holds
+is that a prop lives in the cycle where the hands are already on it, and nowhere
+else.

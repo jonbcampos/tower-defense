@@ -122,6 +122,22 @@ export interface ToyDef {
      * the only reason the attic is playable in depth.
      */
     arcs?: boolean;
+    /**
+     * Fire EVERY covered lane on every shot, including the empty ones.
+     *
+     * The default for a multi-lane shooter is to fire only into lanes that have
+     * something in them, which is efficient and invisible: the Bubble Machine
+     * costs 250 sparkles and is sold as "bubbles in three rows at the same
+     * time", and then usually launched one bubble, because usually only one of
+     * its three rows had a kid in it. A player cannot see a shot that was
+     * skipped, so what she saw was the most expensive toy in the game behaving
+     * like a Bubble Wand.
+     *
+     * So the machine pays for its own advertisement. It still holds its reload
+     * when all three rows are clear — see `fireAt` — but the moment it fires at
+     * anything, all three rows get a bubble.
+     */
+    volley?: boolean;
   };
 
   /** Instants: damage applied to a whole lane the moment it is used. */
@@ -376,7 +392,12 @@ export const TOYS: Record<ToyId, ToyDef> = {
     hp: 140,
     // Three lanes at near single-lane strength. The most expensive thing in the
     // game and the only toy that makes a five-lane board feel small.
-    shoot: { damage: 12, interval: 1.3, kind: 'bubble', lanes: 3, speed: 130 },
+    //
+    // `volley` is the only one in the game, and it is here rather than on the
+    // Sprinkler — the other three-lane shooter — because this is the toy whose
+    // entire pitch is the number three. The Sprinkler is sold on reaching the
+    // floaty ones, which you can see it do.
+    shoot: { damage: 12, interval: 1.3, kind: 'bubble', lanes: 3, speed: 130, volley: true },
     hitsAir: true,
     color: '#c9b3ff',
     accent: '#dff4ff',

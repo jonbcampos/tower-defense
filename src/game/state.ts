@@ -66,8 +66,23 @@ import { Rng } from '../core/rng';
  * `update()` early-returns unless this is `'playing'`, so the menu phases cost
  * the simulation nothing and the renderer gets one field to switch on instead
  * of a parallel screen-state machine that could disagree with this one.
+ *
+ * `'paused'` is a run that is still entirely intact — every toy, kid, shot and
+ * sparkle is where it was. It gets its freeze for free from the early return,
+ * which is the whole reason to spend a phase on it rather than a boolean: a
+ * `paused` flag would have to be checked separately by everything that ticks,
+ * and the first thing anyone forgot to check would keep running under the
+ * scrim.
  */
-export type Phase = 'title' | 'select' | 'loadout' | 'guide' | 'playing' | 'won' | 'lost';
+export type Phase =
+  | 'title'
+  | 'select'
+  | 'loadout'
+  | 'guide'
+  | 'playing'
+  | 'paused'
+  | 'won'
+  | 'lost';
 
 export type GameEventType =
   | 'place'
@@ -707,24 +722,46 @@ export class GameState {
     }
   }
 
-  /** Fire a shooter into every lane it covers that has something to shoot. */
+  /**
+   * Fire a shooter into every lane it covers that has something to shoot.
+   *
+   * Two passes rather than one, because a `volley` shooter still has to decide
+   * WHETHER to fire on the ordinary rule — a lane with something in it — before
+   * it fires into all three. A machine that shot at a completely clear board
+   * would be a machine that spends its reload on nothing and is never charged
+   * when the wave actually arrives, which is the exact bug the held-reload rule
+   * exists to prevent. What `volley` changes is only what happens once the
+   * answer is yes.
+   */
   private fireAt(toy: Toy, laneSpan: number): boolean {
     const def = TOYS[toy.id].shoot!;
     const from = laneSpan > 1 ? toy.lane - 1 : toy.lane;
     const to = laneSpan > 1 ? toy.lane + 1 : toy.lane;
     const seesHidden = laneSpan > 1;
+    const hitsAir = TOYS[toy.id].hitsAir;
     let fired = false;
+
+    if (def.volley) {
+      let anything = false;
+      for (let lane = from; lane <= to && !anything; lane++) {
+        if (lane < 0 || lane >= LANE_COUNT) continue;
+        anything = this.hasTargetIn(lane, cellCentreX(toy.col), hitsAir, seesHidden);
+      }
+      if (!anything) return false;
+    }
 
     for (let lane = from; lane <= to; lane++) {
       if (lane < 0 || lane >= LANE_COUNT) continue;
-      if (!this.hasTargetIn(lane, cellCentreX(toy.col), def.kind, seesHidden)) continue;
+      if (!def.volley && !this.hasTargetIn(lane, cellCentreX(toy.col), hitsAir, seesHidden)) {
+        continue;
+      }
       this.shots.fire(
         cellCentreX(toy.col) + 6,
         lane,
         def.damage,
         def.kind,
         def.speed,
-        TOYS[toy.id].hitsAir,
+        hitsAir,
         seesHidden,
         false,
         { slowFor: def.slowFor ?? 0, pierce: def.pierce ?? 0, arcs: def.arcs ?? false },
@@ -767,17 +804,47 @@ export class GameState {
     return true;
   }
 
-  private hasTargetIn(lane: number, fromX: number, _kind: string, seesHidden: boolean): boolean {
+  /**
+   * Is there anything in this lane that this shooter could actually hit?
+   *
+   * "Could actually hit" is the whole point, and it used to be a lie. The
+   * second pass ran for EVERY shooter, so a Water Gun facing a lane with
+   * nothing in it but a Balloon Kid fired a jet of water straight under her,
+   * every 1.5 seconds, for as long as she took to cross the board.
+   *
+   * That is worse than a wasted shot: it is the game telling a five-year-old
+   * the wrong thing. A toy that fires at a balloon and does not hurt her looks
+   * BROKEN — she can see it trying and failing, and the lesson available is
+   * "this toy is broken" or "you have to shoot her more". A toy that will not
+   * fire at all, sitting there fully charged while the balloon drifts past,
+   * says the one thing that is true and useful: **this is the wrong toy for
+   * her, go and get a different one.** Level six is called "Balloons float over
+   * your bubbles" and this is the frame in which you can see that happen.
+   *
+   * So the aerial pass is now gated on the toy being able to reach up. It stays
+   * a second pass rather than a flag inside the first loop, for the reason it
+   * always was: the common case — a lane full of walking children — stays a
+   * straight scan.
+   *
+   * `hitsAir` replaced a `_kind` parameter that nothing had read in a long
+   * time. Damage kind belongs to the SHOT, which is where immunity is resolved;
+   * what the target scan needs to know is only what the shooter can reach.
+   */
+  private hasTargetIn(
+    lane: number,
+    fromX: number,
+    hitsAir: boolean,
+    seesHidden: boolean,
+  ): boolean {
     for (const enemy of this.enemies.items) {
       if (!enemy.active || enemy.lane !== lane) continue;
       if (enemy.x < fromX) continue;
       const def = ENEMIES[enemy.kind];
-      if (def.aerial) continue; // caller re-checks per shot; ground toys can't reach
+      if (def.aerial) continue; // handled below, and only for toys that can reach
       if (enemy.concealed && !seesHidden) continue;
       return true;
     }
-    // An air-capable toy also fires at floaters. Kept as a second pass rather
-    // than a flag inside the loop so the common case stays a straight scan.
+    if (!hitsAir) return false;
     for (const enemy of this.enemies.items) {
       if (!enemy.active || enemy.lane !== lane) continue;
       if (enemy.x < fromX) continue;

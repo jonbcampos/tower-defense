@@ -422,6 +422,9 @@ function clamp(value: number, low: number, high: number): number {
  * The row split is what lets a single generated image carry two animations of
  * the same character — see `rowIds`.
  */
+/** A `rowIds` entry meaning "this row of the sheet is unusable, throw it away". */
+const SKIP_ROW = 'skip';
+
 function registerSheet(id: string, frames: HTMLCanvasElement[], spec: SheetSpec): void {
   const rowIds = spec.rowIds;
   if (!rowIds || rowIds.length === 0) {
@@ -437,8 +440,16 @@ function registerSheet(id: string, frames: HTMLCanvasElement[], spec: SheetSpec)
   // character with only one action — the Balloon Kid, who never stops to grab
   // because she is floating — still be asked for as the 4x2 grid the model
   // reliably draws, and get an eight-frame float out of it.
+  //
+  // A row named `SKIP_ROW` is thrown away instead. That is for a sheet where
+  // one row came back unusable and the rest is fine: the alternative is either
+  // shipping the bad row or dropping a whole character back to a still, and
+  // both are worse than playing the frames that came out. See the Balloon Kid
+  // in `scripts/art-manifest.mjs` for the one case, and its warning about
+  // clearing this the moment the sheet is regenerated.
   const byId = new Map<string, HTMLCanvasElement[]>();
   rowIds.forEach((suffix, row) => {
+    if (suffix === SKIP_ROW) return;
     const slice = frames.slice(row * cols, row * cols + cols);
     if (slice.length !== cols) return;
     const existing = byId.get(suffix);

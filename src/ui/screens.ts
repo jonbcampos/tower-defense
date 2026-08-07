@@ -386,6 +386,79 @@ export function drawEndlessResult(
   for (const rect of resultMenu(false, false)) drawButton(ctx, rect, false);
 }
 
+/**
+ * The pause panel: keep playing, or leave.
+ *
+ * Two buttons, and the asymmetry between them is the design.
+ *
+ * KEEP PLAYING is wide, first, sits where the thumb already is, and carries the
+ * play triangle — the same shape that has started everything all game. LEAVE is
+ * narrower, further down, and carries the level-grid icon so that it says WHERE
+ * you go rather than that something ends. Nothing here is red and nothing warns:
+ * leaving a level is not a mistake, it is a five-year-old deciding she is done,
+ * and a screen that scolds her for it is a screen she learns to be afraid of.
+ *
+ * There is deliberately no "are you sure". The panel IS the confirmation — one
+ * tap stopped the game and did nothing else, and the run is sitting there intact
+ * behind the scrim.
+ */
+export function pauseMenu(): MenuRect[] {
+  return [
+    {
+      id: 'resume',
+      x: SCREEN.w / 2 - 70,
+      y: 130,
+      w: 140,
+      h: 34,
+      label: 'KEEP PLAYING',
+      sub: '',
+      enabled: true,
+      icon: 'play',
+    },
+    {
+      id: 'leave',
+      x: SCREEN.w / 2 - 52,
+      y: 176,
+      w: 104,
+      h: 26,
+      label: 'LEAVE',
+      sub: '',
+      enabled: true,
+      icon: 'levels',
+    },
+  ];
+}
+
+/**
+ * A lighter scrim than the result cards use.
+ *
+ * 0.6 rather than 0.78, because the room behind this one is not over — it is
+ * waiting. Seeing your own board dimmed but legible is what makes KEEP PLAYING
+ * the obvious answer, and it is the difference between "the game stopped" and
+ * "the game is holding your place".
+ */
+export function drawPauseScreen(ctx: CanvasRenderingContext2D): void {
+  drawScrim(ctx, 0.6);
+  drawText(ctx, 'HAVING A REST', SCREEN.w / 2, 68, {
+    size: 22,
+    align: 'center',
+    color: PALETTE.hudText,
+    glow: true,
+  });
+  // No level name here, unlike the result cards. The footer is still on screen
+  // under the scrim and still says it — this is the one overlay whose own board
+  // is left legible behind it, so repeating the name would just be saying the
+  // same thing twice, forty pixels apart.
+  drawText(ctx, 'Everything is right where you left it.', SCREEN.w / 2, 98, {
+    size: 9,
+    align: 'center',
+    color: PALETTE.hudDim,
+    bold: false,
+  });
+
+  for (const rect of pauseMenu()) drawButton(ctx, rect, false);
+}
+
 export function resultMenu(won: boolean, hasNext: boolean): MenuRect[] {
   const rects: MenuRect[] = [];
   const y = 176;

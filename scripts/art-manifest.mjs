@@ -373,13 +373,33 @@ const BASE_PIECES = [
     // and never touches the head or neck, and the body is bent and active in
     // every single frame. "Dangling" and "hanging" are banned words here —
     // they are accurate about the physics and catastrophic about the picture.
+    // THE STRING IS SHORT, and that is a fix rather than a detail.
+    //
+    // It used to be long, and the long version is what made every other problem
+    // she has ever had. A balloon, a length of string and THEN a child is a
+    // subject twice as tall as it is wide, and the sheet has to be shaped around
+    // it: a 16:9 frame clipped the balloons off the top, a square frame clipped
+    // them again, and the square frame's 1:2 cells then squeezed her to half the
+    // width of every other kid on the board — `drawSprite` fits a frame by its
+    // limiting dimension, and hers was always height. She ended up small, and
+    // still tall enough that in the TOP LANE the crown of the balloon went under
+    // the tray, which is drawn over the board.
+    //
+    // Three attempts at shaping a picture around the subject. So the subject
+    // changes instead: the balloon rides just above her hands. She is still a
+    // child being carried through the air by a balloon, which is the entire
+    // read, and her silhouette is now about as tall as a child in a puffy coat
+    // rather than twice that — so she takes the same 16:9 sheet as the rest of
+    // the cast and is drawn the same size as them.
     subject:
       'a delighted small child in dungarees flying through the air, GRIPPING the string of a big ' +
-      'pink helium balloon TIGHTLY IN BOTH RAISED HANDS above their head. The string ends AT THE ' +
-      "CHILD'S HANDS and must NEVER touch or attach to their head, neck, face or back. Both arms " +
-      'are stretched up holding on. Knees pulled up and legs kicking cheerfully. Laughing, having ' +
-      'enormous fun, like a child on a rope swing. Silhouette: a balloon, a string, then a child ' +
-      'holding on by both hands with bent kicking legs.',
+      'pink helium balloon TIGHTLY IN BOTH RAISED HANDS just above their head. The string is SHORT ' +
+      'so the balloon rides CLOSE ABOVE the hands, about one head-height above them and no more. ' +
+      "The string ends AT THE CHILD'S HANDS and must NEVER touch or attach to their head, neck, " +
+      'face or back. Both arms are stretched up holding on. Knees pulled up and legs kicking ' +
+      'cheerfully. Laughing, having enormous fun, like a child on a rope swing. Silhouette: a ' +
+      'balloon sitting close over a child who is holding on by both hands, with bent kicking legs ' +
+      'below — a compact shape roughly as wide as it is tall, NOT a long vertical one.',
     look: 'warm tan skin and straight black hair',
     cycle:
       'a lively kicking float — the child is holding on and having fun, and is NEVER limp. In all ' +
@@ -387,21 +407,30 @@ const BASE_PIECES = [
       'both knees tucked right up to the chest. Frame 2: legs kicked out forward, body leaning ' +
       'back. Frame 3: legs swung back behind, body leaning forward. Frame 4: legs apart mid-kick, ' +
       'one up and one down. NEVER draw the body hanging straight down, NEVER draw the arms at the ' +
-      "sides, and NEVER attach the string to the child's head or neck.",
-    // A SQUARE sheet, so her cells are tall enough to hold a balloon above a
-    // child. See the note by `aspect` in MOTION_SHEETS.
-    sheetAspect: '1:1',
+      "sides, and NEVER attach the string to the child's head or neck. " +
+      'The WHOLE balloon, including the very top of it, must be inside the frame with clear space ' +
+      'above it in all four frames. Never let the balloon touch or cross the top edge.',
+    // No `sheetAspect` any more: with the short string she is a normal shape and
+    // takes the 16:9 sheet the rest of the cast uses. See the note on `subject`.
+    // `deadRows: [0]` lived here for exactly one session, discarding a top row
+    // whose balloons were cut in half by the top edge of the picture. The short
+    // string made it unnecessary — the regenerated sheet has all eight frames
+    // whole — and it is deleted rather than left set to `[]`, because a disabled
+    // guard is a thing people restore without rereading why it existed. The
+    // mechanism stays in `registerSheet` for the next bad draw.
     // She is the only kid with no grab cycle — she never stops, because she is
     // floating — so her sheet's second row continues the float instead. Eight
-    // frames of one action rather than four of each of two, which makes hers
-    // the smoothest cycle in the game and costs nothing extra.
+    // frames of one action rather than four of each of two, which makes hers the
+    // smoothest cycle in the game and costs nothing extra.
     cycle2:
       'the same lively kicking float, continued. In all four frames BOTH HANDS still grip the ' +
       'string above the head and the arms stay raised. Frame 5: knees tucked up and body twisted ' +
       'slightly, looking down. Frame 6: one leg stretched down and one tucked, body upright. ' +
       'Frame 7: both legs stretched down together, toes pointed, body leaning back. Frame 8: legs ' +
       'scissored, the front one forward and the back one behind, mid-kick. NEVER draw the body ' +
-      "hanging straight down and NEVER attach the string to the child's head or neck.",
+      "hanging straight down and NEVER attach the string to the child's head or neck. " +
+      'The WHOLE balloon, including the very top of it, must be inside the frame with clear space ' +
+      'above it in all four frames. Never let the balloon touch or cross an edge.',
   },
   {
     id: 'puffy',
@@ -493,21 +522,67 @@ const BASE_PIECES = [
   {
     id: 'bigkid',
     aspect: '1:1',
+    // NO PLUSH TOY IN THE WALK, and do not put one back.
+    //
+    // He carried a green bunny tucked under the near arm for three generations
+    // of this sheet. In every one of them it appeared in walk frames 1 and 3 and
+    // was absent from 2 and 4 — so in play it blinked on and off about twice a
+    // second. The shared prop rule ("appears in ALL FOUR frames, on the SAME
+    // side, under or in the SAME hand, never swaps sides, moves or disappears")
+    // was written FOR this exact failure, in capitals, and did not fix it once.
+    //
+    // Look at what the pose asks for and it stops being mysterious: his walk is
+    // both arms flung wide open for an enormous hug, which is the whole reason
+    // he reads as a hug and not a threat. A toy clamped under one of those arms
+    // fights the pose in every frame, and the model resolves the fight by
+    // dropping the toy — just not consistently.
+    //
+    // So the bunny leaves the walk and stays in the GRAB, where all four frames
+    // have always had it, because there it is the thing his hands are ON. The
+    // arms are doing one job instead of two. It appears when he stops to pull at
+    // a toy, which is a moment he changes his entire pose anyway.
     subject:
       'a big grinning older child, much larger than the others, striding to the LEFT with both arms ' +
-      'flung wide open for an enormous hug, a plush toy tucked under one arm. Friendly and boisterous, ' +
-      'never scary. Silhouette: tall and very wide.',
+      'flung wide open for an enormous hug. Both hands are EMPTY and he is carrying NOTHING — no ' +
+      'toy, no bag, nothing under either arm. Friendly and boisterous, never scary. Silhouette: ' +
+      'tall and very wide.',
     look: 'medium brown skin and dark curly hair',
-    outfit: 'a dusty purple long-sleeved top over a cream t-shirt, pale pink trousers and grey shoes',
-    grab: 'a big child pulling a toy apart with both hands. Frame 1: both arms stretched right out, grabbing hold. Frame 2: leaning back with all his weight, elbows bent, hauling. Frame 3: arms out again. Frame 4: leaning back hauling, one foot off the ground. The green plush bunny stays tucked under the SAME arm, the one nearest the viewer, in all four frames.',
+    // He is the only child in the cast wearing one garment OVER another, and he
+    // is the only one whose sheet came back in two different outfits: frames 1
+    // and 3 of his walk wore a closed purple top with no cream showing, frames 2
+    // and 4 an open purple jacket over a cream tee. Reported as "his clothes
+    // change as the walk cycle continues", and correctly — at walking speed the
+    // jacket does up and undoes itself twice a second.
+    //
+    // The shared rules did not catch it, and could not have: they forbid
+    // CHANGING a colour or adding a panel, and nothing changed colour. The
+    // ambiguity is in "a top OVER a t-shirt", which describes two perfectly
+    // consistent garments and never says how much of the lower one you can see.
+    // So the layering is now stated as a visible fact about the picture rather
+    // than as a fact about his wardrobe.
+    //
+    // Which of the two readings to keep was the model's call, on the rule this
+    // file keeps relearning: six of the eight frames it drew — all four grabs
+    // and two of the walks — had the jacket open, so the open jacket is what is
+    // written down.
+    outfit:
+      'an unfastened dusty purple jacket worn open over a cream t-shirt, with pale pink trousers ' +
+      'and grey shoes. The jacket is ALWAYS open and never fastened, and a wide panel of the cream ' +
+      't-shirt is visible down the centre of his chest in every single frame',
+    grab: 'a big child hauling on a small green plush bunny with BOTH HANDS, gripping it out in front of him. Frame 1: both arms stretched right out, hands gripping the bunny. Frame 2: leaning back with all his weight, elbows bent, hauling the bunny towards his chest. Frame 3: arms stretched out again. Frame 4: leaning back hauling, one foot off the ground. The green plush bunny is held in BOTH HANDS in all four frames and is never tucked under an arm, never dropped and never absent.',
     cycle:
       'a slow heavy stride. Frame 1: the NEAR leg planted far forward, the whole body dropped low ' +
       'onto it, landing hard. Frame 2: pushing off, legs passing, body at its highest. Frame 3: ' +
       'THE OPPOSITE OF FRAME 1 — the FAR leg planted far forward, body dropped low, landing hard. ' +
       'Frame 4: pushing off, legs passing, body at its highest. ' +
-      'Both arms stay flung wide open for a hug in every frame. He carries a small green plush ' +
-      'bunny tucked under the SAME arm — the one NEAREST the viewer — in ALL FOUR frames, in the ' +
-      'same spot and at the same size. The bunny must never swap arms, move, or vanish.',
+      'Both arms stay flung wide open for a hug in every frame. ' +
+      // Said here as well as in the outfit, because the outfit line describes a
+      // character and this one describes THIS SHEET, and it is between frames of
+      // one sheet that he changed.
+      'His jacket hangs open with the cream t-shirt showing beneath it in all four frames: it is ' +
+      'never done up, never closed over, and the cream is never hidden. ' +
+      'His hands are EMPTY in all four frames. He is not holding or carrying anything at all, and ' +
+      'there is no plush toy, no bunny and nothing tucked under either arm in any frame.',
   },
 
   // --- Scenery --------------------------------------------------------------
@@ -970,9 +1045,20 @@ const FACE_SHEET_RULES = [
  * grab gets an eight-frame cycle of the one action instead, both rows
  * registering under the same id — see `rowIds` and `registerSheet`.
  */
+/**
+ * Rows of a sheet that came back unusable, named so the loader discards them.
+ *
+ * A property of the FILE, not of the prompt — which is why it changes `rowIds`
+ * and leaves the row's description alone. The prompt keeps asking for the sheet
+ * that should exist; this describes the one that does. See `deadRows` on the
+ * Balloon Kid, the only piece that uses it.
+ */
+const SKIP_ROW = 'skip';
+
 const MOTION_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => {
   const both = Boolean(piece.grab);
   const rowCount = piece.sheetRows ?? 2;
+  const dead = new Set(piece.deadRows ?? []);
   const rowIds = ['walk'];
   const rows = [{ label: `TOP ROW (frames 1 to 4)${both ? ', WALKING' : ''}`, poses: piece.cycle }];
   for (let r = 1; r < rowCount; r++) {
@@ -1007,7 +1093,13 @@ const MOTION_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => 
     aspect: piece.sheetAspect ?? '16:9',
     size: '2K',
     twoActions: both,
-    sheet: { cols: 4, rows: rowCount, align: piece.align ?? 'floor', mirrored: true, rowIds },
+    sheet: {
+      cols: 4,
+      rows: rowCount,
+      align: piece.align ?? 'floor',
+      mirrored: true,
+      rowIds: rowIds.map((id, row) => (dead.has(row) ? SKIP_ROW : id)),
+    },
     subject: piece.subject,
     look: piece.look,
     outfit: piece.outfit,

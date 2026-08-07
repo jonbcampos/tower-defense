@@ -279,12 +279,29 @@ a rest, which children like.
 - **`ARC_HEIGHT` is a fixed 26px.** A lob crossing two cells and one crossing
   seven rise the same amount, because the arc is measured against the distance
   left to run. Fine today; wrong-looking if a short-range lobber ever exists.
+- **The Pillow Fort is the only wall with a recharge.** Twelve seconds, while the
+  Duck Ring, the Fan, the Squeaky Toy, the Soap Dish, the Shelf and the Sand
+  Castle all have none — a player can lay Sand Castles as fast as she can afford
+  them, and that is the rule rather than the exception. Asked about, and correct
+  as it stands: walls are limited by CELLS and by price, not by a timer, and the
+  Castle's 125 sparkles per cell is the cost. The Fort is the odd one out and it
+  is the cheap one, which is the wrong way round if the recharge is doing any
+  work at all. Left alone because nothing is currently broken by it and the
+  campaign is tuned around the number as it is.
+- ~~`hasTargetIn` runs its aerial pass for every shooter~~ — **fixed**, see
+  decision 64. It was parked as a wasted-shots problem, which undersold it: a
+  Water Gun firing under a Balloon Kid reads as a broken toy rather than as the
+  wrong toy, and "go and get a different one" is the whole lesson level six
+  exists to teach.
 
 ### Not content: debts to pay
 
 - **Rotate the Gemini API key.** It was leaked into a transcript once. The
   generate-art script has no `--key=` flag and refuses to run unless
   `.env.local` is gitignored, but the key itself is still the old one.
+- ~~Regenerate `bigkid.motion` and `balloon.motion`~~ — **done**, six billed
+  calls, both sheets and both stills. See decision 66 for what changed and why
+  two of the three fixes were to the SUBJECT rather than to the wording.
 - ~~Back-port the `viewport.ts` NaN fix~~ — **done**. Both siblings floor the
   window at one pixel, and `src/core/viewport.ts` is byte-identical across all
   three games again.

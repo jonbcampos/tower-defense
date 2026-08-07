@@ -516,20 +516,39 @@ function trialImmunityIsReal(id: DifficultyId): TrialResult {
 }
 
 /** A ground shooter cannot touch a balloon; something that goes up can. */
+/**
+ * Balloons float over ground toys — and the ground toy does not even try.
+ *
+ * The second half is the part with teeth. A Bubble Wand that fires at a balloon
+ * and cannot hurt her looks broken, and the lesson a child takes from watching
+ * it is "this toy doesn't work" or "shoot her more". A wand that sits fully
+ * charged while she drifts past says the true thing instead: wrong toy, go and
+ * fetch the Sprinkler. Level six is named for exactly this moment.
+ */
 function trialBalloonNeedsAir(id: DifficultyId): TrialResult {
   const level = levelById(6);
   const ground = damageOver('wand', 'balloon', level, id, 6);
   const air = damageOver('sprinkler', 'balloon', level, id, 6);
   return {
-    trial: 'balloons float over ground toys and not over spray',
+    trial: 'balloons float over ground toys, which do not waste a shot on them',
     level: '6 Slip and Slide',
     difficulty: id,
-    detail: `bubble wand landed ${ground.toFixed(1)}, sprinkler landed ${air.toFixed(1)}`,
-    pass: ground === 0 && air > 0,
+    detail:
+      `bubble wand landed ${ground.damage.toFixed(1)} in ${ground.shots} shots, ` +
+      `sprinkler landed ${air.damage.toFixed(1)} in ${air.shots}`,
+    pass: ground.damage === 0 && ground.shots === 0 && air.damage > 0,
   };
 }
 
-/** A blanket hides from a single-lane shooter and not from a sprinkler. */
+/**
+ * A blanket hides from a single-lane shooter and not from a sprinkler.
+ *
+ * Shots counted here too, and for the same reason as the balloon: a Water Gun
+ * that cannot see her has never fired at her either, so "she is hidden" reads
+ * off the screen as a toy that is holding still rather than one that is missing.
+ * This half already worked — `hasTargetIn` has always skipped concealed kids for
+ * a toy that cannot see them — and is asserted so it stays that way.
+ */
 function trialBlanketHides(id: DifficultyId): TrialResult {
   const level = levelById(5);
   const aimed = damageOver('watergun', 'blanket', level, id, 6);
@@ -538,30 +557,58 @@ function trialBlanketHides(id: DifficultyId): TrialResult {
     trial: 'a blanket hides from an aimed shot and not from spray',
     level: '5 Lights Out',
     difficulty: id,
-    detail: `water gun landed ${aimed.toFixed(1)}, sprinkler landed ${spray.toFixed(1)}`,
-    pass: aimed === 0 && spray > 0,
+    detail:
+      `water gun landed ${aimed.damage.toFixed(1)} in ${aimed.shots} shots, ` +
+      `sprinkler landed ${spray.damage.toFixed(1)} in ${spray.shots}`,
+    pass: aimed.damage === 0 && aimed.shots === 0 && spray.damage > 0,
   };
 }
 
+/**
+ * One shooter against one awkward kid: what it landed, and whether it tried.
+ *
+ * `shots` matters as much as `damage` and is the newer of the two. Landing zero
+ * is only half of "this is the wrong toy for her" — the other half is that the
+ * toy visibly does not bother, which is the half a five-year-old can actually
+ * read off the screen. See `hasTargetIn`.
+ */
 function damageOver(
   toy: ToyId,
   kind: 'balloon' | 'blanket',
   level: Level,
   id: DifficultyId,
   seconds: number,
-): number {
+): { damage: number; shots: number } {
   const state = new GameState();
   state.start(level, id, level.recommended, 3);
   const enemy = state.enemies.spawn(kind, 2, 1)!;
   const before = enemy.hp + enemy.shield;
   state.toys.place(toy, 2, 0, 0);
+  let shots = 0;
   let t = 0;
   while (t < seconds) {
+    // The level's own wave runner keeps going underneath this, and it will put
+    // ordinary children in the lane. That never mattered while this measured
+    // damage to ONE named kid, and it matters completely now that it also counts
+    // shots: a Water Gun firing at a toddler who wandered in looks identical, in
+    // a tally, to a Water Gun firing at the kid it cannot see.
+    //
+    // So the lane is swept back to one occupant every tick — and a tick in which
+    // the runner spawned somebody ANYWAY is discarded rather than counted. The
+    // sweep happens before `update` and a spawn happens inside it, so on exactly
+    // that tick the shooters can see an intruder this loop never got the chance
+    // to remove. One frame in a few hundred, and it was worth a whole shot.
+    for (const other of state.enemies.items) {
+      if (other !== enemy) other.active = false;
+    }
     state.update(FIXED_DT);
-    state.drainEvents(() => {});
+    const intruded = state.enemies.items.some((other) => other.active && other !== enemy);
+    state.drainEvents((event) => {
+      if (event.type === 'shoot' && !intruded) shots += 1;
+    });
     t += FIXED_DT;
   }
-  return before - (enemy.hp + enemy.shield);
+  return { damage: before - (enemy.hp + enemy.shield), shots };
 }
 
 /** A refused placement costs nothing at all. */
@@ -1229,6 +1276,66 @@ function trialEndlessFitsTheTray(): TrialResult {
   };
 }
 
+/**
+ * The Bubble Machine fires three bubbles, and holds its reload on a clear board.
+ *
+ * Both halves, because they are the two ways `volley` can be got wrong and they
+ * fail in opposite directions. Firing one bubble is the bug this was added to
+ * fix — the 250-sparkle toy sold on "three rows at the same time" quietly
+ * behaving like a 50-sparkle wand, because the two skipped shots are invisible.
+ * Firing into a completely empty board is the overcorrection: a shooter that
+ * spends its reload on nothing is never charged when the wave arrives.
+ *
+ * Counted as SHOTS IN FLIGHT rather than as damage, deliberately. Damage would
+ * pass just as well with one bubble hitting three times, and what was reported
+ * is what the player could SEE.
+ */
+function trialMachineFiresThree(): TrialResult {
+  const level = levelById(24);
+  const inFlight = (state: GameState): number =>
+    state.shots.items.filter((shot) => shot.active && !shot.hostile).length;
+
+  const run = (occupy: number[]): number => {
+    const state = new GameState();
+    state.start(level, 'normal', level.recommended, 24);
+    state.toys.place('machine', 2, 1, 0);
+    for (const lane of occupy) {
+      // Parked at the far end so nothing is reached, blocked or killed: the
+      // only thing under test is how many bubbles leave the machine.
+      const enemy = state.enemies.spawn('puffy', lane, 4)!;
+      enemy.x = cellCentreX(COL_COUNT - 1);
+    }
+    let most = 0;
+    let t = 0;
+    while (t < 2) {
+      for (const enemy of state.enemies.items) {
+        if (enemy.active) enemy.x = cellCentreX(COL_COUNT - 1);
+      }
+      state.update(FIXED_DT);
+      state.drainEvents(() => {});
+      most = Math.max(most, inFlight(state));
+      t += FIXED_DT;
+    }
+    return most;
+  };
+
+  const own = run([2]);
+  const above = run([1]);
+  const all = run([1, 2, 3]);
+  const clear = run([]);
+  const want = TOYS.machine.shoot!.lanes;
+
+  return {
+    trial: 'a Bubble Machine fires all three rows, and none on a clear board',
+    level: '24 Bubbles Everywhere',
+    difficulty: 'normal',
+    detail:
+      `one kid in its own row launched ${own}, one kid in the row above ${above}, ` +
+      `three kids ${all}, an empty board ${clear} — want ${want}, ${want}, ${want}, 0`,
+    pass: own === want && above === want && all === want && clear === 0,
+  };
+}
+
 export function verify(): TrialResult[] {
   const results: TrialResult[] = [];
 
@@ -1254,6 +1361,7 @@ export function verify(): TrialResult[] {
   results.push(trialBroomFreesACell());
   results.push(trialBroomHonoursTheRefundWindow());
   results.push(trialBathBoostsBubbles());
+  results.push(trialMachineFiresThree());
   results.push(trialSqueakRedirectsThenWearsOut());
   results.push(trialSqueakFunnelsInward());
   results.push(trialMagnetStripsArmour());
