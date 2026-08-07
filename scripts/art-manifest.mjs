@@ -188,6 +188,39 @@ const BASE_PIECES = [
       'bubbles rightward, and a little window showing soapy liquid. Silhouette: a box with three spouts.',
   },
   {
+    id: 'ring',
+    aspect: '1:1',
+    subject:
+      'a yellow inflatable duck swim ring lying FLAT on the water, seen from a low three-quarter ' +
+      'angle so the hole in the middle is clearly visible as an oval. A duck head with an orange ' +
+      'beak rises at one end. It must read as something you could stand a toy on top of, not as a ' +
+      'hoop standing on its edge. Silhouette: a wide flat oval with a small head at one side.',
+  },
+  {
+    id: 'castle',
+    aspect: '1:1',
+    subject:
+      'a small sandcastle of damp golden sand: a low wall with three squat towers on top, each ' +
+      'tower with square crenellations, and a tiny paper flag on the middle one. Solid and heavy ' +
+      'looking. Silhouette: a wide flat block with three bumps. No face, no character.',
+  },
+  {
+    id: 'slushie',
+    aspect: '1:1',
+    subject:
+      'a paper cup of bright blue crushed-ice slushie with a domed frozen top spilling over the ' +
+      'rim, a candy-striped straw poking out, and frost on the outside of the cup. ' +
+      'Silhouette: a tapered cup with a dome on top and a straw. Icy blue and white.',
+  },
+  {
+    id: 'beachball',
+    aspect: '1:1',
+    subject:
+      'a classic inflatable beach ball with wide alternating panels of pink, cream and mint, a ' +
+      'glossy highlight on the upper left, resting on the ground. ' +
+      'Silhouette: a plain circle — the only perfectly round object in the set.',
+  },
+  {
     // Faces RIGHT with the toys, not left with the kids: he is on your side.
     id: 'bear',
     aspect: '1:1',
