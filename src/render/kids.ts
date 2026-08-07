@@ -326,6 +326,24 @@ const GAITS: Partial<Record<EnemyKind, Gait>> = {
   puffy: { stride: 0.16, bob: 0.07, lean: 0.02, squash: 0.05, sway: 1.0, waddle: 0.13 },
   // Slow, heavy, and lands hard enough that you can feel it.
   bigkid: { stride: 0.13, bob: 0.09, lean: 0.04, squash: 0.14, sway: 2.6, waddle: 0.06 },
+  /**
+   * The only entry here for someone who does not have a stride.
+   *
+   * She has one anyway because `stride` is what `frameFor` divides by, and
+   * without an entry she inherited the DEFAULT — which is the toddler's, the
+   * reference WALK. A drifting child was turning over poses at the rate of a
+   * child taking steps, and she covers ground faster than a toddler does, so it
+   * came out at well over four frames a second against the three the cycle is
+   * written for. Reported as "she is fast, so it looks erratic", alongside the
+   * clipped balloon that was the other half of it.
+   *
+   * Every other field is dead weight for her and is zeroed to say so: both
+   * `applyGait` and `settleFrame` return early for anything `aerial`, and give
+   * her the float — a long slow rise and drift — instead of a gait. Filling
+   * these in with plausible numbers would only invite someone to tune them and
+   * wonder why nothing moved.
+   */
+  balloon: { stride: 0.16, bob: 0, lean: 0, squash: 0, sway: 0, waddle: 0 },
 };
 
 const DEFAULT_GAIT: Gait = { stride: 0.26, bob: 0.13, lean: 0.06, squash: 0.08, sway: 1.2, waddle: 0 };

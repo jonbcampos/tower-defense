@@ -11,6 +11,7 @@
  *   node scripts/generate-art.mjs --force         # redo pieces that already exist
  *   node scripts/generate-art.mjs --model=gemini-3-pro-image-preview
  *   node scripts/generate-art.mjs --dry-run       # print the prompts, call nothing
+ *   node scripts/generate-art.mjs --reindex       # rewrite index.json, call nothing
  *
  * No dependencies: Node's built-in fetch and fs, same rule as the rest of the
  * project.
@@ -56,6 +57,14 @@ let SIZE = flag('size') ?? process.env.GEMINI_IMAGE_SIZE ?? '';
 const ONLY = flag('only')?.split(',').map((s) => s.trim()).filter(Boolean);
 const FORCE = has('force');
 const DRY = has('dry-run');
+/**
+ * Modes that draw nothing, and so must not demand a key.
+ *
+ * `--reindex` in particular: rebuilding the index is how a correction to the
+ * way a sheet is READ gets published, and a key requirement there would mean
+ * the person best placed to fix a bad slice is the person who cannot.
+ */
+const OFFLINE = DRY || has('reindex') || has('list');
 
 const ENV_FILE = join(ROOT, '.env.local');
 
@@ -144,7 +153,7 @@ const KEY =
   fileEnv.GEMINI_API_KEY ??
   fileEnv.GOOGLE_API_KEY;
 
-if (!KEY && !DRY) {
+if (!KEY && !OFFLINE) {
   console.error(
     '\nNo API key found.\n\n' +
       '  cp .env.example .env.local\n' +
@@ -154,7 +163,7 @@ if (!KEY && !DRY) {
   );
   process.exit(1);
 }
-if (KEY === 'paste-your-key-here' && !DRY) {
+if (KEY === 'paste-your-key-here' && !OFFLINE) {
   console.error('\n.env.local still has the placeholder in it. Put your real key in.\n');
   process.exit(1);
 }
@@ -274,6 +283,43 @@ function backoff(attempt, why) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
 
+/**
+ * Rewrite `index.json` from the manifest and whatever is on disk. Returns the
+ * ids that are present.
+ *
+ * The index is what the game loads. Only pieces that exist on disk go in it, so
+ * a partial run gives a partly-illustrated game rather than a broken one:
+ * anything absent simply keeps its hand-drawn version.
+ *
+ * Split out from `main` so `--reindex` can call it. Everything in here is
+ * derived — the manifest plus a directory listing — so rebuilding the index is
+ * not something that should require an API key, and until this existed it did.
+ * A correction to how a sheet is READ (a grid, an alignment, a row the model
+ * drew badly) is a manifest edit that costs nothing to apply, and paying to
+ * redraw art that is already on disk in order to publish it would be an
+ * excellent way to talk yourself out of the correction.
+ */
+function writeIndex() {
+  const present = PIECES.map((p) => p.id).filter((id) => existsSync(join(OUT_DIR, `${id}.jpg`)));
+  const index = {
+    generated: present,
+    /** Extension is recorded rather than assumed, so a future model that can
+     *  return PNG doesn't need a matching change in the loader. */
+    ext: 'jpg',
+    // `keyed` pieces get their flat background removed at load time. The room
+    // background is a full-bleed image and must not be touched.
+    opaque: PIECES.filter((p) => p.background === 'none').map((p) => p.id),
+    // Pieces that are grids of animation frames rather than single subjects.
+    // The loader needs the grid shape to cut them up, and putting it here rather
+    // than in the loader means adding a cycle is still a manifest-only edit.
+    sheets: Object.fromEntries(
+      PIECES.filter((p) => p.sheet && present.includes(p.id)).map((p) => [p.id, p.sheet]),
+    ),
+  };
+  writeFileSync(INDEX_FILE, `${JSON.stringify(index, null, 2)}\n`);
+  return present;
+}
+
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
 
@@ -315,26 +361,7 @@ async function main() {
     }
   }
 
-  // The index is what the game loads. Only pieces that exist on disk go in it,
-  // so a partial run gives a partly-illustrated game rather than a broken one:
-  // anything absent simply keeps its hand-drawn version.
-  const present = PIECES.map((p) => p.id).filter((id) => existsSync(join(OUT_DIR, `${id}.jpg`)));
-  const index = {
-    generated: present,
-    /** Extension is recorded rather than assumed, so a future model that can
-     *  return PNG doesn't need a matching change in the loader. */
-    ext: 'jpg',
-    // `keyed` pieces get their flat background removed at load time. The room
-    // background is a full-bleed image and must not be touched.
-    opaque: PIECES.filter((p) => p.background === 'none').map((p) => p.id),
-    // Pieces that are grids of animation frames rather than single subjects.
-    // The loader needs the grid shape to cut them up, and putting it here rather
-    // than in the loader means adding a cycle is still a manifest-only edit.
-    sheets: Object.fromEntries(
-      PIECES.filter((p) => p.sheet && present.includes(p.id)).map((p) => [p.id, p.sheet]),
-    ),
-  };
-  writeFileSync(INDEX_FILE, `${JSON.stringify(index, null, 2)}\n`);
+  const present = writeIndex();
 
   console.log(
     `\n${done.length} ok, ${failed.length} failed. ${present.length} sprite(s) on disk.` +
@@ -345,8 +372,13 @@ async function main() {
   }
 }
 
-/** Show what's on disk without calling anything. */
-if (has('list')) {
+/** Rebuild the index from the manifest and the files on disk. No API calls. */
+if (has('reindex')) {
+  mkdirSync(OUT_DIR, { recursive: true });
+  const present = writeIndex();
+  console.log(`index.json rewritten from the manifest: ${present.length} sprite(s) on disk.`);
+  console.log('Reload the game — no API calls were made and nothing was redrawn.');
+} else if (has('list')) {
   const index = existsSync(INDEX_FILE) ? JSON.parse(readFileSync(INDEX_FILE, 'utf8')) : null;
   const generated = index?.generated ?? [];
   console.log(

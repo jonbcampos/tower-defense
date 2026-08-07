@@ -391,10 +391,42 @@ const BASE_PIECES = [
     // A SQUARE sheet, so her cells are tall enough to hold a balloon above a
     // child. See the note by `aspect` in MOTION_SHEETS.
     sheetAspect: '1:1',
+    /**
+     * ROW ONE OF THE SHEET ON DISK IS UNUSABLE. Clear this after regenerating.
+     *
+     * Reported as "the balloon goes out of the square, and she is fast so she
+     * looks erratic", and it is one fault wearing two coats.
+     *
+     * The square sheet above was itself the fix for the balloon running off the
+     * top of a 16:9 frame, and on a square frame it happened again: in the top
+     * row the balloons are cut in half by the top edge of the PICTURE, and the
+     * bottom row's balloons are drawn high enough to cross the row boundary, so
+     * each top-row cell also carries a slice of the balloon belonging to the
+     * cell below it. Frames 1-4 are therefore a child with a sawn-off balloon
+     * and a stray pink lump by her boots; frames 5-8 are correct.
+     *
+     * That is also the whole of the "erratic" half. Her eight frames are two
+     * groups of four drawn at different sizes and heights, so the cycle pops
+     * between them — and being eight frames rather than four, it pops at twice
+     * the frame rate of every other kid in the game.
+     *
+     * Dropping the bad row leaves a clean four-frame float, which is exactly
+     * what every other character has. Better than shipping the bad row and far
+     * better than dropping her to a still.
+     *
+     * The prompt below is NOT weakened to match: it still asks for eight good
+     * frames, because that is what should be on disk. This says what IS.
+     */
+    deadRows: [0],
     // She is the only kid with no grab cycle — she never stops, because she is
     // floating — so her sheet's second row continues the float instead. Eight
-    // frames of one action rather than four of each of two, which makes hers
-    // the smoothest cycle in the game and costs nothing extra.
+    // frames of one action rather than four of each of two, which would make
+    // hers the smoothest cycle in the game and cost nothing extra.
+    //
+    // WOULD. On the sheet that is actually on disk the second row is the only
+    // one worth having and the first is discarded — see `deadRows` above. The
+    // description below stays because it is still what a good sheet looks like,
+    // and because it is the row that came out RIGHT.
     cycle2:
       'the same lively kicking float, continued. In all four frames BOTH HANDS still grip the ' +
       'string above the head and the arms stay raised. Frame 5: knees tucked up and body twisted ' +
@@ -997,9 +1029,20 @@ const FACE_SHEET_RULES = [
  * grab gets an eight-frame cycle of the one action instead, both rows
  * registering under the same id — see `rowIds` and `registerSheet`.
  */
+/**
+ * Rows of a sheet that came back unusable, named so the loader discards them.
+ *
+ * A property of the FILE, not of the prompt — which is why it changes `rowIds`
+ * and leaves the row's description alone. The prompt keeps asking for the sheet
+ * that should exist; this describes the one that does. See `deadRows` on the
+ * Balloon Kid, the only piece that uses it.
+ */
+const SKIP_ROW = 'skip';
+
 const MOTION_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => {
   const both = Boolean(piece.grab);
   const rowCount = piece.sheetRows ?? 2;
+  const dead = new Set(piece.deadRows ?? []);
   const rowIds = ['walk'];
   const rows = [{ label: `TOP ROW (frames 1 to 4)${both ? ', WALKING' : ''}`, poses: piece.cycle }];
   for (let r = 1; r < rowCount; r++) {
@@ -1034,7 +1077,13 @@ const MOTION_SHEETS = BASE_PIECES.filter((piece) => piece.cycle).map((piece) => 
     aspect: piece.sheetAspect ?? '16:9',
     size: '2K',
     twoActions: both,
-    sheet: { cols: 4, rows: rowCount, align: piece.align ?? 'floor', mirrored: true, rowIds },
+    sheet: {
+      cols: 4,
+      rows: rowCount,
+      align: piece.align ?? 'floor',
+      mirrored: true,
+      rowIds: rowIds.map((id, row) => (dead.has(row) ? SKIP_ROW : id)),
+    },
     subject: piece.subject,
     look: piece.look,
     outfit: piece.outfit,

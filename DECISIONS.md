@@ -1868,3 +1868,65 @@ along.
 **Revisit if:** a toy is ever added that can hurt something it cannot target —
 a splash, a chain, an area effect. The premise here is that "can this shooter
 reach it" is a property of the shooter alone.
+
+## 65. A bad row of a sheet is thrown away, and a float is not a walk
+
+Reported as "the balloon girl is still having issues — the balloon goes out of
+the square, and she is fast so it looks erratic". Two complaints, one and a half
+causes.
+
+### Half the sheet was never usable
+
+Her frames sliced out as: a child with a balloon **sawn off by a straight line**
+and a stray pink lump by her boots (frames 1-4), then a child with a whole
+balloon at a different size and height (frames 5-8). In the source, the top row's
+balloons run off the top edge of the picture, and the bottom row's are drawn high
+enough to cross the row boundary — so every top-row cell also carries a slice of
+the balloon belonging to the cell below it.
+
+The galling part: **the square sheet was already the fix for this.** Decision-wise
+it is written down in `MOTION_SHEETS` — she used to be 16:9 like everyone else,
+her cells were 256x285, and the balloons ran off the top. Her frame was made
+square so the cells would be tall enough. On a square frame it happened again.
+
+So this stops being a prompt problem and becomes a data problem. `rowIds` gains
+`'skip'`, the loader discards those frames, and her manifest entry gains
+`deadRows: [0]` with the whole story next to it. The prompt is NOT weakened to
+match — it still asks for eight good frames, because that is what should be on
+disk. `deadRows` describes what IS.
+
+What is left is a clean four-frame float, which is exactly what every other
+character has. Better than shipping the bad row, and much better than dropping
+her to a still.
+
+### `--reindex`, so a reading correction is free
+
+`index.json` is generated, and it is where the grid lives — so the fix above was
+unpublishable without an API key, because the only thing that wrote the index was
+a billed generation run. That is backwards. A correction to how a sheet is READ
+is a manifest edit over art that already exists, and paying to redraw the art in
+order to publish the correction is an excellent way to talk yourself out of the
+correction. `--reindex` rewrites the index from the manifest and a directory
+listing, and joins `--dry-run` and `--list` in not demanding a key.
+
+### The other half: she was animating at three times the intended rate
+
+Not a consequence of the bad row, and it would have been wrong even on a perfect
+sheet. `frameFor` divides by the kid's `stride`, and the Balloon Kid had no gait
+entry — so she inherited the DEFAULT, which is the toddler's, the reference
+WALK. A drifting child was turning over poses at the rate of a child taking
+steps, and she covers ground half again as fast as a toddler, so it came out at
+**7.3 frames a second** against the three the cycle is written for. Eight frames
+instead of four is where the last doubling came from.
+
+She has an entry now, at 0.16, and measures 2.25 frames a second — between the
+Puffy Coat's deliberate 1.2 and the toddler's 2.66, which is where a lazy drift
+belongs. Every other field in it is zeroed rather than filled in with plausible
+numbers, because `applyGait` and `settleFrame` both return early for anything
+`aerial` and hand it the float instead. A number that does nothing is worse than
+no number: someone will tune it.
+
+**Revisit if:** a second sheet needs a `deadRows`. One is a bad draw; two is the
+slicer being asked to do something the model cannot reliably supply, and the
+answer then is to cut rows on the CONTENT BANDS `checkArt` already finds rather
+than on an even division of the image.

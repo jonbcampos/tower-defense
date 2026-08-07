@@ -319,6 +319,24 @@ a rest, which children like.
   still `bigkid.jpg` is worth doing in the same run for the same reason, though
   nothing sees it while the sheet exists. Check the result with
   `__game.checkArt()` and by eye before committing.
+- **Regenerate `balloon.motion`, and then clear `deadRows`.** Half that sheet is
+  unusable: the top row's balloons are cut in half by the top edge of the
+  picture, and the bottom row's are drawn high enough to cross the row boundary,
+  so each top-row cell also carries a slice of the balloon belonging to the cell
+  below. The game now discards that row and plays the four good frames, which is
+  the same number every other kid has — see decision 65 — so this is a quality
+  debt rather than a bug.
+
+  Worth knowing before trying: the square sheet was ALREADY the fix for this, on
+  a 16:9 one, and the same fault came back. A third attempt should probably
+  change the shape of the ASK rather than the wording — a 4x1 strip was tried
+  once and the model drew 4x2 anyway, so the honest options are two separate
+  4-cell rows, or accepting that her cells need a lot more headroom than the
+  subject seems to need. Whatever comes back, look at the sliced frames with
+  `__game.sprites.frames('balloon.walk')` rather than at the sheet: the clipping
+  is much easier to see there. Then delete `deadRows` from her manifest entry and
+  run `node scripts/generate-art.mjs --reindex`, or she will keep playing on four
+  frames forever.
 - ~~Back-port the `viewport.ts` NaN fix~~ — **done**. Both siblings floor the
   window at one pixel, and `src/core/viewport.ts` is byte-identical across all
   three games again.
