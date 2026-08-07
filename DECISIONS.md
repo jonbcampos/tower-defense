@@ -1763,3 +1763,54 @@ tap area is at least 30x30.
 **Revisit if:** the footer ever gains a fourth thing. It currently holds a
 control, the hearts, the level name and the wave bar, and that is as much as
 26 pixels of height will carry.
+
+## 63. The Bubble Machine fires three bubbles whether or not it needs to
+
+Reported as "is the bubble machine supposed to hit 3 rows? doesn't seem to at
+least animate 3 shots". It was hitting three rows, and it was not animating three
+shots, and both were true at once.
+
+Every multi-lane shooter fires only into lanes that have something in them. That
+is right for damage — a bubble down an empty row hits nothing — and it is
+invisible, because **a player cannot see a shot that was skipped**. So the most
+expensive toy in the game, sold on the words "bubbles in three rows at the same
+time", spent most of its life launching one bubble, and looked exactly like the
+50-sparkle Bubble Wand costing five times as much.
+
+Sold on three, so it fires three. `volley` on the shoot definition, data rather
+than a branch, and the Bubble Machine is the only thing in the game that has it.
+
+### It still holds its reload
+
+`fireAt` asks the ordinary question first — is there anything in ANY of my three
+rows — and only then fires all three. A machine that shot at a completely clear
+board would burn its 1.3s reload on nothing and be halfway through it when the
+wave actually arrived, which is the exact bug the held-reload rule exists to
+prevent (it is why `fireAt` returns a boolean at all). What `volley` changes is
+only what happens once the answer is yes.
+
+### The trial counts bubbles, not damage
+
+`trialMachineFiresThree` measures SHOTS IN FLIGHT. Damage would pass just as well
+with one bubble hitting three times, and what was reported was not a damage
+figure — it was what the screen showed. Four cases, because the two failure modes
+point in opposite directions: one kid in its own row, one kid in a row it merely
+covers, three kids, and an empty board wanting zero.
+
+### What it costs
+
+A small buff, taken deliberately. Bubbles fired down an empty row travel toward
+the door and can meet a kid who walks in behind them, so the machine now
+occasionally hits something it previously would not have. All 282 trials pass
+unchanged, including every "winnable by a mediocre bot" and every "doing nothing
+loses". Pool pressure was the other worry and is not close: five machines stacked
+in one column — an absurd board nobody will build — peaks at 30 of 64
+projectiles.
+
+**Not** given to the Sprinkler, the other three-lane shooter. The Sprinkler is
+sold on reaching the floaty ones, which you can watch it do; its three lanes are
+a bonus rather than the pitch, and it costs 100 rather than 250.
+
+**Revisit if:** a fourth or fifth lane-spanning shooter arrives. At that point
+"fire every covered lane" is probably the right default for all of them, and the
+flag should invert.

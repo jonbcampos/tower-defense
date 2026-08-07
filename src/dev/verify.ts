@@ -1229,6 +1229,66 @@ function trialEndlessFitsTheTray(): TrialResult {
   };
 }
 
+/**
+ * The Bubble Machine fires three bubbles, and holds its reload on a clear board.
+ *
+ * Both halves, because they are the two ways `volley` can be got wrong and they
+ * fail in opposite directions. Firing one bubble is the bug this was added to
+ * fix — the 250-sparkle toy sold on "three rows at the same time" quietly
+ * behaving like a 50-sparkle wand, because the two skipped shots are invisible.
+ * Firing into a completely empty board is the overcorrection: a shooter that
+ * spends its reload on nothing is never charged when the wave arrives.
+ *
+ * Counted as SHOTS IN FLIGHT rather than as damage, deliberately. Damage would
+ * pass just as well with one bubble hitting three times, and what was reported
+ * is what the player could SEE.
+ */
+function trialMachineFiresThree(): TrialResult {
+  const level = levelById(24);
+  const inFlight = (state: GameState): number =>
+    state.shots.items.filter((shot) => shot.active && !shot.hostile).length;
+
+  const run = (occupy: number[]): number => {
+    const state = new GameState();
+    state.start(level, 'normal', level.recommended, 24);
+    state.toys.place('machine', 2, 1, 0);
+    for (const lane of occupy) {
+      // Parked at the far end so nothing is reached, blocked or killed: the
+      // only thing under test is how many bubbles leave the machine.
+      const enemy = state.enemies.spawn('puffy', lane, 4)!;
+      enemy.x = cellCentreX(COL_COUNT - 1);
+    }
+    let most = 0;
+    let t = 0;
+    while (t < 2) {
+      for (const enemy of state.enemies.items) {
+        if (enemy.active) enemy.x = cellCentreX(COL_COUNT - 1);
+      }
+      state.update(FIXED_DT);
+      state.drainEvents(() => {});
+      most = Math.max(most, inFlight(state));
+      t += FIXED_DT;
+    }
+    return most;
+  };
+
+  const own = run([2]);
+  const above = run([1]);
+  const all = run([1, 2, 3]);
+  const clear = run([]);
+  const want = TOYS.machine.shoot!.lanes;
+
+  return {
+    trial: 'a Bubble Machine fires all three rows, and none on a clear board',
+    level: '24 Bubbles Everywhere',
+    difficulty: 'normal',
+    detail:
+      `one kid in its own row launched ${own}, one kid in the row above ${above}, ` +
+      `three kids ${all}, an empty board ${clear} — want ${want}, ${want}, ${want}, 0`,
+    pass: own === want && above === want && all === want && clear === 0,
+  };
+}
+
 export function verify(): TrialResult[] {
   const results: TrialResult[] = [];
 
@@ -1254,6 +1314,7 @@ export function verify(): TrialResult[] {
   results.push(trialBroomFreesACell());
   results.push(trialBroomHonoursTheRefundWindow());
   results.push(trialBathBoostsBubbles());
+  results.push(trialMachineFiresThree());
   results.push(trialSqueakRedirectsThenWearsOut());
   results.push(trialSqueakFunnelsInward());
   results.push(trialMagnetStripsArmour());

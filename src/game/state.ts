@@ -722,7 +722,17 @@ export class GameState {
     }
   }
 
-  /** Fire a shooter into every lane it covers that has something to shoot. */
+  /**
+   * Fire a shooter into every lane it covers that has something to shoot.
+   *
+   * Two passes rather than one, because a `volley` shooter still has to decide
+   * WHETHER to fire on the ordinary rule — a lane with something in it — before
+   * it fires into all three. A machine that shot at a completely clear board
+   * would be a machine that spends its reload on nothing and is never charged
+   * when the wave actually arrives, which is the exact bug the held-reload rule
+   * exists to prevent. What `volley` changes is only what happens once the
+   * answer is yes.
+   */
   private fireAt(toy: Toy, laneSpan: number): boolean {
     const def = TOYS[toy.id].shoot!;
     const from = laneSpan > 1 ? toy.lane - 1 : toy.lane;
@@ -730,9 +740,20 @@ export class GameState {
     const seesHidden = laneSpan > 1;
     let fired = false;
 
+    if (def.volley) {
+      let anything = false;
+      for (let lane = from; lane <= to && !anything; lane++) {
+        if (lane < 0 || lane >= LANE_COUNT) continue;
+        anything = this.hasTargetIn(lane, cellCentreX(toy.col), def.kind, seesHidden);
+      }
+      if (!anything) return false;
+    }
+
     for (let lane = from; lane <= to; lane++) {
       if (lane < 0 || lane >= LANE_COUNT) continue;
-      if (!this.hasTargetIn(lane, cellCentreX(toy.col), def.kind, seesHidden)) continue;
+      if (!def.volley && !this.hasTargetIn(lane, cellCentreX(toy.col), def.kind, seesHidden)) {
+        continue;
+      }
       this.shots.fire(
         cellCentreX(toy.col) + 6,
         lane,
