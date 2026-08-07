@@ -5,7 +5,7 @@ plants, 26 zombies and 50 levels across 5 areas**; this is the equivalent for a
 bedroom full of toys, with the engineering cost written next to each entry so
 the cheap content can be told apart from the expensive content.
 
-**Today: 14 toys, 10 kids, 20 levels, 2 worlds, endless mode.** Everything below is a plan,
+**Today: 15 toys, 10 kids, 30 levels, 3 worlds, endless mode.** Everything below is a plan,
 not a promise.
 
 ## First, what of PvZ is actually signal
@@ -39,7 +39,7 @@ does and invalidated the build that had been working.
 |---|---|---|---|
 | 1 | **The Bedroom** | None. Every cell takes any toy. | **Built** (levels 1–10) |
 | 2 | **The Backyard** | Paddling pool. Water cells need a Duck Ring first. | **Built** (11–20) |
-| 3 | **Bath Time** | Steam. You cannot see kids more than three columns away until something clears the air. | Planned |
+| 3 | **Bath Time** | Steam. Kids past column five are silhouettes until a Little Fan clears that row. | **Built** (21–30) |
 | 4 | **The Attic** | No floor — bare joists. Every toy needs a Shelf under it, anywhere on the board. | Planned |
 | 5 | **The Treehouse** | Two entrances. Kids come from the right *and* climb up through a trapdoor mid-board. | Planned |
 
@@ -98,7 +98,7 @@ last lesson.
 | Guard Bear | Lawnmower | — | **Built** (not a card) |
 | Ice Lolly | Ice-shroom | small | Planned — freezes the whole board briefly |
 | Toy Box | Squash | small | Planned — one kid, gone, cheap, single use |
-| Fan | Blover | small | Planned — clears steam in world 3, pops balloons |
+| Little Fan | Blover | — | **Built** — clears its row's steam. Sight only. |
 
 ### Verbs worth stealing
 
@@ -141,14 +141,30 @@ player experiences.
    and Sand Castle.
 2. ~~Endless mode~~ — **done**. Waves survived is the score; a competent bot
    reaches about wave 50 on EASY and 31 on HARD.
-3. **World 3, Bath Time.** Steam is a visibility rule, which is engine work in
-   the renderer rather than the simulation — the cheapest of the three
-   remaining terrain rules.
+3. ~~World 3, Bath Time~~ — **done**, levels 21–30.
 4. **The verb toys.** Bubble Bath, Squeaky Toy, Magnet Wand. These are the ones
    that make the loadout a real decision, and they are worth more than another
    ten levels of the same choices.
 5. **World 4, The Attic**, which needs the Shelf and the Lobber.
 6. **World 5, The Treehouse**, and the Big Sister.
+
+## The loadout squeeze
+
+Worth stating before World 4, because it has now bitten twice. Each world after
+the first adds a **prerequisite toy** — the Duck Ring, the Little Fan — and
+every loadout in that world spends one of its five slots on it. With the Glitter
+Jar taking another, later worlds have **three** defensive cards where the
+bedroom had four.
+
+Three does not fit water-immunity plus a floater plus a tank, so levels 19, 20
+and 27–30 all had to drop their raincoats. That is a real design cost, and it
+compounds: the Attic wants a Shelf and the Treehouse will want something too.
+
+The fix, when it becomes intolerable, is the one PvZ used — **more card slots as
+you progress**. Six from world 3, seven from world 5. It touches `maxLoadout`,
+the tray layout and the tray's don't-cover-a-cell contract, so it is a morning's
+work rather than a line, and it is the right answer rather than trimming another
+roster.
 
 ## What has to stay true
 

@@ -18,6 +18,7 @@ import {
   WAVE,
   cellAt,
   cellCentreX,
+  colAtX,
   cellIndex,
   cellX,
   laneCentreY,
@@ -29,7 +30,7 @@ import { TOYS, type ToyId } from '../game/toys';
 import type { Input } from '../core/input';
 import type { Renderer } from './renderer';
 import { PALETTE, alpha } from './palette';
-import { drawBlocked, drawGuards, drawNook, drawRoom, drawUnicorn, drawWater, ellieMood } from './bedroom';
+import { drawBlocked, drawGuards, drawNook, drawRoom, drawSteam, drawUnicorn, drawWater, ellieMood } from './bedroom';
 import { drawKid } from './kids';
 import { drawPlacedToy, drawToyArt } from './toys';
 import { drawFooter, drawPopups } from '../ui/hud';
@@ -150,6 +151,9 @@ export const sceneRenderer: Renderer = {
     particles.draw(ctx);
     // The unicorn over everything on the board, so a kid reaching the cushion
     // is hugging her rather than replacing her.
+    // Steam over the board but UNDER the unicorn and the bears, which are on
+    // your side of the room and never fogged.
+    if (inPlay) drawSteam(ctx, (lane) => state.laneIsClear(lane), clock);
     if (inPlay) drawGuards(ctx, state.guardReady, clock);
     drawUnicorn(ctx, clock, squeezeFlash);
     drawDenyMark(ctx, state);
@@ -432,7 +436,7 @@ function drawKidsInLane(
 
       const fan = STACK_FAN[Math.min(depth, STACK_FAN.length - 1)]! * STACK_STEP;
       const x = enemy.prevX + (enemy.x - enemy.prevX) * interpolation;
-      drawKid(ctx, enemy, x, centre + fan, clock);
+      drawKid(ctx, enemy, x, centre + fan, clock, state.isFogged(lane, colAtX(enemy.x)));
       drawn++;
     }
     previous = cutoff - 1e-9;

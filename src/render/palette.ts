@@ -67,6 +67,10 @@ export interface Palette {
   unicornBlush: string;
 
   /** Generic kid parts. Clothing colour comes from the EnemyDef. */
+  steam: string;
+  steamAlpha: number;
+  /** The flat tone a kid in the steam is reduced to. Dark, to read against it. */
+  fogShape: string;
   water: string;
   waterShine: string;
   waterRim: string;
@@ -180,6 +184,13 @@ export const BEDROOM_PALETTE: Palette = {
   unicornEye: '#3a2a52',
   unicornBlush: '#ffb3d1',
 
+  steam: '#e8f4fb',
+  // Heavy enough to hide a face, light enough to see a shape. Both halves matter.
+  // Heavy enough to hide a face, light enough that a shape still shows through.
+  // At 0.72 the silhouettes all but vanished and "something is coming" stopped
+  // reading, which is the one thing this rule has to keep saying.
+  steamAlpha: 0.58,
+  fogShape: '#3d3560',
   water: '#5fb6d9',
   waterShine: '#d8f4ff',
   waterRim: '#9fe0f5',

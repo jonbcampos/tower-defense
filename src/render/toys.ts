@@ -116,6 +116,9 @@ export function drawToyArt(
     case 'castle':
       drawCastle(ctx, body, def.accent);
       break;
+    case 'fan':
+      drawFan(ctx, body, def.accent, t);
+      break;
     case 'slushie':
       drawSlushie(ctx, body, def.accent, t);
       break;
@@ -481,6 +484,38 @@ function drawBeachBall(ctx: CanvasRenderingContext2D, body: string, accent: stri
   ctx.ellipse(-4, -5, 3, 2, -0.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
+}
+
+/** A desk fan, blades turning. The spin is the whole read at this size. */
+function drawFan(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {
+  ctx.fillStyle = accent;
+  ctx.fillRect(-5, 8, 10, 5);
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(-5, 8, 10, 5);
+
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.arc(0, 0, 11, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Three blades, turning fast enough to read as motion but not so fast they
+  // strobe against a 60Hz refresh.
+  ctx.save();
+  ctx.rotate(t * 5);
+  ctx.fillStyle = accent;
+  for (let i = 0; i < 3; i++) {
+    ctx.rotate((Math.PI * 2) / 3);
+    ctx.beginPath();
+    ctx.ellipse(5, 0, 5, 2.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  ctx.fillStyle = PALETTE.kidOutline;
+  ctx.beginPath();
+  ctx.arc(0, 0, 1.8, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 /** A sandcastle: three towers and a wall, squat and obviously solid. */

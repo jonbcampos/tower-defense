@@ -21,6 +21,7 @@ import {
   boardLeft,
   cellX,
   laneY,
+  STEAM_FROM_COL,
 } from '../game/config';
 import { PALETTE, alpha } from './palette';
 import { drawSprite, sprite, spriteFrames } from './sprites';
@@ -239,6 +240,54 @@ function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number,
   ctx.moveTo(x1, y1);
   ctx.lineTo(x2, y2);
   ctx.stroke();
+}
+
+/**
+ * Bathroom steam, over the far columns of every lane a Fan has not cleared.
+ *
+ * Drawn AFTER the kids and toys rather than under them, because it is the thing
+ * doing the hiding. Soft-edged on the left so the boundary is a gradient rather
+ * than a line — a hard edge would read as a wall, and the one thing this must
+ * not look like is a wall.
+ */
+export function drawSteam(
+  ctx: CanvasRenderingContext2D,
+  clearLane: (lane: number) => boolean,
+  time: number,
+): void {
+  const from = cellX(STEAM_FROM_COL);
+  const width = SCREEN.w - from;
+
+  for (let lane = 0; lane < LANE_COUNT; lane++) {
+    if (clearLane(lane)) continue;
+    const y = laneY(lane);
+
+    // The body of the fog, fading in from the left over one cell.
+    const fade = ctx.createLinearGradient(from, 0, from + CELL_W, 0);
+    fade.addColorStop(0, alpha(PALETTE.steam, 0));
+    fade.addColorStop(1, alpha(PALETTE.steam, PALETTE.steamAlpha));
+    ctx.fillStyle = fade;
+    ctx.fillRect(from, y, CELL_W, CELL_H);
+    ctx.fillStyle = alpha(PALETTE.steam, PALETTE.steamAlpha);
+    ctx.fillRect(from + CELL_W, y, width - CELL_W, CELL_H);
+
+    // Curls drifting leftwards out of the fog. Slow and few: this sits on top
+    // of everything, so anything busy here makes the whole board feel dirty.
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 3; i++) {
+      const span = width + 40;
+      const drift = span - ((time * 9 + i * 71 + lane * 37) % span);
+      const cx = from + drift;
+      if (cx < from) continue;
+      const cy = y + 10 + ((i * 13 + lane * 7) % (CELL_H - 20));
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 13, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 }
 
 /**

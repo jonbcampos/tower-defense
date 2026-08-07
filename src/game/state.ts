@@ -26,6 +26,7 @@ import {
   KILL_MARGIN,
   KILL_SAFETY,
   SLUSH_FACTOR,
+  STEAM_FROM_COL,
   LANE_COUNT,
   POOL,
   SPARKLE,
@@ -285,6 +286,30 @@ export class GameState {
   /** Paddling pool. Buildable, but only on top of a Duck Ring. */
   isWater(lane: number, col: number): boolean {
     return this.water.has(cellIndex(lane, col));
+  }
+
+  /**
+   * True where the bathroom's steam hides what is walking.
+   *
+   * Purely a question about SIGHT, and deliberately on `GameState` rather than
+   * in the renderer even though nothing in the simulation reads it: the fog's
+   * extent depends on the world and on which lanes hold a Fan, and both of
+   * those are simulation state. A renderer that worked it out for itself would
+   * be a second copy of the rule, free to disagree with this one.
+   */
+  isFogged(lane: number, col: number): boolean {
+    if (WORLDS[this.level.world].terrain !== 'steam') return false;
+    if (col < STEAM_FROM_COL) return false;
+    return !this.laneIsClear(lane);
+  }
+
+  /** True if a Fan is holding this lane's steam back. */
+  laneIsClear(lane: number): boolean {
+    for (let col = 0; col < COL_COUNT; col++) {
+      const toy = this.toys.at(lane, col);
+      if (toy && TOYS[toy.id].clearsFog) return true;
+    }
+    return false;
   }
 
   /**

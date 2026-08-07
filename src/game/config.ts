@@ -293,6 +293,17 @@ export const STUCK_SECONDS = 35;
  * building slot for and a kid has to be standing on it; a chill follows her
  * down the lane for free once a Slushie Cup has landed one hit.
  */
+/**
+ * The first column the bathroom's steam covers. Everything from here rightward
+ * is fogged unless a Fan has cleared that lane.
+ *
+ * Just past the middle, so the fog hides where kids ENTER and the fight itself
+ * happens in clear air. Fogging the near half instead would hide the moment a
+ * toy is being eaten, which is the one thing a player must always be able to
+ * see.
+ */
+export const STEAM_FROM_COL = 5;
+
 export const SLUSH_FACTOR = 0.62;
 
 export const KILL_SAFETY = 0.65;

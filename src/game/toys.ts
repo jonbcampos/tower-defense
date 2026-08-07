@@ -27,6 +27,7 @@ export type ToyId =
   | 'castle'
   | 'slushie'
   | 'beachball'
+  | 'fan'
   | 'sweeper';
 
 /**
@@ -106,6 +107,14 @@ export interface ToyDef {
 
   /** Floor tiles: what they multiply a kid's speed by while it stands on them. */
   slow?: { factor: number };
+
+  /**
+   * Blows the bathroom's steam out of its own lane, permanently.
+   *
+   * Sight only — it changes nothing about what can be hit or how fast anyone
+   * walks. See `STEAM_FROM_COL`.
+   */
+  clearsFog?: boolean;
 
   /**
    * Whether this toy can touch a kid that is floating. Ground shooters fire
@@ -381,6 +390,24 @@ export const TOYS: Record<ToyId, ToyDef> = {
     accent: '#fff3c4',
   },
 
+  fan: {
+    id: 'fan',
+    name: 'Little Fan',
+    blurb: 'Blows the steam out of its row so you can see who is coming.',
+    role: 'wall',
+    layer: 'ground',
+    // Cheap, because it does no damage and the alternative is playing the whole
+    // level half blind. A fog rule you cannot afford to answer is not a rule,
+    // it is a penalty.
+    cost: 50,
+    recharge: 0,
+    hp: 300,
+    clearsFog: true,
+    hitsAir: false,
+    color: '#bfe9f7',
+    accent: '#ffffff',
+  },
+
   ring: {
     id: 'ring',
     name: 'Duck Ring',
@@ -439,6 +466,8 @@ export const TOY_ORDER: readonly ToyId[] = [
   'castle',
   'slushie',
   'beachball',
+  // Bathroom.
+  'fan',
 ];
 
 /** Damage per second a shooter lands on a single kid standing in front of it. */

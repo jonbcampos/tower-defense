@@ -62,6 +62,16 @@ export function drawKid(
   x: number,
   y: number,
   time: number,
+  /**
+   * She is in the bathroom's steam: draw her as a shape, not as herself.
+   *
+   * Deliberately NOT invisible. Plants vs Zombies' fog levels hide the enemy
+   * outright, and they are the levels everybody remembers hating — at five,
+   * something arriving from nowhere is not tense, it is unfair. A silhouette
+   * keeps the real lesson, which is that you cannot tell WHICH kid is coming
+   * and so cannot pre-build the counter, and drops the part that is only cruel.
+   */
+  fogged = false,
 ): void {
   const def = ENEMIES[enemy.kind];
   const walk = x * 0.14;
@@ -124,6 +134,15 @@ export function drawKid(
     else applyGait(ctx, enemy, def, walkPx);
     const box = def.height * KID_ART_SCALE;
     drawSprite(ctx, image, 0, 0, box, box);
+    if (fogged) {
+      // Flatten whatever was drawn to a single tone, in place. `source-atop`
+      // paints only where the sprite already is, so this is the sprite's own
+      // outline rather than a rectangle over it.
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.fillStyle = alpha(PALETTE.fogShape, 0.92);
+      ctx.fillRect(-box, -box, box * 2, box * 2);
+      ctx.globalCompositeOperation = 'source-over';
+    }
     ctx.restore();
     // No status markers while concealed: a shield or a soaked drip floating over
     // the mound would say more about who is under there than the blanket should.

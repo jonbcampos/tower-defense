@@ -31,7 +31,7 @@ import type { ToyId } from './toys';
  * v1 ships one world. This type exists now, with the fields the sketched worlds
  * would need, because retrofitting it later means touching every level.
  */
-export type WorldId = 'bedroom' | 'backyard';
+export type WorldId = 'bedroom' | 'backyard' | 'bathroom';
 
 export interface World {
   id: WorldId;
@@ -52,8 +52,11 @@ export interface World {
    * `dry` is the bedroom: every unblocked cell takes any toy.
    * `pool` is the backyard: cells listed in a level's `water` hold nothing at
    * all until a Duck Ring floats there, and then behave like dry ground.
+   * `steam` is the bathroom: the far half of the board is fogged, so a kid
+   * walking in it cannot be SEEN — everything about her is unchanged, the
+   * player simply does not know she is there.
    */
-  terrain: 'dry' | 'pool';
+  terrain: 'dry' | 'pool' | 'steam';
   /**
    * The generated backdrop for this world's board, by sprite id.
    *
@@ -70,10 +73,14 @@ export const WORLDS: Record<WorldId, World> = {
   // higher because there is daylight rather than one bedside lamp — a small
   // nudge that pays for the Duck Rings the terrain forces you to buy.
   backyard: { id: 'backyard', name: 'The Backyard', lanes: LANE_COUNT, trickleScale: 1.15, terrain: 'pool', background: 'yard' },
+  // Bath time. Steam hides the far columns, so the board is the same size and
+  // you can only use half of it with any confidence. The trickle is back to
+  // normal — the pool's extra was paying for Duck Rings, and there are none here.
+  bathroom: { id: 'bathroom', name: 'Bath Time', lanes: LANE_COUNT, trickleScale: 1, terrain: 'steam', background: 'bath' },
 };
 
 /** Worlds in the order they are played. Also the order of the level-select tabs. */
-export const WORLD_ORDER: readonly WorldId[] = ['bedroom', 'backyard'];
+export const WORLD_ORDER: readonly WorldId[] = ['bedroom', 'backyard', 'bathroom'];
 
 // --- Waves ------------------------------------------------------------------
 
@@ -648,7 +655,10 @@ export const LEVELS: readonly Level[] = [
     world: 'backyard',
     name: 'The Big Kid Outdoors',
     teaches: 'Everything the backyard taught, in one go.',
-    unlocks: [],
+    // Same reasoning as the Duck Ring at the end of the bedroom: the bathroom
+    // is played half-blind without a Fan, and a world that opens with its own
+    // answer still locked reads as broken rather than as hard.
+    unlocks: ['fan'],
     recommended: ['jar', 'ring', 'sprinkler', 'machine', 'watergun'],
     // His lane is dry all the way, so he cannot be held at a ring — he has to
     // be fought, and the pool is what stops you reinforcing round him.
@@ -659,6 +669,194 @@ export const LEVELS: readonly Level[] = [
       w([k('toddler', 2), k('runner', 0, 2), k('runner', 4, 2)]),
       w([k('balloon', 1), k('balloon', 3, 2), k('slider', 2, 3), o(k('puffy', 0, 3))]),
       wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 2, 3), o(k('balloon', 0, 3)), o(k('slider', 4, 3))], 30),
+      w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
+      wBig(
+        [
+          k('bigkid', 2),
+          k('puffy', 1, 4),
+          k('puffy', 3, 4),
+          k('slider', 0, 3),
+          k('slider', 4, 2),
+          o(k('wagon', 2, 5)),
+          o(k('balloon', 1, 3)),
+        ],
+        36,
+      ),
+    ],
+  },
+
+  // --- World 3: Bath Time -----------------------------------------------------
+  //
+  // The terrain rule is steam: from column five rightward you can see that
+  // somebody is coming but not who, until a Little Fan clears that row.
+  //
+  // Deliberately a SIGHT rule and nothing else. Nothing about the kids changes
+  // — they walk the same, take the same damage, can be shot the same. What you
+  // lose is the ability to pre-build the right answer, which is the whole of
+  // the lesson and none of the cruelty of hiding them outright.
+  {
+    id: 21,
+    world: 'bathroom',
+    name: 'Steamy',
+    teaches: 'A fan blows the steam out of its own row.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'wand', 'watergun', 'fort'],
+    blocked: [],
+    startSparkles: 225,
+    waves: [
+      w([k('toddler', 2)], 24),
+      w([k('toddler', 1), k('toddler', 3, 3)], 24),
+      w([k('runner', 2), k('toddler', 0, 3), o(k('toddler', 4, 3))]),
+      wBig([k('toddler', 0), k('runner', 2, 2), k('toddler', 4, 2), k('runner', 1, 3), o(k('toddler', 3, 3))]),
+    ],
+  },
+  {
+    id: 22,
+    world: 'bathroom',
+    name: 'Who Is That?',
+    teaches: 'A raincoat and a toddler look the same in the fog.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'wand', 'machine', 'fort'],
+    blocked: [],
+    startSparkles: 250,
+    waves: [
+      w([k('raincoat', 2), k('toddler', 0, 3)]),
+      w([k('raincoat', 1), k('toddler', 3, 2), k('raincoat', 4, 2)]),
+      w([k('toddler', 0), k('raincoat', 2, 2), k('toddler', 4, 2), o(k('raincoat', 1, 3))]),
+      wBig([k('raincoat', 0), k('raincoat', 2, 1), k('raincoat', 4, 1), k('toddler', 1, 3), o(k('runner', 3, 3))]),
+    ],
+  },
+  {
+    id: 23,
+    world: 'bathroom',
+    name: 'Slippery Tiles',
+    teaches: 'Sock Sliders, arriving out of the steam.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'watergun', 'slushie', 'castle'],
+    blocked: [],
+    startSparkles: 250,
+    waves: [
+      w([k('slider', 2), k('toddler', 0, 3)]),
+      w([k('slider', 1), k('slider', 3, 2), o(k('runner', 2, 3))]),
+      w([k('slider', 0), k('slider', 2, 1), k('slider', 4, 1), o(k('puffy', 3, 4))]),
+      wBig([k('slider', 1), k('slider', 2, 1), k('slider', 3, 1), k('puffy', 0, 3), k('runner', 4, 2)], 28),
+    ],
+  },
+  {
+    id: 24,
+    world: 'bathroom',
+    name: 'Bubbles Everywhere',
+    teaches: 'Fans cost cells too. Choose which rows you can see.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun'],
+    // A bath mat down the middle of the board: fewer cells, so a Fan in every
+    // lane is no longer affordable in space even when it is in sparkles.
+    blocked: colOff(4),
+    startSparkles: 275,
+    waves: [
+      w([k('balloon', 2), k('toddler', 0, 3)]),
+      w([k('balloon', 1), k('balloon', 3, 2), k('runner', 2, 3)]),
+      w([k('balloon', 0), k('runner', 2, 2), k('balloon', 4, 2), o(k('runner', 1, 3))]),
+      wBig([k('balloon', 1), k('balloon', 3, 1), k('runner', 2, 2), k('puffy', 0, 3), o(k('balloon', 4, 3))]),
+    ],
+  },
+  {
+    id: 25,
+    world: 'bathroom',
+    name: 'Under the Towel',
+    teaches: 'Hidden under a blanket AND hidden in the steam.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'sprinkler', 'machine', 'watergun'],
+    blocked: [],
+    startSparkles: 275,
+    waves: [
+      w([k('blanket', 2), k('toddler', 0, 3)]),
+      w([k('blanket', 1), k('blanket', 3, 2), o(k('runner', 2, 3))]),
+      w([k('blanket', 0), k('blanket', 2, 2), k('runner', 4, 2), o(k('blanket', 1, 3))]),
+      wBig([k('blanket', 1), k('blanket', 2, 1), k('blanket', 3, 1), k('puffy', 0, 3), o(k('balloon', 4, 3))], 28),
+    ],
+  },
+  {
+    id: 26,
+    world: 'bathroom',
+    name: 'Big Coats, No View',
+    teaches: 'Tanks you cannot see coming.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'watergun', 'castle', 'powder'],
+    blocked: [],
+    startSparkles: 300,
+    waves: [
+      w([k('puffy', 2), k('toddler', 0, 3)]),
+      w([k('puffy', 1), k('puffy', 3, 2), o(k('runner', 2, 3))]),
+      w([k('puffy', 0), k('wagon', 2, 3), k('puffy', 4, 2), o(k('slider', 1, 3))]),
+      wBig([k('puffy', 1), k('puffy', 2, 1), k('puffy', 3, 1), k('wagon', 0, 3), o(k('wagon', 4, 3))], 30),
+    ],
+  },
+  {
+    id: 27,
+    world: 'bathroom',
+    name: 'Two Fans',
+    teaches: 'Not every row is worth clearing.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun'],
+    // Both outer lanes lose their back half, so a Fan there costs a fighting
+    // cell rather than a spare one.
+    blocked: merge(rect(0, 0, 6, 8), rect(4, 4, 6, 8)),
+    startSparkles: 300,
+    waves: [
+      w([k('runner', 0), k('runner', 4, 2), k('toddler', 2, 3)]),
+      w([k('runner', 1), k('slider', 3, 2), k('balloon', 2, 3), o(k('runner', 0, 3))]),
+      w([k('wagon', 2), k('puffy', 1, 2), k('slider', 4, 2), o(k('blanket', 3, 3))]),
+      wBig([k('puffy', 0), k('puffy', 4, 1), k('wagon', 2, 2), k('slider', 1, 3), o(k('balloon', 3, 3))], 30),
+    ],
+  },
+  {
+    id: 28,
+    world: 'bathroom',
+    name: 'Rush Hour',
+    teaches: 'Everything at once, and half of it invisible.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'machine', 'watergun', 'sprinkler'],
+    blocked: [],
+    startSparkles: 325,
+    waves: [
+      w([k('runner', 1), k('runner', 3, 1), k('slider', 2, 3)]),
+      w([k('balloon', 0), k('runner', 2, 2), k('slider', 4, 2), o(k('runner', 1, 3))]),
+      w([k('blanket', 1), k('puffy', 3, 2), k('balloon', 2, 2), k('wagon', 0, 3), o(k('slider', 4, 3))]),
+      wBig([k('puffy', 1), k('wagon', 2, 2), k('puffy', 3, 2), k('balloon', 0, 3), k('slider', 4, 2)], 30),
+    ],
+  },
+  {
+    id: 29,
+    world: 'bathroom',
+    name: 'Fogged In',
+    teaches: 'The steam reaches further than usual.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun'],
+    // A shelf across the middle. With less room, a Fan in every lane is a real
+    // sacrifice — which is the whole question this level asks.
+    blocked: merge(rect(1, 3, 3, 3)),
+    startSparkles: 350,
+    waves: [
+      w([k('wagon', 2), k('runner', 0, 2), k('runner', 4, 2)]),
+      w([k('puffy', 1), k('balloon', 3, 2), k('slider', 2, 3), o(k('runner', 0, 3))]),
+      wBig([k('wagon', 1), k('wagon', 3, 2), k('blanket', 2, 3), o(k('puffy', 0, 3)), o(k('balloon', 4, 3))], 30),
+      w([k('slider', 0), k('slider', 4, 1), k('puffy', 2, 2), k('runner', 1, 2), o(k('wagon', 3, 4))]),
+    ],
+  },
+  {
+    id: 30,
+    world: 'bathroom',
+    name: 'The Big Kid In The Bath',
+    teaches: 'The exam, in the steam.',
+    unlocks: [],
+    recommended: ['jar', 'fan', 'machine', 'watergun', 'sprinkler'],
+    blocked: rect(2, 2, 7, 8),
+    startSparkles: 375,
+    waves: [
+      w([k('toddler', 1), k('runner', 3, 2), k('slider', 0, 3)]),
+      w([k('balloon', 2), k('blanket', 4, 2), k('runner', 1, 3), o(k('runner', 3, 3))]),
+      wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 0, 3), o(k('balloon', 2, 3)), o(k('slider', 4, 3))], 30),
       w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
       wBig(
         [

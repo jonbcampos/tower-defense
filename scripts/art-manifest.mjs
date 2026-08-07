@@ -188,6 +188,14 @@ const BASE_PIECES = [
       'bubbles rightward, and a little window showing soapy liquid. Silhouette: a box with three spouts.',
   },
   {
+    id: 'fan',
+    aspect: '1:1',
+    subject:
+      'a small round desk fan on a stubby base, pale blue, facing RIGHT, with a white grille and ' +
+      'three visible blades behind it, and two or three soft curved motion lines blowing off to ' +
+      'the right. Silhouette: a circle on a small stand.',
+  },
+  {
     id: 'ring',
     aspect: '1:1',
     subject:
@@ -493,6 +501,25 @@ const BASE_PIECES = [
       'line, no furniture, no toys, no people, no paddling pool, no flowerbeds, no path. ' +
       'Rich and slightly deep in colour so that pale characters placed on top of it stand out. ' +
       'Warm afternoon light, soft and even, no hotspots and no cast shadows.',
+  },
+  {
+    // World 3's board. Same flat-orthographic rules as the other two — see the
+    // note on `room`. The steam is drawn by the game on top of this, so the
+    // picture itself must be CLEAR: a backdrop that already looks foggy would
+    // make the fogged half indistinguishable from the clear half.
+    id: 'bath',
+    aspect: '16:9',
+    background: 'none',
+    size: '2K',
+    subject:
+      'A FLAT ORTHOGRAPHIC GAME BACKGROUND with NO PERSPECTIVE and NO VANISHING POINT. ' +
+      'The TOP ONE SIXTH of the image is a bathroom wall of small square mint-green tiles with a ' +
+      'row of darker trim tiles running horizontally along its bottom edge. The REMAINING FIVE ' +
+      'SIXTHS below it is a plain, even bathroom floor of larger cream and pale grey tiles, flat ' +
+      'and uniform, filling the whole width. Straight-on and perfectly horizontal: no ceiling, no ' +
+      'side walls, no corners, no horizon line, no bath, no sink, no toilet, no towels, no mat, ' +
+      'no people. CLEAR AND CRISP with no steam, no mist and no fog anywhere. Soft even lighting, ' +
+      'no hotspots, no reflections, no cast shadows.',
   },
   {
     // The only piece with no green screen: it IS the background.

@@ -914,3 +914,33 @@ four-wide grid would have been resampled to 128 pixels a frame.
 cells on a 2K 16:9 frame is about 690x770 each, which is comfortable; sixteen
 would not be, and at that point the split is by CHARACTER — one sheet per kid
 per world, say — never by animation.
+
+## 42. World 3's steam hides who, not whether
+
+Bath Time's rule: from column five rightward, a kid is drawn as a flat dark
+silhouette until a Little Fan clears that row. Sight only — nothing about her
+speed, health or targetability changes, and the simulation would play the level
+identically with the fog turned off.
+
+**Deliberately not invisible.** Plants vs Zombies' fog levels hide the enemy
+outright and they are the levels everyone remembers hating; at five, something
+arriving out of nowhere is not tense, it is unfair. A silhouette keeps the
+actual lesson — you cannot tell WHICH kid is coming, so you cannot pre-build the
+counter — and drops the part that is only cruel.
+
+The fog covers the FAR half, not the near half. The one thing a player must
+always be able to see is a toy being eaten.
+
+`isFogged` lives on `GameState` even though nothing in the simulation reads it,
+because its answer depends on the world and on which lanes hold a Fan, and both
+of those are simulation state. A renderer working it out for itself would be a
+second copy of the rule, free to disagree.
+
+The first pass had steam at 0.72 alpha over a mid-tone silhouette and the shapes
+all but vanished — "something is coming" stopped reading, which is the one thing
+the rule must keep saying. Lighter fog, darker silhouette.
+
+**Revisit if:** a world wants fog that moves, or fog you clear from the tray
+rather than by building. Both are bigger changes than this one: the Fan being a
+placed toy is what makes clearing a row cost a cell, which is the decision the
+level is actually asking about.

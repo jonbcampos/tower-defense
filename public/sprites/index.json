@@ -12,6 +12,7 @@
     "powder",
     "fountain",
     "machine",
+    "fan",
     "ring",
     "castle",
     "slushie",
@@ -31,6 +32,7 @@
     "rug",
     "menu",
     "yard",
+    "bath",
     "room",
     "crawler.motion",
     "toddler.motion",
@@ -47,6 +49,7 @@
   "opaque": [
     "menu",
     "yard",
+    "bath",
     "room"
   ],
   "sheets": {
