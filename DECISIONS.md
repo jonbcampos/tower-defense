@@ -845,3 +845,39 @@ rather than left to it.
 
 **Revisit if:** a third animation is added — a leaving pose, a startled pose.
 Write the outfit first; it is much cheaper than nine regenerations.
+
+## 40. Endless is a level whose wave list keeps growing
+
+No mode flag, no branch in the simulation. `WaveRunner` reads
+`level.waves[index]`, so a level whose array gets longer as you reach the end of
+it is a level that never finishes — and `spawnedEverything` is therefore never
+true, so the win check never fires and the run ends the only other way it can.
+Two nullable function arguments to `GameState.start` are the whole integration:
+one to extend the list, one to say how tough a kid spawned now should be.
+
+**Waves survived is the score.** Not kids turned round, not sparkles, not time.
+A wave is the unit the game already shouts about and the progress bar already
+counts, and "I got to seven" is a thing a five-year-old can hold in her head and
+want to beat.
+
+Two things had to be fixed before it was a mode rather than a treadmill:
+
+**It did not end.** A bot driven to wave 120 still had three hearts and a full
+board. More kids stops being an escalation once the pool caps how many kids fit,
+so the budget just went unspent. Enemy health now ramps from wave 12 onward,
+which never stops being an escalation. A trial pins this — the only one in the
+suite whose pass condition is that the player LOSES — and it deliberately checks
+"terminates" rather than "terminates at wave 33", because pinning the number
+would turn every tuning change into a failing test with nothing wrong.
+
+**Early waves were unfair and late waves were empty.** A budget alone bought the
+single dearest kid it could afford, so wave one opened with a lone Balloon Kid
+and wave three with a Puffy Coat, while wave forty was four Big Kids on an
+otherwise bare board. Two fixes: a price ceiling that rises with the wave, so
+the roster arrives in roughly the order the campaign introduces it; and a second
+spending pass that puts the last 40% of the budget into cheap kids, so a late
+wave is tanks WITH a crowd rather than tanks instead of one.
+
+**Revisit if:** a world other than the bedroom should host it. Endless is dry
+ground today, which quietly means the Duck Ring is dead weight in a loadout that
+contains every toy you own.

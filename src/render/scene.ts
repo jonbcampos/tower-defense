@@ -38,6 +38,7 @@ import {
   drawGuide,
   drawLevelSelect,
   drawLoadout,
+  drawEndlessResult,
   drawResult,
   drawScrim,
   drawTitle,
@@ -45,6 +46,7 @@ import {
   type GuideTab,
 } from '../ui/screens';
 import { freshSave, type Save } from '../core/save';
+import { ENDLESS_ID } from '../game/endless';
 import { LEVELS, WORLDS, type WorldId } from '../game/levels';
 
 /**
@@ -94,6 +96,15 @@ let selectWorld: WorldId = 'bedroom';
 
 export function setSelectWorld(world: WorldId): void {
   selectWorld = world;
+}
+
+/** Endless: waves reached this run, and the best ever. Both shown on the card. */
+let endlessReached = 0;
+let endlessBest = 0;
+
+export function setEndlessScore(reached: number, best: number): void {
+  endlessReached = reached;
+  endlessBest = best;
 }
 
 export function setGuideDisplay(tab: GuideTab, page: number): void {
@@ -471,6 +482,10 @@ function drawOverlays(ctx: CanvasRenderingContext2D, state: GameState): void {
     case 'won':
     case 'lost': {
       const won = state.phase === 'won';
+      if (state.level.id === ENDLESS_ID) {
+        drawEndlessResult(ctx, endlessReached, endlessBest);
+        break;
+      }
       const hasNext = state.level.id < LEVELS.length;
       drawResult(ctx, won, state.result().stars, state.level.name, hasNext, clock % 8);
       if (won && unlockBanner) drawUnlockBanner(ctx, unlockBanner);

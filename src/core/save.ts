@@ -166,6 +166,21 @@ export function starsFor(save: Save, levelId: number): number {
  * take away a rating the player already earned, or replaying a beaten level
  * becomes a risk instead of a treat.
  */
+/**
+ * Record an endless run. Returns true if it was a new best.
+ *
+ * Only ever goes up, like the stars. A worse run must not overwrite a better
+ * one — losing badly is the normal way an endless run ends, and having the
+ * number drop every time she plays would make the one thing this mode keeps
+ * score of the one thing it punishes her for.
+ */
+export function recordEndless(save: Save, waves: number): boolean {
+  const clamped = Math.max(0, Math.floor(waves));
+  if (clamped <= save.endlessBest) return false;
+  save.endlessBest = clamped;
+  return true;
+}
+
 export function recordResult(save: Save, levelId: number, stars: number): boolean {
   let changed = false;
   const key = String(levelId);

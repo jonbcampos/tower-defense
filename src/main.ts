@@ -1,17 +1,20 @@
 import { Audio } from './core/audio';
 import { Input, type KeyAction, type Tap } from './core/input';
 import { startLoop } from './core/loop';
+import { Rng } from './core/rng';
 import { Viewport } from './core/viewport';
 import { WakeLock } from './core/wakelock';
 import {
   freshSave,
   loadSave,
+  recordEndless,
   recordResult,
   writeSave,
   type Save,
 } from './core/save';
 import { DIFFICULTIES, cellAt, type DifficultyId } from './game/config';
 import { LEVELS, levelById, unlockedBy, type WorldId } from './game/levels';
+import { buildEndless, ENDLESS_ID, type EndlessRun } from './game/endless';
 import { GameState, validateDesignContracts, type GameEvent } from './game/state';
 import { TOYS, type ToyId } from './game/toys';
 import { Particles } from './render/particles';
@@ -21,6 +24,7 @@ import {
   sceneRenderer,
   setGuideDisplay,
   setSelectWorld,
+  setEndlessScore,
   setLoadoutDisplay,
   setSaveForDisplay,
   setUnlockBanner,
@@ -81,6 +85,8 @@ setMutedDisplay(audio.muted);
 let currentLevelId = 1;
 /** Cards chosen on the loadout screen. Unused on EASY. */
 let picked: ToyId[] = [];
+/** The endless run in progress, if any. Null during the campaign. */
+let endless: EndlessRun | null = null;
 /** Which world's levels the picker is showing. */
 let selectWorld: WorldId = 'bedroom';
 /** Where the guide is open, if it is. Reset every time it opens. */
@@ -160,6 +166,10 @@ function routeMenuTap(tap: Tap): void {
       setSelectWorld(selectWorld);
       return;
     }
+    if (hit.id === 'endless') {
+      beginEndless();
+      return;
+    }
     currentLevelId = Number(hit.id.slice('level:'.length));
     beginSetup();
     return;
@@ -200,6 +210,15 @@ function routeMenuTap(tap: Tap): void {
 
   if (state.phase === 'won' || state.phase === 'lost') {
     const won = state.phase === 'won';
+    // Endless has no NEXT, and `beginSetup` would look up level 0 and throw.
+    if (currentLevelId === ENDLESS_ID) {
+      const endHit = hitTestMenu(resultMenu(false, false), tap.x, tap.y);
+      if (!endHit) return;
+      audio.play('select');
+      if (endHit.id === 'menu') state.phase = 'select';
+      else beginEndless();
+      return;
+    }
     const hit = hitTestMenu(resultMenu(won, currentLevelId < LEVELS.length), tap.x, tap.y);
     if (!hit) return;
     audio.play('select');
@@ -244,7 +263,32 @@ function availableToys(): ToyId[] {
  * difficulty's headline lever: it removes a thing to CONSIDER, not a thing to
  * do, which is the whole shape of the EASY-to-NORMAL step.
  */
+/**
+ * Start an endless run.
+ *
+ * Skips the loadout picker on every difficulty, unlike the campaign. Endless
+ * deals you everything you own — there is no lesson to build a five-card puzzle
+ * around, and asking a child to choose five of fourteen before she has seen a
+ * single wave of a mode she has never played is a wall.
+ */
+function beginEndless(): void {
+  currentLevelId = ENDLESS_ID;
+  const owned = unlockedBy(LEVELS.length);
+  const seed = (Math.random() * 0xffffffff) >>> 0;
+  endless = buildEndless(owned, save.unlocked, DIFFICULTIES[save.difficulty], new Rng(seed));
+  picked = [...owned];
+  state.start(endless.level, save.difficulty, owned, seed, endless.grow, endless.toughnessAt);
+  particles.reset();
+  resetHud();
+  setUnlockBanner('');
+  setEndlessScore(0, save.endlessBest);
+  // Same reason as startRun: drop the tap that pressed the button, or the
+  // first frame opens by placing a toy wherever the thumb happened to be.
+  input.clear();
+}
+
 function beginSetup(): void {
+  endless = null;
   const level = levelById(currentLevelId);
   const difficulty = DIFFICULTIES[save.difficulty];
   if (difficulty.loadoutIsPicked) {
@@ -423,6 +467,15 @@ function presentEvent(event: GameEvent): void {
 }
 
 function finishRun(won: boolean, stars: number): void {
+  // Endless ends the only way it can, so it is the one run recorded on a LOSS.
+  // Waves survived is the score; there are no stars and nothing to unlock.
+  if (currentLevelId === ENDLESS_ID) {
+    const reached = state.waves.index;
+    if (recordEndless(save, reached)) writeSave(save);
+    setSaveForDisplay(save);
+    setEndlessScore(reached, save.endlessBest);
+    return;
+  }
   if (!won) return;
   const level = levelById(currentLevelId);
   if (recordResult(save, currentLevelId, stars)) writeSave(save);

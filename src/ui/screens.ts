@@ -92,6 +92,31 @@ export function guideButton(): MenuRect {
   };
 }
 
+/**
+ * Endless, on the level-select screen once she has finished the bedroom.
+ *
+ * Gated rather than always there: endless deals every toy you own, and before
+ * the campaign has handed over a usable kit it is not a mode, it is level one
+ * for an hour. Ten levels is also roughly where "I want to keep going" starts
+ * being a thing a child says.
+ */
+export function endlessButton(save: Save): MenuRect {
+  return {
+    id: 'endless',
+    x: SCREEN.w / 2 - 60,
+    y: VIRTUAL_H - 30,
+    w: 120,
+    h: 22,
+    label: 'ENDLESS',
+    sub: '',
+    enabled: save.unlocked > BEDROOM_LEVELS,
+    icon: 'again',
+  };
+}
+
+/** Clearing the bedroom is the gate. */
+const BEDROOM_LEVELS = 10;
+
 /** Title: pick a difficulty, which is also the button that starts. */
 export function titleMenu(): MenuRect[] {
   const w = 104;
@@ -187,6 +212,7 @@ export function levelMenu(save: Save, world: WorldId): MenuRect[] {
     enabled: true,
     icon: 'back',
   });
+  rects.push(endlessButton(save));
   return rects;
 }
 
@@ -300,6 +326,52 @@ export function drawLoadout(
       drawTick(ctx, rect.x + rect.w - 7, rect.y + 7, 7, PALETTE.cardReady, PALETTE.tray);
     }
   }
+}
+
+/**
+ * The endless card: how far you got, and how far you have ever got.
+ *
+ * No stars. Stars measure how cleanly you beat a fixed thing; endless has no
+ * fixed thing to beat. The whole scoreboard is one number, and it is the number
+ * the progress bar was already counting while she played.
+ */
+export function drawEndlessResult(
+  ctx: CanvasRenderingContext2D,
+  reached: number,
+  best: number,
+): void {
+  drawScrim(ctx, 0.82);
+  const beatIt = reached >= best && reached > 0;
+
+  drawText(ctx, beatIt ? 'NEW BEST!' : 'GOOD TRY!', SCREEN.w / 2, 52, {
+    size: 20,
+    align: 'center',
+    color: beatIt ? PALETTE.hudAccent : PALETTE.hudText,
+    glow: true,
+  });
+  // The count, big. It is the entire result, so it gets the space a row of
+  // stars would have had.
+  drawText(ctx, String(reached), SCREEN.w / 2, 96, {
+    size: 40,
+    align: 'center',
+    color: PALETTE.hudAccent,
+    glow: true,
+  });
+  drawText(ctx, reached === 1 ? 'wave' : 'waves', SCREEN.w / 2, 122, {
+    size: 11,
+    align: 'center',
+    color: PALETTE.hudText,
+  });
+  if (!beatIt && best > 0) {
+    drawText(ctx, `your best is ${best}`, SCREEN.w / 2, 142, {
+      size: 9,
+      align: 'center',
+      color: PALETTE.hudDim,
+      bold: false,
+    });
+  }
+
+  for (const rect of resultMenu(false, false)) drawButton(ctx, rect, false);
 }
 
 export function resultMenu(won: boolean, hasNext: boolean): MenuRect[] {
@@ -428,6 +500,19 @@ export function drawLevelSelect(
     if (rect.id.startsWith('world:')) {
       const id = rect.id.slice('world:'.length) as WorldId;
       drawButton(ctx, rect, id === world, !rect.enabled);
+      continue;
+    }
+    if (rect.id === 'endless') {
+      drawButton(ctx, rect, false, !rect.enabled);
+      // The best so far, beside the button rather than on it. A number on the
+      // button reads as part of its name.
+      if (rect.enabled && save.endlessBest > 0) {
+        drawText(ctx, `best ${save.endlessBest}`, rect.x + rect.w + 8, rect.y + 11, {
+          size: 8,
+          color: PALETTE.hudAccent,
+          bold: false,
+        });
+      }
       continue;
     }
     const id = Number(rect.id.slice('level:'.length));

@@ -149,6 +149,8 @@ export class GameState {
   private readonly guardTimer: number[] = new Array<number>(LANE_COUNT).fill(0);
 
   /** Cells this level's furniture covers. */
+  private growWaves: ((index: number) => void) | null = null;
+  private toughness: ((index: number) => number) | null = null;
   private blocked = new Set<number>();
   /** Paddling-pool cells. Empty outside a `pool` world. See `isWater`. */
   private water = new Set<number>();
@@ -177,8 +179,32 @@ export class GameState {
 
   // --- Lifecycle ------------------------------------------------------------
 
-  start(level: Level, difficultyId: DifficultyId, loadout: readonly ToyId[], seed: number): void {
+  start(
+    level: Level,
+    difficultyId: DifficultyId,
+    loadout: readonly ToyId[],
+    seed: number,
+    /**
+     * Endless only: extend the level's waves so it never runs out.
+     *
+     * A function rather than a mode flag, because that is the entire difference
+     * between endless and a campaign level as far as the simulation is
+     * concerned. There is no `if (endless)` anywhere below: a level whose wave
+     * list keeps growing simply never satisfies `spawnedEverything`, so the win
+     * check never fires and the run ends the only other way it can.
+     */
+    growWaves: ((index: number) => void) | null = null,
+    /**
+     * Endless only: how much tougher a kid spawned now should be.
+     *
+     * Same shape and same reasoning as `growWaves` — a function, not a mode
+     * flag. The campaign passes nothing and every multiplier below is 1.
+     */
+    toughness: ((index: number) => number) | null = null,
+  ): void {
     this.level = level;
+    this.growWaves = growWaves;
+    this.toughness = toughness;
     this.difficulty = DIFFICULTIES[difficultyId];
     this.rng = new Rng(seed);
     this.loadout = [...loadout];
@@ -380,6 +406,11 @@ export class GameState {
     this.elapsed += dt;
     this.decayShake(dt);
     this.tickTimers(dt);
+
+    // Keep endless topped up BEFORE the runner looks at the list, so it never
+    // sees a short one. Idempotent and cheap: almost every call is a length
+    // comparison that returns immediately.
+    this.growWaves?.(this.waves.index);
 
     this.waves.update(
       dt,
@@ -714,7 +745,8 @@ export class GameState {
   }
 
   private spawnEnemy(kind: EnemyKind, lane: number): void {
-    const enemy = this.enemies.spawn(kind, lane, this.difficulty.enemyHpScale);
+    const ramp = this.toughness?.(this.waves.index) ?? 1;
+    const enemy = this.enemies.spawn(kind, lane, this.difficulty.enemyHpScale * ramp);
     if (!enemy) return;
     // Bosses hold their first throw, so the entrance isn't also an ambush.
     if (ENEMIES[kind].behaviour === 'throws') enemy.actionTimer = 6;

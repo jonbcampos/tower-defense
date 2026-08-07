@@ -5,7 +5,7 @@ plants, 26 zombies and 50 levels across 5 areas**; this is the equivalent for a
 bedroom full of toys, with the engineering cost written next to each entry so
 the cheap content can be told apart from the expensive content.
 
-**Today: 12 toys, 10 kids, 15 levels, 2 worlds.** Everything below is a plan,
+**Today: 14 toys, 10 kids, 20 levels, 2 worlds, endless mode.** Everything below is a plan,
 not a promise.
 
 ## First, what of PvZ is actually signal
@@ -38,7 +38,7 @@ does and invalidated the build that had been working.
 | # | World | Terrain rule | Status |
 |---|---|---|---|
 | 1 | **The Bedroom** | None. Every cell takes any toy. | **Built** (levels 1–10) |
-| 2 | **The Backyard** | Paddling pool. Water cells need a Duck Ring first. | **Half built** (11–15) |
+| 2 | **The Backyard** | Paddling pool. Water cells need a Duck Ring first. | **Built** (11–20) |
 | 3 | **Bath Time** | Steam. You cannot see kids more than three columns away until something clears the air. | Planned |
 | 4 | **The Attic** | No floor — bare joists. Every toy needs a Shelf under it, anywhere on the board. | Planned |
 | 5 | **The Treehouse** | Two entrances. Kids come from the right *and* climb up through a trapdoor mid-board. | Planned |
@@ -72,10 +72,10 @@ last lesson.
 | Bubble Machine | Threepeater | — | **Built** |
 | Sprinkler | Starfruit-ish | — | **Built** |
 | Super Soaker | Gatling Pea | data | Planned — the padding entry, and fine |
-| Slushie Cup | Snow Pea | small | Planned — its hits also slow. One field on `shoot`. |
+| Slushie Cup | Snow Pea | — | **Built** — its hits leave a lingering chill |
 | Two-Way Wand | Split Pea | small | Planned — fires left as well, for the treehouse |
 | Bath Toy Lobber | Cabbage-pult | **system** | Planned — an arcing shot that ignores walls. Needed for world 4. |
-| Beach Ball | — | small | Planned — a shot that passes *through* kids instead of stopping |
+| Beach Ball | — | — | **Built** — passes through kids instead of stopping |
 
 ### Walls and floor
 
@@ -137,11 +137,10 @@ last lesson.
 Content before systems, and a world at a time, because a world is the unit a
 player experiences.
 
-1. **Finish World 2** — levels 16–20, plus the Slushie Cup and Beach Ball so
-   the backyard has a kit of its own rather than the bedroom's with a ring.
-2. **Endless mode.** Cheapest longevity in the project: a procedural wave
-   generator over whatever is unlocked, one screen, one saved high score. Worth
-   doing before World 3 because it makes everything already built replayable.
+1. ~~Finish World 2~~ — **done**, levels 11–20 with the Slushie Cup, Beach Ball
+   and Sand Castle.
+2. ~~Endless mode~~ — **done**. Waves survived is the score; a competent bot
+   reaches about wave 50 on EASY and 31 on HARD.
 3. **World 3, Bath Time.** Steam is a visibility rule, which is engine work in
    the renderer rather than the simulation — the cheapest of the three
    remaining terrain rules.

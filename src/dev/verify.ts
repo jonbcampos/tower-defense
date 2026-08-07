@@ -28,7 +28,9 @@ import { COL_COUNT, HALFWAY_COL, LANE_COUNT, cellCentreX, colAtX, squeezeX } fro
 import { ENEMIES, answersIn, type Enemy, type EnemyKind } from '../game/enemies';
 import { LEVELS, levelById, type Level } from '../game/levels';
 import { GameState } from '../game/state';
-import { TOYS, toyDealsDamage, type ToyId } from '../game/toys';
+import { TOYS, TOY_ORDER, toyDealsDamage, type ToyId } from '../game/toys';
+import { buildEndless } from '../game/endless';
+import { Rng } from '../core/rng';
 import { freshSave, loadSave, recordResult, starsFor, writeSave } from '../core/save';
 
 export interface TrialResult {
@@ -763,6 +765,47 @@ function damageOverBoss(toy: ToyId, level: Level): number {
 
 // --- Runner -----------------------------------------------------------------
 
+/**
+ * Endless must actually end.
+ *
+ * The first version did not. A bot driven to wave 120 still had three hearts, a
+ * full board and no prospect of ever losing, because the wave size caps out
+ * once the enemy pool is the limit and more kids stops being an escalation the
+ * moment you cannot fit more kids. The fix was a toughness ramp; this is what
+ * stops it quietly regressing, and it is the only trial in the suite whose
+ * pass condition is that the player LOSES.
+ *
+ * The bound at the top is generous. The point is "this terminates", not "this
+ * terminates at wave 33" — pinning the exact number would turn every tuning
+ * change into a failing test with nothing wrong.
+ */
+function trialEndlessEnds(id: DifficultyId): TrialResult {
+  const state = new GameState();
+  const owned = [...TOY_ORDER];
+  const run = buildEndless(owned, LEVELS.length, DIFFICULTIES[id], new Rng(11));
+  state.start(run.level, id, owned, 11, run.grow, run.toughnessAt);
+
+  const policy = goodBot(run.level);
+  const limit = 120 * 3000;
+  for (let i = 0; i < limit && state.phase === 'playing'; i++) {
+    if (i % 30 === 0) policy(state);
+    state.update(1 / 120);
+    state.drainEvents(() => {});
+  }
+
+  const reached = state.waves.index;
+  return {
+    trial: 'endless eventually ends',
+    level: 'endless',
+    difficulty: id,
+    detail:
+      state.phase === 'playing'
+        ? `still going at wave ${reached} after 3000s — the ramp never catches up`
+        : `ended at wave ${reached}`,
+    pass: state.phase !== 'playing' && reached >= 5,
+  };
+}
+
 export function verify(): TrialResult[] {
   const results: TrialResult[] = [];
 
@@ -785,6 +828,7 @@ export function verify(): TrialResult[] {
   results.push(trialStarsAreMonotone());
   results.push(trialSaveSurvivesHostility());
   results.push(trialBossResistsBubbles());
+  for (const id of DIFFICULTY_ORDER) results.push(trialEndlessEnds(id));
 
   const failed = results.filter((r) => !r.pass);
   console.table(
