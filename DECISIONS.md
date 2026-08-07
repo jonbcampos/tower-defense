@@ -55,6 +55,8 @@ laid out from `SCREEN.w`; in the sibling games it merely produced one bad frame.
 **Revisit if:** it's back-ported. It should be — both siblings have the same latent bug, and
 until then decision 2's "verbatim" is no longer strictly true.
 
+*Done. Back-ported to both siblings; see decision 55.*
+
 ## 4. The board is static and `scrollSpeed` does not exist
 
 Both siblings are scrollers: the player is pinned at `PLAYER_X`, the world moves left, and
@@ -1367,3 +1369,33 @@ collision to a phone. Same mistake decision 46 caught in the overflow check.
 before it breaks, so the kid has nothing to chew. There is no cooldown today
 because that is a strategy no five-year-old will find, and a cooldown on a tidy-
 up tool is a confusing thing to explain.
+
+## 55. The NaN fix is back-ported, and the core is verbatim again
+
+Decision 3's revisit condition was "it's back-ported", and it now has been.
+Both siblings floor the window at one pixel, both have a matching entry in their
+own logs, and `src/core/viewport.ts` is **byte-identical across all three
+games** — verified by hash, not by eye.
+
+That last part is the whole point. Decision 2 deferred extracting the shared
+core on the grounds that the copies stay identical; a file that had quietly
+diverged for months was decision 2's argument slowly expiring. It is honest
+again.
+
+It is worth naming what happened here, because it is the thing decision 2 was
+betting against: **a bug was fixed in one copy and left in two, for months, and
+the only reason it got fixed at all is that the same person happened to be
+looking at all three.** Nothing in the tooling would ever have said so. The
+siblings do not run these contracts, nothing diffs the copies, and the bug is
+invisible in normal play in both of them.
+
+So the trigger for extraction has actually fired. Decision 2 said the signal was
+"a bug fixed in one core file that has to be applied by hand in three places" —
+which is exactly this. The extraction is still not being done, and that is now a
+deliberate second deferral rather than the original one: three games that are
+finished and deployed are a bad time to restructure, and the cost was two lines
+in two files. The next one should not be waved through the same way.
+
+**Revisit if:** a fourth copy is made, or a second bug crosses the same way. A
+cheap intermediate step, if it comes up before anyone wants a monorepo: a script
+that hashes the six shared files across the three repos and complains.

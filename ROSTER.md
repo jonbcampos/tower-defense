@@ -278,13 +278,16 @@ a rest, which children like.
 - **Rotate the Gemini API key.** It was leaked into a transcript once. The
   generate-art script has no `--key=` flag and refuses to run unless
   `.env.local` is gitignored, but the key itself is still the old one.
-- **Back-port the `viewport.ts` NaN fix** to `flappy-unicorn` and `runner` — see
-  decision 3. Three copies of one core file, and this is the bug that proves the
-  copy was a real cost.
-- **The core is now copied three times.** Decision 2 named the third copy as the
-  trigger to extract a shared package and then deferred it. The revisit
-  condition it set — "a bug fixed in one core file that has to be applied by
-  hand in three places" — is exactly the line above.
+- ~~Back-port the `viewport.ts` NaN fix~~ — **done**. Both siblings floor the
+  window at one pixel, and `src/core/viewport.ts` is byte-identical across all
+  three games again.
+- **Extract the shared core.** Decision 2 deferred this and named the trigger as
+  "a bug fixed in one core file that has to be applied by hand in three places".
+  That trigger has now fired — the NaN fix sat in one copy for months and was
+  only found because one person happened to be looking at all three. Deferred a
+  second time on purpose (see decision 55); three finished, deployed games are a
+  bad moment to restructure. A cheap intermediate step if it comes up sooner: a
+  script that hashes the six shared files across the repos and complains.
 
 ## What has to stay true
 
