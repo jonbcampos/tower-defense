@@ -1661,3 +1661,34 @@ that caught the anchor bug.
 
 **Revisit if:** a second endless variant lands on wet or bare terrain. The float
 exclusion is hardcoded to this mode's dry bedroom, not derived from its world.
+
+## 61. The chroma key gets a second flood, for holes in the subject
+
+Reported as "the green screen is definitely showing" on the Wagon Kid. It was:
+between the wheel spokes, in the triangle under the tow handle, and in the slot
+between her arm and her cardboard shield.
+
+The cut-out floods inward from the border, which is deliberate — decision-wise it
+is the reason a green highlight inside the Sticky Slime survives while the green
+around it goes. But a flood only removes background CONNECTED to the border, and
+a wagon has holes in it. Every enclosed pocket shipped as a bright green patch.
+
+Deleting every key-coloured pixel is the obvious fix and the wrong one: it is
+precisely what the flood exists to avoid. So there is a second flood instead,
+seeded from pixels that are unmistakably the key — the seed test is more than
+twice as strict as the flood's own tolerance — after which the ordinary flood
+sweeps the JPEG ringing around each pocket's rim exactly as it does outside.
+
+It runs **only when the key colour is vivid**, meaning its channel spread is over
+110. That is the premise of chroma key restated as a guard: nothing in this
+palette is near #00FF00, so an unmistakably-green pixel in the middle of a
+subject is a hole. A model that ignored the prompt and gave a WHITE background
+gets the border flood and nothing else — half the cast is cream and the eyes are
+white, and an interior pass there would blind them.
+
+Checked against the sprites most at risk of being eaten: the frog-green Squeaky
+Toy, the Sticky Slime and the Balloon Kid's mint cuffs all survive untouched.
+
+**Revisit if:** a piece ever legitimately contains a patch of near-#00FF00 that
+is enclosed by its own subject. Nothing does today, and the palette is the reason
+the key is that colour in the first place.

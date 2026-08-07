@@ -26,6 +26,10 @@
  * the green around it goes. It also keys on the colour it finds in the corners
  * rather than on a hard-coded green, so a model that ignores the instruction
  * and gives you a flat white background still works.
+ *
+ * A second flood then handles background the first one cannot reach — the holes
+ * in the Wagon Kid's wagon — seeded only from pixels that are unmistakably the
+ * key, and only when the key is a vivid colour. See `cutOutBackground`.
  */
 
 /** A piece that is a grid of animation frames rather than one subject. */
@@ -92,6 +96,15 @@ let loaded = false;
 const KEY_TOLERANCE = 96;
 /** Pixels within this of the edge of the key get a soft alpha, to avoid fringing. */
 const KEY_FEATHER = 56;
+/**
+ * How close a pixel must be to the key to START a cut-out of its own.
+ *
+ * Deliberately far stricter than `KEY_TOLERANCE`. A seed is not protected by
+ * being connected to the border, so it has to be background beyond argument;
+ * everything softer around it is then swept by the ordinary flood. See the
+ * second pass in `cutOutBackground`.
+ */
+const KEY_SEED = 40;
 
 export function spritesReady(): boolean {
   return loaded;
@@ -504,39 +517,68 @@ function cutOutBackground(image: HTMLImageElement): HTMLCanvasElement {
   // Iterative flood fill with an explicit stack — a recursive one blows the
   // call stack on a 1024x1024 image, which is exactly the size we generate.
   const seen = new Uint8Array(width * height);
-  const stack: number[] = [];
-  for (let x = 0; x < width; x++) {
-    stack.push(x, x + (height - 1) * width);
-  }
-  for (let y = 0; y < height; y++) {
-    stack.push(y * width, width - 1 + y * width);
-  }
+  const flood = (stack: number[]): void => {
+    while (stack.length > 0) {
+      const p = stack.pop()!;
+      if (seen[p]) continue;
+      seen[p] = 1;
+      const i = p * 4;
+      const distance = distanceAt(i);
+      if (distance > KEY_TOLERANCE + KEY_FEATHER) continue;
 
-  while (stack.length > 0) {
-    const p = stack.pop()!;
-    if (seen[p]) continue;
-    seen[p] = 1;
-    const i = p * 4;
-    const distance = distanceAt(i);
-    if (distance > KEY_TOLERANCE + KEY_FEATHER) continue;
+      // Feathered edge: pixels close to the key go fully transparent, pixels on
+      // the boundary fade. A hard cut leaves a green rim on every curve, which
+      // at this scale is the difference between "a sprite" and "a sticker".
+      if (distance <= KEY_TOLERANCE) {
+        data[i + 3] = 0;
+      } else {
+        const t = (distance - KEY_TOLERANCE) / KEY_FEATHER;
+        data[i + 3] = Math.min(data[i + 3]!, Math.round(255 * t));
+        continue; // don't spread through a partially-kept pixel
+      }
 
-    // Feathered edge: pixels close to the key go fully transparent, pixels on
-    // the boundary fade. A hard cut leaves a green rim on every curve, which at
-    // this scale is the difference between "a sprite" and "a sticker".
-    if (distance <= KEY_TOLERANCE) {
-      data[i + 3] = 0;
-    } else {
-      const t = (distance - KEY_TOLERANCE) / KEY_FEATHER;
-      data[i + 3] = Math.min(data[i + 3]!, Math.round(255 * t));
-      continue; // don't spread through a partially-kept pixel
+      const x = p % width;
+      const y = (p / width) | 0;
+      if (x > 0) stack.push(p - 1);
+      if (x < width - 1) stack.push(p + 1);
+      if (y > 0) stack.push(p - width);
+      if (y < height - 1) stack.push(p + width);
     }
+  };
 
-    const x = p % width;
-    const y = (p / width) | 0;
-    if (x > 0) stack.push(p - 1);
-    if (x < width - 1) stack.push(p + 1);
-    if (y > 0) stack.push(p - width);
-    if (y < height - 1) stack.push(p + width);
+  const edges: number[] = [];
+  for (let x = 0; x < width; x++) edges.push(x, x + (height - 1) * width);
+  for (let y = 0; y < height; y++) edges.push(y * width, width - 1 + y * width);
+  flood(edges);
+
+  // Second pass: the pockets the first one cannot reach.
+  //
+  // A flood from the border only removes background CONNECTED to the border,
+  // which is the whole reason it is a flood — but the Wagon Kid arrives towing a
+  // wagon, and a wagon has holes in it. The gaps between the spokes, the
+  // triangle under the tow handle and the slot between her arm and her shield
+  // are all background enclosed by subject, and every one of them shipped as a
+  // bright green patch on the board.
+  //
+  // Deleting every key-coloured pixel is the obvious fix and the wrong one — it
+  // is what the flood exists to avoid, and it would eat a green highlight inside
+  // the slime. So this seeds a fresh flood instead, from pixels that are
+  // UNAMBIGUOUSLY the key: the seed test is more than twice as strict as the
+  // flood's own tolerance, and once a pocket has one seed the ordinary flood
+  // sweeps the JPEG noise around its rim exactly as it does on the outside.
+  //
+  // Only when the background is a vivid colour, which is the whole premise of
+  // chroma key: nothing in this game's palette is anywhere near #00FF00. A model
+  // that ignored the prompt and gave us a WHITE background gets the border flood
+  // and nothing else — half the cast is cream, and the eyes are white.
+  const vivid = Math.max(kr, kg, kb) - Math.min(kr, kg, kb) > 110;
+  if (vivid) {
+    const pockets: number[] = [];
+    for (let p = 0; p < width * height; p++) {
+      if (seen[p] || data[p * 4 + 3] === 0) continue;
+      if (distanceAt(p * 4) <= KEY_SEED) pockets.push(p);
+    }
+    if (pockets.length > 0) flood(pockets);
   }
 
   ctx.putImageData(frame, 0, 0);
