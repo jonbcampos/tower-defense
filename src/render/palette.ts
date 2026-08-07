@@ -98,6 +98,14 @@ export interface Palette {
 
   /** The tray across the top, and the footer under the board. */
   tray: string;
+  /**
+   * Text on a light card. The buttons already used `tray` for this; naming it
+   * means the next person to put words on a card does not have to go and read
+   * `drawButton` to find out which dark colour is the right one.
+   */
+  cardText: string;
+  /** Secondary text on a light card. Still dark — a light grey vanishes. */
+  cardTextDim: string;
   trayEdge: string;
   card: string;
   cardEdge: string;
@@ -201,6 +209,8 @@ export const BEDROOM_PALETTE: Palette = {
   sparkleDim: '#c9a72f',
 
   tray: '#2f2547',
+  cardText: '#2f2547',
+  cardTextDim: '#5c4a7a',
   trayEdge: '#4a3a6b',
   card: '#f6f0ff',
   cardEdge: '#c9b3e0',

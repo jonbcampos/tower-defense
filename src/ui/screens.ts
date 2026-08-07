@@ -762,8 +762,8 @@ export function drawGuide(
   if (tab === 'kids') {
     // Two small captions, once at the top rather than on every row. At 6px
     // these are for the adult; the child is looking at the pictures.
-    drawText(ctx, 'walking', 40, GUIDE_TOP - 6, { size: 6, align: 'center', color: PALETTE.hudDim, bold: false });
-    drawText(ctx, 'grabbing', 70, GUIDE_TOP - 6, { size: 6, align: 'center', color: PALETTE.hudDim, bold: false });
+    drawText(ctx, 'walking', 40, GUIDE_TOP - 7, { size: 7, align: 'center', color: PALETTE.hudText, bold: false });
+    drawText(ctx, 'grabbing', 72, GUIDE_TOP - 7, { size: 7, align: 'center', color: PALETTE.hudText, bold: false });
   }
 
   const first = page * GUIDE_ROWS;
@@ -830,9 +830,19 @@ function drawGuideRow(
   const left = 18;
   const width = SCREEN.w - left * 2;
 
-  ctx.fillStyle = alpha(PALETTE.card, 0.5);
+  // A proper opaque card, not a half-transparent one.
+  //
+  // It was `card` at 0.5 alpha over the scrim, which lands somewhere in the
+  // middle — and light text on a mid-tone is unreadable. The rest of this game
+  // puts DARK text on LIGHT cards, which is what the buttons have always done;
+  // the guide was the one screen that wandered off and did its own thing.
+  ctx.fillStyle = PALETTE.card;
   roundedRect(ctx, left, y, width, GUIDE_ROW_H - 5, 5);
   ctx.fill();
+  ctx.strokeStyle = PALETTE.cardEdge;
+  ctx.lineWidth = 1;
+  roundedRect(ctx, left, y, width, GUIDE_ROW_H - 5, 5);
+  ctx.stroke();
 
   const artX = left + 22;
   const artY = y + (GUIDE_ROW_H - 5) / 2;
@@ -863,10 +873,12 @@ function drawGuideRow(
   }
 
   const textX = left + (tab === 'kids' ? 76 : 46);
-  drawText(ctx, name, textX, y + 12, { size: 10, color: PALETTE.hudText });
+  drawText(ctx, name, textX, y + 12, { size: 10, color: PALETTE.cardText });
   drawText(ctx, blurb, textX, y + 24, {
-    size: 7,
-    color: PALETTE.hudDim,
+    // 8px rather than 7. This line is the whole reason an adult opens this
+    // screen, and it was set at the size used for captions nobody has to read.
+    size: 8,
+    color: PALETTE.cardTextDim,
     bold: false,
   });
 
@@ -875,6 +887,6 @@ function drawGuideRow(
     ctx.beginPath();
     ctx.arc(left + width - 26, y + 16, 4, 0, Math.PI * 2);
     ctx.fill();
-    drawText(ctx, cost, left + width - 18, y + 12, { size: 9, color: PALETTE.hudAccent });
+    drawText(ctx, cost, left + width - 18, y + 12, { size: 10, color: PALETTE.cardText });
   }
 }
