@@ -516,7 +516,7 @@ export const TOYS: Record<ToyId, ToyDef> = {
   squeak: {
     id: 'squeak',
     name: 'Squeaky Toy',
-    blurb: 'Too interesting to walk past. Whoever finds it changes row.',
+    blurb: 'Too interesting to walk past. Kids wander toward the middle.',
     role: 'wall',
     layer: 'ground',
     cost: 75,

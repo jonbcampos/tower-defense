@@ -105,7 +105,7 @@ last lesson.
 | Toy | PvZ | Cost | Why it earns its place |
 |---|---|---|---|
 | Bubble Bath | Torchwood | **system** | **Built** (level 22) — bubbles through it come out double. The first toy that makes *placement order* matter. |
-| Squeaky Toy | Garlic | **system** | **Built** (level 23) — a kid who reaches it changes row, four times, then it wears out. |
+| Squeaky Toy | Garlic | **system** | **Built** (level 23) — sends whoever finds it one row toward the MIDDLE, four times, then it wears out. |
 | Magnet Wand | Magnet-shroom | **system** | **Built** (level 26) — strips a shield within three rows, every ten seconds. |
 | Chomper Puppet | Chomper | small | Eats one kid whole, then chews for eight seconds and is helpless. |
 

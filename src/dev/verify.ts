@@ -871,6 +871,59 @@ function trialSqueakRedirectsThenWearsOut(): TrialResult {
 }
 
 /**
+ * Every frog sends kids INWARD, and the middle row is the only coin flip.
+ *
+ * The direction is the whole strategy — put frogs on the outside, build one
+ * strong centre row — and it is invisible to every other check, because a kid
+ * sent the wrong way is still a kid who changed rows. Each row gets its own
+ * frog and its own run, so a regression names the row it broke.
+ */
+function trialSqueakFunnelsInward(): TrialResult {
+  const level = levelById(23);
+  const sent: string[] = [];
+  let wrong = 0;
+
+  for (let lane = 0; lane < LANE_COUNT; lane++) {
+    const seen = new Set<number>();
+    // Several runs per row, with different seeds, because "always inward" and
+    // "inward four times out of five" look identical in one run.
+    for (let seed = 0; seed < 6; seed++) {
+      const state = new GameState();
+      state.start(level, 'normal', level.recommended, 40 + seed);
+      state.enemies.reset();
+      state.toys.place('squeak', lane, 5, 0);
+      const kid = state.enemies.spawn('toddler', lane, 1)!;
+      let t = 0;
+      while (t < 30 && kid.active && kid.lane === lane) {
+        state.update(FIXED_DT);
+        state.drainEvents(() => {});
+        t += FIXED_DT;
+      }
+      seen.add(kid.lane);
+    }
+    const middle = (LANE_COUNT - 1) / 2;
+    const inward = lane < middle ? lane + 1 : lane > middle ? lane - 1 : -1;
+    const lanes = [...seen].sort((a, b) => a - b);
+    sent.push(`${lane}->${lanes.join('/')}`);
+    if (inward >= 0) {
+      // Off the middle: one destination, and it is the inward one.
+      if (lanes.length !== 1 || lanes[0] !== inward) wrong += 1;
+    } else if (lanes.length !== 2) {
+      // On the middle: no inward direction, so both neighbours must show up.
+      wrong += 1;
+    }
+  }
+
+  return {
+    trial: 'a Squeaky Toy funnels toward the middle row',
+    level: '23 Slippery Tiles',
+    difficulty: 'normal',
+    detail: `6 runs per row: ${sent.join(', ')} — every row but the middle must have exactly one destination, and it must be inward`,
+    pass: wrong === 0,
+  };
+}
+
+/**
  * The magnet takes the shield and leaves the kid, from a neighbouring row.
  *
  * Deliberately placed one lane over. Reaching across rows is the whole reason
@@ -987,6 +1040,7 @@ export function verify(): TrialResult[] {
   results.push(trialBossResistsBubbles());
   results.push(trialBathBoostsBubbles());
   results.push(trialSqueakRedirectsThenWearsOut());
+  results.push(trialSqueakFunnelsInward());
   results.push(trialMagnetStripsArmour());
   for (const id of DIFFICULTY_ORDER) results.push(trialEndlessEnds(id));
 

@@ -1066,7 +1066,7 @@ had five of them.
 
 The three toys added here are the other kind. A **Bubble Bath** makes bubbles
 that fly through it twice the size. A **Squeaky Toy** sends the kid who finds it
-into a neighbouring row. A **Magnet Wand** pulls the armour off anything
+into a neighbouring row (which one is settled by decision 49). A **Magnet Wand** pulls the armour off anything
 armoured within three rows. None of them deals a point of damage, and that is
 the point: they are the first cards whose value depends on what is *next to*
 them, so the tray that grew to seven slots in decision 46 finally has seven
@@ -1137,3 +1137,40 @@ missing.
 **Revisit if:** something else moves a kid sideways — the Treehouse's trapdoor
 would. Two things setting one offset field is fine; three means it wants to be
 a small tween helper.
+
+## 49. The Squeaky Toy funnels inward rather than picking a side
+
+Shipped in decision 47 sending kids to a **random** neighbouring row, which is
+what Plants vs Zombies' Garlic does. Asked what happens to a wall of frogs, I
+ran the cases and found the honest answer was worse than the plan: ROSTER.md
+had promised a funnel and what existed was a splitter.
+
+Random is fine in PvZ because every lane in that game is the same lane. It is
+not fine here. This game routinely asks whether a row is worth defending at
+all — level 14 is entirely that question, and the pool and the fog both make
+some rows more expensive than others — so a coin flip can deposit a kid in the
+row you deliberately gave up. A toy that makes things worse half the time is a
+toy nobody can learn, least of all by watching.
+
+Every frog now sends kids **one row toward the middle of the board**. A frog on
+the middle row has no inward direction and stays a coin flip, which is the only
+case left. That turns the toy into a build: frogs on the outside, one strong
+centre row, and everybody comes to you.
+
+The exclusion rule from 47 is unchanged and still does the work it was added
+for. A row that has a frog of its own at the same column is not a destination,
+so two frogs side by side cancel and get eaten like ordinary walls rather than
+batting a kid between them a hundred and twenty times a second. A full column
+of frogs is therefore a very bad wall — 375 sparkles for what a Pillow Fort
+does for 50 — and that is the correct outcome: the player built toys that
+cancel, and the game should show her the price rather than hide it.
+
+A new trial pins the direction, because it is invisible to everything else: a
+kid sent the wrong way is still a kid who changed rows, so no other check can
+tell. It runs six seeds per row and asserts that every row but the middle has
+exactly one destination and that it is the inward one — `0->1, 1->2, 2->1/3,
+3->2, 4->3`.
+
+**Revisit if:** a world has a row that should be avoided rather than aimed at.
+The Attic's joists might, and "toward the middle" would then be pushing kids
+somewhere the player cannot build.

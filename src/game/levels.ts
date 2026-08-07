@@ -741,7 +741,7 @@ export const LEVELS: readonly Level[] = [
     // slime and the Slushie's chill does nothing. So this level answers the
     // question a different way: if you cannot make her take longer, make her
     // arrive somewhere you were ready for.
-    teaches: 'You cannot slow her down. You can send her sideways.',
+    teaches: 'You cannot slow her down. You can steer her into the middle.',
     unlocks: ['squeak'],
     recommended: ['jar', 'fan', 'watergun', 'slushie', 'castle', 'squeak', 'machine'],
     blocked: [],

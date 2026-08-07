@@ -76,7 +76,8 @@ is a content problem rather than an engineering one.
 
 **5. `World` is a terrain rule, not a background.** The reason Plants vs Zombies' fifty levels
 don't feel like ten repeated five times is that each area changed what the board itself does.
-v1 ships one world; the seam for the rest is already in `levels.ts`.
+Three are built — a dry bedroom, a backyard whose pool cells hold nothing until a Duck Ring
+floats there, and a bathroom whose far columns are hidden by steam until a Fan clears the row.
 
 **6. The tray grows with progress.** Five cards in the bedroom, six in the backyard, seven in the
 bathroom. Each world after the first spends a slot on its own prerequisite toy, so a fixed five
@@ -103,7 +104,7 @@ change looks fine on NORMAL and quietly makes HARD impossible.
 __game.verify()
 ```
 
-214 headless trials driving the real `GameState` with a scripted bot, across every level at every
+218 headless trials driving the real `GameState` with a scripted bot, across every level at every
 difficulty — the count grows on its own as levels are added, which is the point. Every one reports **what it measured**, not just pass or fail. EASY and NORMAL are
 held to a deliberately mediocre bot; HARD is held to a competent one, and that difference is the
 definition of the tier.
@@ -151,8 +152,8 @@ command line ends up in your shell history.
 npm run art -- --dry-run
 ```
 
-Prints all 36 prompts and calls nothing. Worth a skim — this is the art direction, and it is
-much cheaper to fix a description here than after 36 billed calls.
+Prints all 47 prompts and calls nothing. Worth a skim — this is the art direction, and it is
+much cheaper to fix a description here than after 47 billed calls.
 
 ### 4. Generate
 
@@ -160,7 +161,7 @@ much cheaper to fix a description here than after 36 billed calls.
 npm run art
 ```
 
-One API call per piece, 36 in total, printing `ok` / `skip` / `FAIL` as it goes. Finished pieces
+One API call per piece, 47 in total, printing `ok` / `skip` / `FAIL` as it goes. Finished pieces
 are written straight to `public/sprites/` as JPEGs, so if it dies half way through — rate limit,
 network, Ctrl-C — just run it again and it picks up where it stopped. Nothing already done is
 paid for twice.
@@ -269,6 +270,6 @@ that kid keeps its still image and the procedural gait. Nothing has to be true f
 
 Playable end to end: **thirty levels across three worlds**, an **endless mode**, eighteen toys, ten kids, three
 difficulties, saved progress and stars, an in-game guide, and the screen stays awake while you
-play. All 217 trials and every design contract pass.
+play. All 218 trials and every design contract pass.
 
 Every toy and kid has painted art.

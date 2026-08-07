@@ -27,6 +27,7 @@ import {
   KILL_SAFETY,
   LANE_SHIFT_SECONDS,
   loadoutSlotsFor,
+  MIDDLE_LANE,
   SLUSH_FACTOR,
   STEAM_FROM_COL,
   LANE_COUNT,
@@ -750,27 +751,60 @@ export class GameState {
   }
 
   /**
-   * Send a kid into a neighbouring row, and take a bite out of the toy that
-   * did it.
+   * Can a Squeaky Toy in `toy`'s cell send someone into this row?
    *
-   * The destination excludes any row whose cell at this column ALSO holds a
-   * squeaky toy, which is what stops two of them in adjacent rows batting a
-   * kid back and forth forever. With nowhere to send her the toy does nothing
-   * at all and she eats it like any other wall, which is the correct outcome:
-   * the player built two toys that cancel, and the game should show her that
-   * rather than hide it behind a special case.
+   * Not if that row has a squeaky toy of its own at the same column. That is
+   * what stops two of them in adjacent rows batting a kid back and forth at a
+   * hundred and twenty frames a second. With nowhere to send her the toy does
+   * nothing at all and she eats it like any other wall, which is the correct
+   * outcome: the player built two toys that cancel, and the game should show
+   * her that rather than hide it behind a special case.
+   */
+  private divertableTo(toy: Toy, lane: number): boolean {
+    if (lane < 0 || lane >= LANE_COUNT) return false;
+    const neighbour = this.toys.at(lane, toy.col);
+    return !neighbour || TOYS[neighbour.id].divert === undefined;
+  }
+
+  /**
+   * Send a kid into a neighbouring row — the one nearer the MIDDLE of the
+   * board — and take a bite out of the toy that did it.
+   *
+   * Inward, not randomly. Plants vs Zombies' Garlic picks a random neighbour
+   * and that is fine there, because every lane in that game is the same lane.
+   * It is not fine here: this game routinely asks whether a row is worth
+   * defending at all — level 14 is entirely that question — so a coin flip can
+   * deposit a kid in the row you deliberately gave up, and a toy that makes
+   * things worse half the time is a toy nobody can learn.
+   *
+   * Heading for the middle makes it a tool: put frogs on the outside, build one
+   * strong centre row, and everybody comes to you. It also states a rule a
+   * five-year-old can watch happen, which random never does.
+   *
+   * A frog sitting ON the middle row has no inward direction, and that one case
+   * stays a coin flip.
    */
   private divert(enemy: Enemy, toy: Toy, bite: number): boolean {
-    const options: number[] = [];
-    for (const lane of [toy.lane - 1, toy.lane + 1]) {
-      if (lane < 0 || lane >= LANE_COUNT) continue;
-      const neighbour = this.toys.at(lane, toy.col);
-      if (neighbour && TOYS[neighbour.id].divert) continue;
-      options.push(lane);
-    }
-    if (options.length === 0) return false;
+    const up = this.divertableTo(toy, toy.lane - 1);
+    const down = this.divertableTo(toy, toy.lane + 1);
+    if (!up && !down) return false;
 
-    const to = options[Math.floor(this.rng.next() * options.length)]!;
+    let to: number;
+    if (up && down) {
+      const towardUp = Math.abs(toy.lane - 1 - MIDDLE_LANE);
+      const towardDown = Math.abs(toy.lane + 1 - MIDDLE_LANE);
+      to =
+        towardUp === towardDown
+          ? this.rng.next() < 0.5
+            ? toy.lane - 1
+            : toy.lane + 1
+          : towardUp < towardDown
+            ? toy.lane - 1
+            : toy.lane + 1;
+    } else {
+      to = up ? toy.lane - 1 : toy.lane + 1;
+    }
+
     // The offset is measured from the OLD row, so she slides across from where
     // she was rather than appearing part-way and drifting.
     enemy.laneShift = (enemy.lane - to) * CELL_H;

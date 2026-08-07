@@ -206,6 +206,15 @@ export const CROSS_DISTANCE = BOARD_W + SPAWN_RUN + CELL_W / 2; // 442
 export const HALFWAY_COL = 4;
 
 /**
+ * The middle row. Where a Squeaky Toy sends everybody.
+ *
+ * Fractional on an even-numbered board, deliberately — it is only ever used as
+ * something to measure distance from, and two rows tying for "closest to the
+ * middle" is exactly the case that should fall back to a coin flip.
+ */
+export const MIDDLE_LANE = (LANE_COUNT - 1) / 2;
+
+/**
  * How many kids can reach the cushion before the level is lost.
  *
  * Not one. In Plants vs Zombies a single zombie through the door ends the run,
