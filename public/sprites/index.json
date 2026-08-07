@@ -36,6 +36,10 @@
     "menu",
     "yard",
     "bath",
+    "attic",
+    "boxes",
+    "shelf",
+    "lobber",
     "room",
     "crawler.motion",
     "toddler.motion",
@@ -53,6 +57,7 @@
     "menu",
     "yard",
     "bath",
+    "attic",
     "room"
   ],
   "sheets": {

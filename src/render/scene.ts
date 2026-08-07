@@ -30,7 +30,18 @@ import { TOYS, type ToyId } from '../game/toys';
 import type { Input } from '../core/input';
 import type { Renderer } from './renderer';
 import { PALETTE, alpha } from './palette';
-import { drawBlocked, drawGuards, drawNook, drawRoom, drawSteam, drawUnicorn, drawWater, ellieMood } from './bedroom';
+import {
+  drawBlocked,
+  drawClutter,
+  drawGuards,
+  drawJoists,
+  drawNook,
+  drawRoom,
+  drawSteam,
+  drawUnicorn,
+  drawWater,
+  ellieMood,
+} from './bedroom';
 import { drawKid } from './kids';
 import { drawPlacedToy, drawToyArt } from './toys';
 import { drawFooter, drawPopups } from '../ui/hud';
@@ -139,7 +150,13 @@ export const sceneRenderer: Renderer = {
     // Water under the furniture: a level could in principle put a rug at the
     // pool's edge, and a rug half-submerged is a mistake either way round.
     if (inPlay) drawWater(ctx, state.level.water ?? [], clock);
+    // The attic's missing floor, under everything and over the backdrop. Cells
+    // with a Shelf are skipped, so laying one visibly closes the hole.
+    if (inPlay && WORLDS[state.level.world].terrain === 'joists') {
+      drawJoists(ctx, (lane, col) => state.toys.floatAt(lane, col) !== null);
+    }
     if (inPlay) drawBlocked(ctx, state.level.blocked);
+    if (inPlay) drawClutter(ctx, state.level.clutter ?? []);
     drawLaneFlashes(ctx, state);
     drawFloatToys(ctx, state);
     drawFloorToys(ctx, state);
@@ -346,6 +363,16 @@ function drawSparkles(ctx: CanvasRenderingContext2D, state: GameState): void {
   }
 }
 
+/**
+ * How high a lob rises at the top of its arc, in pixels.
+ *
+ * A lane is 40 tall, and this deliberately clears it: the throw has to look
+ * like it goes OVER the row rather than along it, or the one thing the toy does
+ * differently is invisible. It costs a little confusion about which row a
+ * mid-flight toy belongs to, which the shadow underneath pays back.
+ */
+const ARC_HEIGHT = 26;
+
 function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolation: number): void {
   for (const shot of state.shots.items) {
     if (!shot.active) continue;
@@ -370,12 +397,59 @@ function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolatio
     // the thing she built is doing something.
     const grown = shot.boosted ? 1.6 : 1;
 
+    // A lob rises and falls across whatever is left of the board in front of
+    // it. Height only — the simulation still treats it as travelling straight
+    // down the row, and this is the picture of why it clears the boxes.
+    //
+    // Measured against the distance still to run rather than a fixed span, so
+    // the throw always lands at the far wall instead of arcing, touching down
+    // and then skimming the rest of the way like a stone.
+    let y = shot.y;
+    if (shot.arcs) {
+      const span = Math.max(1, cellCentreX(COL_COUNT - 1) + CELL_W - shot.bornX);
+      const progress = Math.min(1, Math.max(0, (x - shot.bornX) / span));
+      y -= Math.sin(progress * Math.PI) * ARC_HEIGHT;
+    }
+
+    if (shot.arcs) {
+      // A thrown bath toy, tumbling. Drawn as a solid little object rather than
+      // a droplet because the point being made is that it is a THING going over
+      // the boxes, and a splash of water reads as something that would hit them.
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((x - shot.bornX) * 0.06);
+      // Bigger than a droplet, in the Lobber's own pink, with a hard outline.
+      // The first version was a pale blue blob the size of a water shot and it
+      // read as a bubble that had wandered up out of its row — which is the one
+      // thing it must not look like, since the whole point is that it is a
+      // solid thing sailing over the boxes.
+      ctx.fillStyle = PALETTE.shotThrow;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 6, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = PALETTE.kidOutline;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = PALETTE.shotCore;
+      ctx.beginPath();
+      ctx.arc(2, -2, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      // A shadow on the boards underneath, which is what actually sells the
+      // height. Without it the toy just looks like it is in the wrong row.
+      ctx.fillStyle = alpha(PALETTE.scrim, 0.22);
+      ctx.beginPath();
+      ctx.ellipse(x, shot.y + 4, 4, 1.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      continue;
+    }
+
     if (shot.kind === 'bubble') {
-      const wobble = shot.boosted ? Math.sin(clock * 9 + shot.y) * 0.6 : 0;
+      const wobble = shot.boosted ? Math.sin(clock * 9 + y) * 0.6 : 0;
       ctx.strokeStyle = PALETTE.shotBubble;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.ellipse(x, shot.y, 4 * grown + wobble, 4 * grown - wobble, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, y, 4 * grown + wobble, 4 * grown - wobble, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.fillStyle = alpha(PALETTE.shotBubble, 0.28);
       ctx.fill();
@@ -384,10 +458,10 @@ function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolatio
 
     ctx.fillStyle = shot.kind === 'water' ? PALETTE.shotWater : PALETTE.shotLight;
     ctx.beginPath();
-    ctx.ellipse(x, shot.y, 5 * grown, 2.6 * grown, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y, 5 * grown, 2.6 * grown, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = PALETTE.shotCore;
-    ctx.fillRect(x - 1, shot.y - 1, 2, 2);
+    ctx.fillRect(x - 1, y - 1, 2, 2);
   }
 }
 

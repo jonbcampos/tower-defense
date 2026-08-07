@@ -99,10 +99,11 @@ function openLanes(level: Level): number[] {
   const lanes: number[] = [];
   for (let lane = 0; lane < LANE_COUNT; lane++) {
     for (let col = 0; col < COL_COUNT; col++) {
-      if (!level.blocked.includes(lane * COL_COUNT + col)) {
-        lanes.push(lane);
-        break;
-      }
+      const cell = lane * COL_COUNT + col;
+      if (level.blocked.includes(cell)) continue;
+      if (level.clutter?.includes(cell)) continue;
+      lanes.push(lane);
+      break;
     }
   }
   return lanes;
@@ -130,22 +131,30 @@ function placementCol(state: GameState, lane: number, targetCol: number): number
 }
 
 /**
- * Place a card, laying a Duck Ring first if the cell is water.
+ * Place a card, laying whatever the terrain needs underneath it first.
  *
  * Every bot placement goes through here, which is the only reason the backyard
- * did not need two more policies written. The terrain rule is not strategy — a
- * bot that does not know it simply cannot build in three lanes of five, and the
+ * did not need two more policies written, and the attic none at all. The
+ * terrain rule is not strategy — a bot that does not know it simply cannot
+ * build in three lanes of five, or in the attic cannot build anywhere, and the
  * trial would report "this level is unwinnable" when what it had actually found
  * was a bot that cannot swim.
  *
+ * The support toy is taken from the LOADOUT rather than named, because the
+ * backyard's is a Duck Ring and the attic's is a Shelf and there will be a
+ * third. Naming one here is how a new world silently makes every trial fail.
+ *
  * Note it does NOT teach the bots to value the pool lanes, decide whether a
- * lane is worth the ring, or hold cells back. Those are judgements, and the
+ * cell is worth the shelf, or hold cells back. Those are judgements, and the
  * whole point of a deliberately mediocre bot is that it makes none of them.
  */
 function tryPlace(state: GameState, id: ToyId, lane: number, col: number): boolean {
   if (col < 0) return false;
-  if (state.isWater(lane, col) && TOYS[id].layer !== 'float') {
-    if (!state.toys.floatAt(lane, col) && !placeCard(state, 'ring', lane, col)) return false;
+  if (state.needsSupport(lane, col) && TOYS[id].layer !== 'float') {
+    if (!state.toys.floatAt(lane, col)) {
+      const support = state.loadout.find((card) => TOYS[card].layer === 'float');
+      if (!support || !placeCard(state, support, lane, col)) return false;
+    }
   }
   return placeCard(state, id, lane, col);
 }

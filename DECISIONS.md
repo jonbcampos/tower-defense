@@ -1174,3 +1174,124 @@ exactly one destination and that it is the inward one — `0->1, 1->2, 2->1/3,
 **Revisit if:** a world has a row that should be avoided rather than aimed at.
 The Attic's joists might, and "toward the middle" would then be pushing kids
 somewhere the player cannot build.
+
+## 50. The attic is the pool's rule turned all the way up
+
+World four had to invalidate every build without invalidating a lesson, and the
+cheapest honest way to do that was already in the codebase. The backyard's pool
+says *this cell holds nothing until a Duck Ring floats on it* and applies it to
+a dozen cells. The attic says the same thing and applies it to all forty-five.
+
+That is one line of rule — `needsSupport()` returns true for every cell in a
+`joists` world instead of only the wet ones — and it changes everything about
+how a board is built. Half as many toys for the same sparkles, two taps and two
+prices for every placement, and the question the pool asked about three lanes
+now asked about the whole room. Nothing she learned stops working.
+
+It also means the Shelf is the Duck Ring with different art, deliberately. They
+share a layer, a price and a job; they share nothing else, because the two must
+never be confused. A child who thinks a plank floats will try to build a shelf
+in the paddling pool. The prompt for the shelf sprite says *not a ring, not a
+hoop, no hole in the middle, no duck* for exactly that reason.
+
+The tray goes to eight here. Decision 46 measured the room left at seven and
+said there was space for one more before the purse readout has to move; the
+attic spends a slot on its prerequisite the way the backyard spends one on the
+ring, so this is that one more. There is no ninth.
+
+**Revisit if:** world five wants a prerequisite too. It cannot have one — the
+tray is full, and a fifth world that costs a slot would have to take one back
+from the roster instead.
+
+## 51. Boxes stop a flat shot, and that is what the Lobber is for
+
+A terrain rule on its own would have made the attic expensive rather than
+different, so it has a second idea: stacks of boxes. You cannot build on one,
+and a shot fired flat thuds into it. A lob goes over.
+
+That is what makes the Bath Toy Lobber a toy rather than a reskin. It is
+fractionally WORSE than a Water Gun in the open — 13 damage a second against
+13.3, for half again the price — and the only thing that works at all down a row
+with boxes in it. A toy that arced *and* out-damaged would simply replace the
+Water Gun everywhere and the choice would evaporate.
+
+Kids walk past the boxes. Making them stop would be handing out a free Sand
+Castle with every level that has one.
+
+### The thud is emitted, not swallowed
+
+A Water Gun parked behind a stack fires forever and achieves nothing. The
+tempting fix is to make it hold its fire, and that is wrong: silence is the one
+answer a five-year-old reads as "the game is broken" — decision 7 — and she will
+leave it there. So it fires, and every shot dies against the cardboard with a
+puff and a dull thud. The sound is throttled to about a third of hits, like
+`shoot` and `boost`; the puff is drawn every time, because that is the part she
+needs to SEE.
+
+### The contract that nearly shipped backwards
+
+Boxes shorten how far down a row a flat shot reaches, so the kill guarantee had
+to account for them. The first version took the DEEPEST stack on the board,
+which is exactly wrong: a shot dies at the FIRST stack it meets, so the binding
+one is the stack nearest the unicorn. Written the deep way it called a stack at
+column three harmless — when column three is the worst place on the board for
+one — and a stack at column eight ruinous, when a stack at column eight costs
+nothing at all.
+
+The contract also had to stop ranking answers by raw damage. With boxes on the
+board "which answer is strongest" and "which answer is best" are different
+questions, and picking the Water Gun and then measuring it over a walk it never
+gets is how a level looks fine and is not. It now scores every answer over the
+reach that answer actually has.
+
+And a Magnet Wand in the hand means the armour is not part of the problem —
+otherwise the contract charged a Wagon Kid's 150-point shield to a loadout
+holding the card whose only job is removing it, and the only way to satisfy it
+would have been to delete the toy that solves it.
+
+**Revisit if:** something other than the attic wants boxes. The shortening is
+computed from the whole level rather than per lane, which is conservative and
+fine while one world uses the mechanic in a few cells.
+
+## 52. A kid who stops to grab is not hiding any more
+
+A Blanket Kid is untargetable by aimed shooters until she peeks out at the
+halfway column. That rule assumes she keeps walking.
+
+She does not always. A trial bot on level 35 spent 420 simulated seconds sitting
+on 2,553 sparkles while one Blanket Kid parked at column eight, chewed whatever
+was rebuilt in front of her, and could not be touched: still concealed because
+she never reached halfway, and out of reach of the only spray in the row because
+a stack of boxes was in the way. The bot fed her toys forever and the level
+never ended.
+
+Grabbing now reveals her. It takes both hands to pull a toy apart, so whatever
+she was hiding under is off — and it closes the dead end everywhere rather than
+just in the attic. It also makes the kid better rather than weaker: untargetable
+while she is coming, targetable the moment she stops, which is the moment you
+most want to shoot her.
+
+**Revisit if:** a future kid is supposed to stay hidden while attacking. There
+isn't one, and there probably shouldn't be — this was a dead end the first time.
+
+## 53. The bedroom had steam in it for four worlds
+
+Found while looking at something else, which is how this one was always going to
+be found. `drawSteam` renders the fog over the far columns of any lane a Fan has
+not cleared, and it has no idea which room it is in. The call site did not check
+either. So from the day world three shipped, the bedroom and the backyard were
+being fogged as well.
+
+Nobody noticed for four worlds because a soft gradient creeping in from the
+right of a warm room reads as afternoon light. It only became obvious against
+the attic, where the same gradient sat on top of a deliberately dark backdrop.
+
+Fixed in `laneIsClear`, at the source, rather than at the call site: a lane in a
+room with no steam in it *is* clear, and the renderer asking the question should
+not also have to know which worlds have weather. `isFogged` already checked the
+terrain, which is why the simulation was right the whole time and only the
+picture was wrong.
+
+**Revisit if:** a world wants weather that is not steam. The predicate is named
+for the answer rather than the cause, so a second kind of weather wants a second
+predicate rather than an argument to this one.

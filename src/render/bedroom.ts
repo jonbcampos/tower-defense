@@ -164,6 +164,111 @@ export function drawBlocked(ctx: CanvasRenderingContext2D, blocked: readonly num
 }
 
 /**
+ * The attic's bare joists: the gap between the beams, everywhere there is no
+ * Shelf yet.
+ *
+ * Drawn on the same principle as the water rather than the rugs, and for the
+ * same reason. A rug is sunk into shadow behind a hard border because the
+ * message is "this is not your floor, ever". A gap between joists IS your floor
+ * the moment you put a shelf across it, so it has to look like an opportunity —
+ * open, and framed by the two beams that make it obvious what a shelf would
+ * bridge.
+ *
+ * Darkening rather than a texture, because whatever the backdrop happens to
+ * paint under here, "there is nothing there" is a shadow.
+ */
+export function drawJoists(
+  ctx: CanvasRenderingContext2D,
+  supported: (lane: number, col: number) => boolean,
+): void {
+  for (let lane = 0; lane < LANE_COUNT; lane++) {
+    const y = laneY(lane);
+    for (let col = 0; col < COL_COUNT; col++) {
+      if (supported(lane, col)) continue;
+      const x = cellX(col);
+      // A light touch. The attic backdrop is already the darkest in the game
+      // and the board carries a scrim over the top of it, so a heavy gradient
+      // here turned all forty-five cells into one dark smear with no cells in
+      // it. What has to be visible is the BEAMS, not the dark.
+      const gap = ctx.createLinearGradient(0, y, 0, y + CELL_H);
+      gap.addColorStop(0, alpha(PALETTE.scrim, 0.1));
+      gap.addColorStop(0.5, alpha(PALETTE.scrim, 0.3));
+      gap.addColorStop(1, alpha(PALETTE.scrim, 0.1));
+      ctx.fillStyle = gap;
+      ctx.fillRect(x + 1, y + 5, CELL_W - 2, CELL_H - 10);
+    }
+
+    // The joists themselves, along the row boundaries and unbroken across the
+    // whole board — a beam that stopped at every cell edge would read as a grid
+    // of planks rather than as long timbers with nothing between them. Drawn
+    // opaque, because they are the one thing in the room that is solid.
+    ctx.fillStyle = PALETTE.joist;
+    ctx.fillRect(0, y + 1, SCREEN.w, 4);
+    ctx.fillStyle = PALETTE.joistShade;
+    ctx.fillRect(0, y + 5, SCREEN.w, 2);
+    if (lane === LANE_COUNT - 1) {
+      ctx.fillStyle = PALETTE.joist;
+      ctx.fillRect(0, y + CELL_H - 5, SCREEN.w, 4);
+      ctx.fillStyle = PALETTE.joistShade;
+      ctx.fillRect(0, y + CELL_H - 1, SCREEN.w, 2);
+    }
+  }
+}
+
+/**
+ * Stacks of cardboard boxes: unbuildable, and a flat shot thuds into one.
+ *
+ * Drawn TALLER than its cell and overlapping the row above, which is the only
+ * thing in the picture that says "your bubbles will not get over this". A box
+ * stack that politely stayed inside its 44x40 cell would look like a rug with a
+ * pattern on it, and the whole mechanic would have to be learned by being
+ * punished for it.
+ *
+ * Kids are drawn afterwards and therefore in front. Losing track of a child
+ * behind the scenery would be a worse trade than the small wrongness of a kid
+ * walking over a box — the fog in world three already taught how much it
+ * matters to know where everyone is.
+ */
+export function drawClutter(ctx: CanvasRenderingContext2D, clutter: readonly number[]): void {
+  const art = sprite('boxes');
+  for (const index of clutter) {
+    const lane = Math.floor(index / COL_COUNT);
+    const col = index % COL_COUNT;
+    const x = cellX(col);
+    const y = laneY(lane);
+
+    // A shadow on the boards first, so the stack has weight.
+    ctx.fillStyle = alpha(PALETTE.scrim, 0.35);
+    ctx.beginPath();
+    ctx.ellipse(x + CELL_W / 2, y + CELL_H - 5, CELL_W / 2 - 3, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (art) {
+      drawSprite(ctx, art, x + CELL_W / 2, y + CELL_H / 2 - 8, CELL_W + 4, CELL_H + 20);
+      continue;
+    }
+
+    // Three crates, offset, because a single rectangle is a wall and a stack of
+    // boxes is a stack of boxes.
+    const crates: [number, number, number, number][] = [
+      [x + 3, y + CELL_H - 20, CELL_W - 6, 18],
+      [x + 6, y + CELL_H - 34, CELL_W - 16, 15],
+      [x + 12, y + CELL_H - 45, CELL_W - 22, 12],
+    ];
+    for (const [bx, by, bw, bh] of crates) {
+      ctx.fillStyle = PALETTE.box;
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeStyle = PALETTE.boxEdge;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+      // Parcel tape down the middle: the detail that makes it a cardboard box.
+      ctx.fillStyle = alpha(PALETTE.boxTape, 0.8);
+      ctx.fillRect(bx + bw / 2 - 2, by, 4, bh);
+    }
+  }
+}
+
+/**
  * The paddling pool.
  *
  * Drawn like `drawBlocked`'s opposite number and deliberately not like it. A

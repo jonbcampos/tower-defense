@@ -5,7 +5,7 @@ plants, 26 zombies and 50 levels across 5 areas**; this is the equivalent for a
 bedroom full of toys, with the engineering cost written next to each entry so
 the cheap content can be told apart from the expensive content.
 
-**Today: 18 toys, 10 kids, 30 levels, 3 worlds, endless mode.** Everything below is a plan,
+**Today: 20 toys, 10 kids, 40 levels, 4 worlds, endless mode.** Everything below is a plan,
 not a promise.
 
 ## First, what of PvZ is actually signal
@@ -40,7 +40,7 @@ does and invalidated the build that had been working.
 | 1 | **The Bedroom** | None. Every cell takes any toy. | **Built** (levels 1–10) |
 | 2 | **The Backyard** | Paddling pool. Water cells need a Duck Ring first. | **Built** (11–20) |
 | 3 | **Bath Time** | Steam. Kids past column five are silhouettes until a Little Fan clears that row. | **Built** (21–30) |
-| 4 | **The Attic** | No floor — bare joists. Every toy needs a Shelf under it, anywhere on the board. | Planned |
+| 4 | **The Attic** | No floor — bare joists. Every toy needs a Shelf under it. Plus stacks of boxes that stop a flat shot. | **Built** (31–40) |
 | 5 | **The Treehouse** | Two entrances. Kids come from the right *and* climb up through a trapdoor mid-board. | Planned |
 
 World 4 is deliberately the "roof" of this game: it makes every previous build
@@ -74,7 +74,7 @@ last lesson.
 | Super Soaker | Gatling Pea | data | Planned — the padding entry, and fine |
 | Slushie Cup | Snow Pea | — | **Built** — its hits leave a lingering chill |
 | Two-Way Wand | Split Pea | small | Planned — fires left as well, for the treehouse |
-| Bath Toy Lobber | Cabbage-pult | **system** | Planned — an arcing shot that ignores walls. Needed for world 4. |
+| Bath Toy Lobber | Cabbage-pult | **system** | **Built** (level 32) — arcs over the attic's box stacks. Fractionally weaker than a Water Gun in the open, on purpose. |
 | Beach Ball | — | — | **Built** — passes through kids instead of stopping |
 
 ### Walls and floor
@@ -85,7 +85,7 @@ last lesson.
 | Sand Castle | Tall-nut | — | **Built** |
 | Sticky Slime | Spikeweed (slow, not damage) | — | **Built** |
 | Duck Ring | Lily Pad | — | **Built** |
-| Shelf | Flower Pot | **system** | Planned — world 4's prerequisite, same shape as the ring |
+| Shelf | Flower Pot | **system** | **Built** — world 4's prerequisite. Literally the ring's twin: same layer, same price, different world. |
 | Blanket Wrap | Pumpkin | **system** | Planned — armour placed *around* an existing toy. New layer. |
 | Jacks | Spikeweed (damage) | small | Planned — floor tile that hurts, not slows |
 
@@ -145,7 +145,8 @@ player experiences.
 4. ~~The verb toys~~ — **done**. Bubble Bath, Squeaky Toy and Magnet Wand, taught
    on levels 22, 23 and 26 respectively. Those three levels unlocked nothing
    before, which made the bathroom ten levels long with one new card in it.
-5. **World 4, The Attic**, which needs the Shelf and the Lobber.
+5. ~~World 4, The Attic~~ — **done**, levels 31–40 with the Shelf, the Bath Toy
+   Lobber and box stacks that stop a flat shot.
 6. **World 5, The Treehouse**, and the Big Sister.
 
 ## The loadout squeeze

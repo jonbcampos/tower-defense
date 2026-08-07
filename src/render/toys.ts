@@ -143,6 +143,12 @@ export function drawToyArt(
     case 'magnet':
       drawMagnet(ctx, body, def.accent, t);
       break;
+    case 'shelf':
+      drawShelf(ctx, body, def.accent);
+      break;
+    case 'lobber':
+      drawLobber(ctx, body, def.accent, t);
+      break;
     case 'sweeper':
       drawSweeper(ctx, body, def.accent);
       break;
@@ -839,6 +845,90 @@ function drawMagnet(ctx: CanvasRenderingContext2D, body: string, accent: string,
   }
 
   ctx.restore();
+}
+
+/**
+ * A plank laid across the joists.
+ *
+ * The Duck Ring's opposite number in every way that matters at this size: the
+ * ring is a soft yellow oval with a hole in it, this is a hard brown rectangle
+ * with a wood grain. They do the same job in two different worlds and must
+ * never be confused for one another, so they share nothing but their layer.
+ *
+ * Flat and wide, with the near edge picked out, because everything else in the
+ * cell will be standing on top of it.
+ */
+function drawShelf(ctx: CanvasRenderingContext2D, body: string, accent: string): void {
+  ctx.fillStyle = accent;
+  ctx.fillRect(-19, 6, 38, 5);
+  ctx.fillStyle = body;
+  ctx.fillRect(-19, -2, 38, 9);
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(-18.5, -1.5, 37, 8);
+  // Grain, so it is a plank rather than a bar of chocolate.
+  ctx.strokeStyle = alpha(accent, 0.7);
+  for (const gy of [1, 4]) {
+    ctx.beginPath();
+    ctx.moveTo(-15, gy);
+    ctx.bezierCurveTo(-5, gy - 1.2, 5, gy + 1.2, 15, gy);
+    ctx.stroke();
+  }
+  // Two brackets underneath. They are what say "this was PUT here".
+  ctx.fillStyle = accent;
+  for (const bx of [-13, 8]) ctx.fillRect(bx, 11, 5, 4);
+}
+
+/**
+ * A bucket of bath toys with a rubber duck sitting in the throwing arm.
+ *
+ * The arm is the read: it is drawn cocked back and to the LEFT, which is the
+ * only thing on the board that points away from the door. Everything else
+ * faces right because it fires flat that way; this one is winding up to throw
+ * over the top, and the backwards lean is the picture of that.
+ */
+function drawLobber(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {
+  // The throwing arm, swinging. Slow, and it snaps forward — a smooth sine both
+  // ways looks like a metronome rather than a throw.
+  const cycle = (t * 0.5) % 1;
+  const swing = cycle < 0.8 ? -0.9 + (cycle / 0.8) * 0.35 : -0.55 + ((cycle - 0.8) / 0.2) * -0.35;
+
+  // Bucket.
+  ctx.fillStyle = body;
+  trapezoid(ctx, 0, 13, 26, 18, 14);
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(0, -1);
+  ctx.rotate(swing);
+  ctx.strokeStyle = PALETTE.cardEdge;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, -15);
+  ctx.stroke();
+  // The duck in the cup at the end.
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(0, -17, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+
+  // A couple more toys peeking over the rim, so the bucket reads as full.
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.arc(-7, 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = alpha(PALETTE.shotBubble, 0.95);
+  ctx.beginPath();
+  ctx.arc(7, 3, 3.5, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawSweeper(ctx: CanvasRenderingContext2D, body: string, accent: string): void {

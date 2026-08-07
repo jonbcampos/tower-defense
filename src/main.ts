@@ -457,6 +457,15 @@ function presentEvent(event: GameEvent): void {
       audio.play('magnet');
       particles.toyLost(event.x, event.y, '#a06a44', random);
       break;
+    case 'thud':
+      // A shot dying against a stack of boxes. Only sometimes, like 'shoot' and
+      // 'boost' — a Water Gun parked behind a stack thuds every 1.5 seconds for
+      // as long as it is there, and a sound that constant stops being a signal.
+      // The puff of cardboard dust is drawn every time, because that is what
+      // she needs to SEE to work out what is wrong.
+      if (random() < 0.35) audio.play('thud');
+      particles.shrug(event.x, event.y, random);
+      break;
     case 'throw':
       audio.play('shield');
       break;

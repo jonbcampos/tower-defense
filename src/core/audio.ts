@@ -43,6 +43,7 @@ export type Sfx =
   | 'boost'
   | 'squeak'
   | 'magnet'
+  | 'thud'
   | 'squeeze'
   | 'win'
   | 'lose';
@@ -191,6 +192,13 @@ export class Audio {
         // audibly something being TAKEN rather than something breaking.
         this.noise(t, 0.09, 0.1, 3000, 1200);
         this.tone('square', 380, 1300, t, 0.1, 0.12);
+        break;
+      case 'thud':
+        // A shot hitting a stack of cardboard. Dull, low and completely dead —
+        // it is a close cousin of 'shrug' on purpose, because it means the same
+        // thing to the player: that did nothing, move it.
+        this.noise(t, 0.05, 0.05, 320);
+        this.tone('sine', 190, 130, t, 0.06, 0.09);
         break;
       case 'squeeze':
         // A cuddle that went too far: a squeak, then a descending sigh.

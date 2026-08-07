@@ -74,6 +74,12 @@ export interface Palette {
   water: string;
   waterShine: string;
   waterRim: string;
+  /** The attic: the beams, and the cardboard stacked between them. */
+  joist: string;
+  joistShade: string;
+  box: string;
+  boxEdge: string;
+  boxTape: string;
   kidSkin: string;
   kidSkinShade: string;
   kidHair: string;
@@ -94,6 +100,8 @@ export interface Palette {
   shotBubble: string;
   shotPowder: string;
   shotLight: string;
+  /** A thrown bath toy. Not a droplet colour — it is an OBJECT in the air. */
+  shotThrow: string;
   shotCore: string;
 
   sparkle: string;
@@ -192,6 +200,11 @@ export const BEDROOM_PALETTE: Palette = {
   steamAlpha: 0.58,
   fogShape: '#3d3560',
   water: '#5fb6d9',
+  joist: '#a37c4e',
+  joistShade: '#6f5230',
+  box: '#c9a06a',
+  boxEdge: '#8a6136',
+  boxTape: '#e8dcc0',
   waterShine: '#d8f4ff',
   waterRim: '#9fe0f5',
   kidSkin: '#f2c396',
@@ -213,6 +226,7 @@ export const BEDROOM_PALETTE: Palette = {
   shotBubble: '#dff4ff',
   shotPowder: '#fff0d9',
   shotLight: '#ffe98a',
+  shotThrow: '#ff8fc7',
   shotCore: '#ffffff',
 
   sparkle: '#ffd94d',

@@ -332,8 +332,15 @@ export function loadoutSlotsFor(highestLevel: number): number {
 }
 
 export const BASE_LOADOUT_SLOTS = 5;
-/** What the tray can physically hold. A contract checks this against the frame. */
-export const MAX_LOADOUT_SLOTS = 7;
+/**
+ * What the tray can physically hold. A contract checks this against the frame.
+ *
+ * Eight, as of the attic. Decision 46 measured the room left over at seven and
+ * said there was space for exactly one more before the purse readout has to
+ * move; the attic spends a slot on the Shelf the way the backyard spends one on
+ * the Duck Ring, so this is that one more.
+ */
+export const MAX_LOADOUT_SLOTS = 8;
 export const LEVELS_PER_WORLD = 10;
 
 export const STEAM_FROM_COL = 5;

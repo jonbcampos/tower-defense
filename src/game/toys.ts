@@ -31,6 +31,8 @@ export type ToyId =
   | 'soap'
   | 'squeak'
   | 'magnet'
+  | 'shelf'
+  | 'lobber'
   | 'sweeper';
 
 /**
@@ -114,6 +116,12 @@ export interface ToyDef {
     slowFor?: number;
     /** Extra kids each shot passes through before stopping. The Beach Ball's. */
     pierce?: number;
+    /**
+     * Thrown in an arc rather than fired flat, so it sails over the attic's
+     * stacked boxes instead of thudding into them. The Bath Toy Lobber's, and
+     * the only reason the attic is playable in depth.
+     */
+    arcs?: boolean;
   };
 
   /** Instants: damage applied to a whole lane the moment it is used. */
@@ -552,6 +560,63 @@ export const TOYS: Record<ToyId, ToyDef> = {
     accent: '#dfe6ee',
   },
 
+  /**
+   * The attic's prerequisite, and the Duck Ring's twin.
+   *
+   * Same layer, same price, same job: a cell holds nothing until one of these
+   * is in it. The difference is how much of the board it applies to — the pool
+   * is a few wet cells in a dry room, and the attic is bare joists everywhere,
+   * so this is not "some cells cost extra" but "everything costs extra". That
+   * is the whole world, and it is why the tray grows to eight here.
+   *
+   * Priced at 25, exactly like the ring, for the same reason: a prerequisite
+   * you have to save up for reads as a tax rather than as a move. The
+   * interesting question is which cells are worth opening, not whether you can
+   * afford to open one.
+   */
+  shelf: {
+    id: 'shelf',
+    name: 'Shelf',
+    blurb: 'The attic has no floor! Lay a shelf down, then build on top of it.',
+    role: 'wall',
+    layer: 'float',
+    cost: 25,
+    recharge: 0,
+    // Tougher than the ring, because in the attic EVERY toy is standing on one
+    // and losing a shelf takes whatever was on it. In the pool that happens in
+    // three lanes; here it would happen everywhere.
+    hp: 400,
+    hitsAir: false,
+    color: '#c89f6a',
+    accent: '#8a6a44',
+  },
+
+  lobber: {
+    id: 'lobber',
+    name: 'Bath Toy Lobber',
+    blurb: 'Throws bath toys up and over. Boxes do not stop it.',
+    role: 'shooter',
+    layer: 'ground',
+    cost: 150,
+    recharge: 8,
+    hp: 120,
+    // Thirteen damage a second against the Water Gun's thirteen and a third,
+    // for half again the price. Fractionally worse in the open, and the only
+    // thing that works at all down a row with a stack of boxes in it. A toy
+    // that was better AND arced would simply replace the Water Gun everywhere.
+    //
+    // The margin is that thin because the contracts set it: at 24 damage the
+    // Wagon Kids on levels 39 and 40 survived a HARD walk by three per cent.
+    //
+    // Water, not something new: it is a dripping wet bath toy, and a Raincoat
+    // Kid shrugging one off keeps the arc from being a free pass. The slow
+    // 90px/s is deliberate too — you can watch the lob leave and land.
+    shoot: { damage: 26, interval: 2, kind: 'water', lanes: 1, speed: 90, arcs: true },
+    hitsAir: false,
+    color: '#ffb3d1',
+    accent: '#7ee0f0',
+  },
+
   sweeper: {
     id: 'sweeper',
     name: 'Guard Bear',
@@ -594,6 +659,9 @@ export const TOY_ORDER: readonly ToyId[] = [
   'soap',
   'squeak',
   'magnet',
+  // Attic.
+  'shelf',
+  'lobber',
 ];
 
 /** Damage per second a shooter lands on a single kid standing in front of it. */

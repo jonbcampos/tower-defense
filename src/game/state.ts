@@ -51,7 +51,6 @@ import {
   ENEMIES,
   EnemyField,
   answersIn,
-  bestAnswerDps,
   enemySpeed,
   type Enemy,
   type EnemyKind,
@@ -91,6 +90,7 @@ export type GameEventType =
   | 'boost'
   | 'divert'
   | 'magnet'
+  | 'thud'
   | 'throw'
   | 'squeeze'
   | 'win'
@@ -165,6 +165,8 @@ export class GameState {
   private blocked = new Set<number>();
   /** Paddling-pool cells. Empty outside a `pool` world. See `isWater`. */
   private water = new Set<number>();
+  /** Stacks of boxes. Unbuildable, and they stop a flat shot. See `isClutter`. */
+  private clutter = new Set<number>();
 
   /** Star bookkeeping. */
   toysLost = 0;
@@ -228,6 +230,7 @@ export class GameState {
     this.lastPlaced = -1;
     this.blocked = new Set(level.blocked);
     this.water = new Set(WORLDS[level.world].terrain === 'pool' ? (level.water ?? []) : []);
+    this.clutter = new Set(level.clutter ?? []);
     this.purse = level.startSparkles + this.difficulty.startSparkleBonus;
     this.lives = SQUEEZE_LIVES;
     this.elapsed = 0;
@@ -290,8 +293,21 @@ export class GameState {
     return (this.cooldowns.get(id) ?? 0) <= 0;
   }
 
+  /**
+   * Nothing can be built here.
+   *
+   * Furniture and box stacks are one answer to that question, so they are one
+   * function. They differ only in what ELSE they do — boxes also stop a flat
+   * shot — and every caller that cares about buildability wants both.
+   */
   isBlocked(lane: number, col: number): boolean {
-    return this.blocked.has(cellIndex(lane, col));
+    const cell = cellIndex(lane, col);
+    return this.blocked.has(cell) || this.clutter.has(cell);
+  }
+
+  /** A stack of boxes: unbuildable, and a flat shot thuds into it. */
+  isClutter(lane: number, col: number): boolean {
+    return this.clutter.has(cellIndex(lane, col));
   }
 
   /**
@@ -313,6 +329,20 @@ export class GameState {
   }
 
   /**
+   * True where a toy needs something under it before it can go down.
+   *
+   * Two worlds answer yes, for what is really one rule at two scales: the
+   * backyard's pool cells, and every last cell of the attic. Stated once here
+   * rather than as two branches in `terrainAllows`, because the renderer and
+   * the trial bots both need the same answer and a second copy of it would be
+   * free to disagree.
+   */
+  needsSupport(lane: number, col: number): boolean {
+    if (WORLDS[this.level.world].terrain === 'joists') return true;
+    return this.isWater(lane, col);
+  }
+
+  /**
    * True where the bathroom's steam hides what is walking.
    *
    * Purely a question about SIGHT, and deliberately on `GameState` rather than
@@ -327,8 +357,23 @@ export class GameState {
     return !this.laneIsClear(lane);
   }
 
-  /** True if a Fan is holding this lane's steam back. */
+  /**
+   * True if this lane has no steam in it — because a Fan is holding it back,
+   * or because this room does not have any steam to hold back.
+   *
+   * That second clause was missing, and the bug it caused shipped with world
+   * three and survived four worlds: `drawSteam` has no idea which room it is
+   * in, so it fogged the far columns of the BEDROOM and the BACKYARD too. It
+   * went unnoticed because a soft gradient creeping in from the right reads as
+   * afternoon light rather than as a fault — it only became obvious next to an
+   * attic, where the same gradient sat on top of a deliberately dark room.
+   *
+   * Fixed here rather than at the call site so that every caller gets it. The
+   * renderer asking "is this lane clear?" should not also have to know which
+   * worlds have weather.
+   */
   laneIsClear(lane: number): boolean {
+    if (WORLDS[this.level.world].terrain !== 'steam') return true;
     for (let col = 0; col < COL_COUNT; col++) {
       const toy = this.toys.at(lane, col);
       if (toy && TOYS[toy.id].clearsFog) return true;
@@ -365,19 +410,22 @@ export class GameState {
    * keep tapping the same wrong cell rather than trying a different one.
    */
   /**
-   * The paddling pool rule, and the only thing that makes the backyard a
-   * different game rather than a different picture.
+   * The terrain rule for both worlds that have one, in three lines.
    *
-   * Water holds nothing until a Duck Ring floats on it; a ring is the one thing
-   * that CAN go there and the one thing that cannot go anywhere else. Stated as
-   * two symmetric refusals rather than one, because "you may not build here"
-   * and "this belongs in the water" are different mistakes and the player has
-   * to be able to tell which one she made.
+   * A cell that needs support holds nothing until a float toy is in it; a float
+   * toy is the one thing that CAN go there and the one thing that cannot go
+   * anywhere else. Stated as two symmetric refusals rather than one, because
+   * "you may not build here" and "this belongs on a shelf" are different
+   * mistakes and the player has to be able to tell which one she made.
+   *
+   * The backyard applies it to a few wet cells and the attic to every cell in
+   * the room. That difference is entirely in `needsSupport`, which is why the
+   * attic cost one line of rule and not a new one.
    */
   private terrainAllows(id: ToyId, lane: number, col: number): boolean {
-    const wet = this.isWater(lane, col);
-    if (TOYS[id].layer === 'float') return wet;
-    return !wet || this.toys.floatAt(lane, col) !== null;
+    const bare = this.needsSupport(lane, col);
+    if (TOYS[id].layer === 'float') return bare;
+    return !bare || this.toys.floatAt(lane, col) !== null;
   }
 
   tryPlace(lane: number, col: number): boolean {
@@ -602,7 +650,7 @@ export class GameState {
         TOYS[toy.id].hitsAir,
         seesHidden,
         false,
-        { slowFor: def.slowFor ?? 0, pierce: def.pierce ?? 0 },
+        { slowFor: def.slowFor ?? 0, pierce: def.pierce ?? 0, arcs: def.arcs ?? false },
       );
       fired = true;
     }
@@ -686,6 +734,22 @@ export class GameState {
       if (shot.x > cellCentreX(COL_COUNT - 1) + CELL_W) {
         shot.active = false;
         continue;
+      }
+
+      // A stack of boxes. Anything fired flat stops here; a lob goes over.
+      //
+      // The thud is emitted rather than swallowed on purpose. A player who has
+      // built a Water Gun behind the boxes has to be able to SEE why it is
+      // achieving nothing, and silence is the one answer a five-year-old reads
+      // as "the game is broken" — decision 7. The shooter keeps firing and
+      // keeps thudding until she moves it, which costs her nothing but noise.
+      if (!shot.arcs) {
+        const col = colAtX(shot.x);
+        if (col >= 0 && col < COL_COUNT && this.isClutter(shot.lane, col)) {
+          shot.active = false;
+          this.emit('thud', shot.x, laneCentreY(shot.lane), 0, shot.lane);
+          continue;
+        }
       }
 
       // A Bubble Bath the shot is passing over. Checked BEFORE the hit test, so
@@ -851,6 +915,22 @@ export class GameState {
             // something better to do and is already on her way to the next row.
           } else if (toy) {
             enemy.grabbing = true;
+            // Stopping to pull at something takes both hands, so whatever you
+            // were hiding under is off. Not a flourish — it closes a dead end.
+            //
+            // The peek rule below reveals a hidden kid at the halfway column,
+            // which assumes she keeps walking. A Blanket Kid who parks at
+            // column eight chewing on a toy never reaches halfway, and if a
+            // stack of boxes also stops the spray that could otherwise find
+            // her, nothing in the row can ever touch her: she sits there being
+            // rebuilt into forever. A trial bot did exactly that for 420
+            // simulated seconds on level 35 with 2,553 sparkles in the purse.
+            //
+            // Making the grab reveal her is the general fix, and it improves
+            // the kid rather than nerfing her: she is untargetable while she is
+            // coming, and targetable the moment she stops — which is the moment
+            // you most want to shoot her anyway.
+            enemy.concealed = false;
             toy.hp -= def.grabDps * dt;
             toy.hurt = 0.12;
             if (toy.hp <= 0) this.destroyToy(toy);
@@ -1186,6 +1266,16 @@ export function validateDesignContracts(): string[] {
       `level ${level.id} deals ${level.recommended.length} cards but the tray holds ${slots} there`,
     );
 
+    // A world with no floor has to deal the thing that makes a floor. Without
+    // it the level is not hard, it is inert: not one toy can be placed in any
+    // cell, and the only contract that would have noticed is this one.
+    if (WORLDS[level.world].terrain === 'joists') {
+      check(
+        level.recommended.some((id) => TOYS[id].layer === 'float'),
+        `level ${level.id} is in ${WORLDS[level.world].name}, which has no floor, and deals nothing that makes one — no toy can be placed at all`,
+      );
+    }
+
     const kinds = enemiesIn(level);
     const damageToys = level.recommended.filter(toyDealsDamage);
 
@@ -1242,10 +1332,14 @@ export function validateDesignContracts(): string[] {
     // Every cell a wave uses has to be reachable, and every lane a beat names
     // has to actually be open. A beat in a lane that is entirely furniture is a
     // kid that walks the whole board unopposed.
+    // Boxes count as furniture here. They are a different thing on the board —
+    // a shot stops at one — but for "is there anywhere at all to build in this
+    // row", a stack of boxes and a chest of drawers are the same answer.
+    const unbuildable = new Set([...level.blocked, ...(level.clutter ?? [])]);
     const openLanes = new Set<number>();
     for (let lane = 0; lane < LANE_COUNT; lane++) {
       for (let col = 0; col < COL_COUNT; col++) {
-        if (!level.blocked.includes(cellIndex(lane, col))) {
+        if (!unbuildable.has(cellIndex(lane, col))) {
           openLanes.add(lane);
           break;
         }
@@ -1294,22 +1388,81 @@ export function validateDesignContracts(): string[] {
       // who doesn't exist fails on levels that are fine and passes on levels
       // that aren't.
       const approach = cellCentreX(COL_COUNT - 1) - cellCentreX(0) + CELL_W;
+
+      // How far down a row a FLAT shot reaches once there are boxes in it.
+      //
+      // The model of the player everywhere in this function is that she builds
+      // a few copies of the best answer at the BACK of a lane — which is what
+      // both trial bots do and what a lane defence teaches. Under that model a
+      // stack of boxes caps her coverage at the boxes, and the kid walks
+      // everything beyond them untouched.
+      //
+      // The binding stack is therefore the one NEAREST the unicorn, not the
+      // furthest away — the first shot to leave a gun dies at the first stack
+      // it meets, and everything behind that one is irrelevant. Written the
+      // other way round at first, which had it exactly backwards: it made a
+      // stack at column three look harmless when a stack at column three is the
+      // worst place on the board for one, and a stack at column eight look
+      // ruinous when a stack at column eight costs nothing at all.
+      let nearestBoxes = COL_COUNT;
+      for (const cell of level.clutter ?? []) {
+        nearestBoxes = Math.min(nearestBoxes, cell % COL_COUNT);
+      }
+      const pastBoxes =
+        nearestBoxes < COL_COUNT ? cellCentreX(nearestBoxes) - cellCentreX(0) + CELL_W : approach;
+
+      // A Magnet Wand in the hand means the armour is not part of the problem.
+      // Without this the contract charges a Wagon Kid's 150-point shield to a
+      // loadout that is holding the card whose entire job is taking it off, and
+      // the only way to satisfy it would be to delete the toy that solves it.
+      const strips = level.recommended.some((id) => TOYS[id].magnet !== undefined);
+
       for (const kind of kinds) {
-        const dps = bestAnswerDps(level.recommended, kind);
-        if (dps <= 0) continue; // already reported by the no-answer check above
-        const needed = (ENEMIES[kind].hp + (ENEMIES[kind].shield ?? 0)) * difficulty.enemyHpScale;
+        const answers = answersIn(level.recommended, kind);
+        if (answers.length === 0) continue; // already reported by the check above
+        const armour = strips ? 0 : (ENEMIES[kind].shield ?? 0);
+        const needed = (ENEMIES[kind].hp + armour) * difficulty.enemyHpScale;
         const copies = Math.min(5, Math.max(2, Math.ceil(needed / 120)));
         const speed = enemySpeed(kind, difficulty.enemySpeedScale);
-        const seconds = approach / speed;
-        const landed = dps * copies * seconds * KILL_SAFETY;
-        const best = answersIn(level.recommended, kind)[0];
+
+        // Per answer rather than "the highest dps answer", because with boxes
+        // on the board those are different questions: a Water Gun out-damages
+        // a Bath Toy Lobber everywhere except the row it cannot shoot down.
+        // Ranking on damage alone would pick the gun and then measure it over
+        // a walk it never gets, which is how a level looks fine and is not.
+        let landed = 0;
+        let seconds = 0;
+        let best: ToyId | null = null;
+        for (const toy of answers) {
+          const def = TOYS[toy];
+          const rate = def.shoot
+            ? def.shoot.damage / def.shoot.interval
+            : (def.instant?.damage ?? 0) / Math.max(1, def.recharge);
+          // An instant empties the whole row whatever is stacked in it, and a
+          // lob goes over. Only a flat shooter pays the boxes.
+          const reach = !def.shoot || def.shoot.arcs ? approach : pastBoxes;
+          const walk = reach / speed;
+          const total = rate * copies * walk * KILL_SAFETY;
+          if (total > landed) {
+            landed = total;
+            seconds = walk;
+            best = toy;
+          }
+        }
+
         check(
           landed >= needed * KILL_MARGIN,
           `${label}: ${copies}x the best answer (${
             best ? TOYS[best].name : '?'
           }) lands ${landed.toFixed(0)} over a ${ENEMIES[kind].name}'s ${seconds.toFixed(
             1,
-          )}s walk, and it needs ${(needed * KILL_MARGIN).toFixed(0)}`,
+          )}s walk${
+            nearestBoxes < COL_COUNT && seconds < approach / speed
+              ? ` (cut short by the boxes at column ${nearestBoxes})`
+              : ''
+          }, and it needs ${(needed * KILL_MARGIN).toFixed(0)}${
+            strips && ENEMIES[kind].shield ? ' with the shield magnetted off' : ''
+          }`,
         );
       }
 

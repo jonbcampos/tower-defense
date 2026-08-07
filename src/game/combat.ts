@@ -45,6 +45,18 @@ export interface Shot {
    */
   boosted: boolean;
   /**
+   * Thrown in an arc. Sails over a stack of boxes that would stop a flat shot.
+   *
+   * The renderer draws the arc from `bornX`; the simulation only cares that
+   * clutter does not stop it. Keeping the height purely in the renderer means
+   * an arcing shot still travels down one row in a straight line as far as
+   * targeting is concerned, which is what a five-year-old expects from
+   * watching it — and it means the arc can be retuned without touching a rule.
+   */
+  arcs: boolean;
+  /** Where it was launched from, so the renderer knows how far into the arc it is. */
+  bornX: number;
+  /**
    * Travels left and damages TOYS instead of kids. Only the Big Kid's thrown
    * stuffie uses this.
    *
@@ -60,6 +72,7 @@ export interface Shot {
 export interface ShotExtras {
   slowFor?: number;
   pierce?: number;
+  arcs?: boolean;
 }
 
 export class ShotPool {
@@ -80,6 +93,8 @@ export class ShotPool {
         slowFor: 0,
         pierce: 0,
         boosted: false,
+        arcs: false,
+        bornX: 0,
         hostile: false,
         active: false,
       });
@@ -115,6 +130,8 @@ export class ShotPool {
     item.slowFor = extras.slowFor ?? 0;
     item.pierce = extras.pierce ?? 0;
     item.boosted = false;
+    item.arcs = extras.arcs ?? false;
+    item.bornX = x;
     item.active = true;
     return item;
   }

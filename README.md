@@ -22,7 +22,7 @@ enough that whatever your toys are doing is more interesting than you are.
 | **Wagon Kid** | A cardboard shield comes off first | Sustained damage |
 | **The Big Kid** | Throws a stuffie that destroys a toy; half damage from bubbles | Everything you know |
 
-Thirty levels across three worlds, a new toy every level or two, and a **Guard Bear** sitting at the end of every lane —
+Forty levels across four worlds, a new toy every level or two, and a **Guard Bear** sitting at the end of every lane —
 the first kid to reach the cushion in a lane gets swept into an enormous hug by the bear instead
 of squeezing you, and the two of them wander off together. One bear per lane, once each.
 
@@ -76,12 +76,14 @@ is a content problem rather than an engineering one.
 
 **5. `World` is a terrain rule, not a background.** The reason Plants vs Zombies' fifty levels
 don't feel like ten repeated five times is that each area changed what the board itself does.
-Three are built — a dry bedroom, a backyard whose pool cells hold nothing until a Duck Ring
-floats there, and a bathroom whose far columns are hidden by steam until a Fan clears the row.
+Four are built: a dry bedroom; a backyard whose pool cells hold nothing until a Duck Ring floats
+there; a bathroom whose far columns are hidden by steam until a Fan clears the row; and an attic
+with no floor at all, where every cell needs a Shelf and stacks of boxes stop a flat shot.
 
 **6. The tray grows with progress.** Five cards in the bedroom, six in the backyard, seven in the
-bathroom. Each world after the first spends a slot on its own prerequisite toy, so a fixed five
-left later worlds a card short — the growth gives it back rather than trimming the roster.
+bathroom, eight in the attic. Each world after the first spends a slot on its own prerequisite
+toy, so a fixed five left later worlds a card short — the growth gives it back rather than
+trimming the roster. Eight is the ceiling: a ninth card does not fit a 480px frame.
 
 **7. Difficulty is chores first, pressure second.** EASY→NORMAL adds two things to *consider* —
 you collect your own sparkles, you pick your own five cards — and speeds nothing up.
@@ -104,7 +106,7 @@ change looks fine on NORMAL and quietly makes HARD impossible.
 __game.verify()
 ```
 
-218 headless trials driving the real `GameState` with a scripted bot, across every level at every
+278 headless trials driving the real `GameState` with a scripted bot, across every level at every
 difficulty — the count grows on its own as levels are added, which is the point. Every one reports **what it measured**, not just pass or fail. EASY and NORMAL are
 held to a deliberately mediocre bot; HARD is held to a competent one, and that difference is the
 definition of the tier.
@@ -152,8 +154,8 @@ command line ends up in your shell history.
 npm run art -- --dry-run
 ```
 
-Prints all 47 prompts and calls nothing. Worth a skim — this is the art direction, and it is
-much cheaper to fix a description here than after 47 billed calls.
+Prints all 51 prompts and calls nothing. Worth a skim — this is the art direction, and it is
+much cheaper to fix a description here than after 51 billed calls.
 
 ### 4. Generate
 
@@ -161,7 +163,7 @@ much cheaper to fix a description here than after 47 billed calls.
 npm run art
 ```
 
-One API call per piece, 47 in total, printing `ok` / `skip` / `FAIL` as it goes. Finished pieces
+One API call per piece, 51 in total, printing `ok` / `skip` / `FAIL` as it goes. Finished pieces
 are written straight to `public/sprites/` as JPEGs, so if it dies half way through — rate limit,
 network, Ctrl-C — just run it again and it picks up where it stopped. Nothing already done is
 paid for twice.
@@ -268,8 +270,8 @@ that kid keeps its still image and the procedural gait. Nothing has to be true f
 
 ## Status
 
-Playable end to end: **thirty levels across three worlds**, an **endless mode**, eighteen toys, ten kids, three
+Playable end to end: **forty levels across four worlds**, an **endless mode**, twenty toys, ten kids, three
 difficulties, saved progress and stars, an in-game guide, and the screen stays awake while you
-play. All 218 trials and every design contract pass.
+play. All 278 trials and every design contract pass.
 
 Every toy and kid has painted art.

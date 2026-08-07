@@ -551,16 +551,29 @@ function drawLevelCard(
     color: locked ? PALETTE.hudDim : PALETTE.cardCharging,
   });
 
-  // The toy this level hands over. The last level introduces nothing, so it
-  // gets the boss's crown colour instead of a blank space.
+  // The toy this level hands over, or a warning on the one that ends a world.
+  //
+  // The '!' used to appear on every level with no new toy, which was fine when
+  // that meant level ten and nothing else. It stopped being fine as the
+  // campaign grew: by the attic, nine cards in ten carried a big red
+  // exclamation mark, and a warning that appears on almost everything is not a
+  // warning, it is wallpaper — worse, it made nine perfectly ordinary levels
+  // look like they were about to go wrong.
+  //
+  // It now marks the LAST level of a world and nothing else, which is exactly
+  // what it was for: no new toy, and everything you know at once. An ordinary
+  // level with no unlock gets a quiet blank, and a card that is a number and
+  // three stars is a perfectly good card.
   const level = LEVELS[id - 1];
   const toy = level?.unlocks[0];
+  const next = LEVELS[id];
+  const endsAWorld = level !== undefined && (next === undefined || next.world !== level.world);
   if (toy) {
     ctx.save();
     if (locked) ctx.globalAlpha = 0.35;
     drawToyArt(ctx, toy, rect.x + rect.w / 2, rect.y + 27, 0.66, time + id);
     ctx.restore();
-  } else {
+  } else if (endsAWorld) {
     ctx.save();
     if (locked) ctx.globalAlpha = 0.35;
     drawText(ctx, '!', rect.x + rect.w / 2, rect.y + 27, {

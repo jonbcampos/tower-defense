@@ -574,6 +574,73 @@ const BASE_PIECES = [
       'Soft even lighting, no hotspots, no reflections, no cast shadows.',
   },
   {
+    // World 4's board. Same flat-orthographic rules as the other three.
+    //
+    // The joists are drawn BY THE GAME on top of this, cell by cell, because
+    // which cells are still open changes as the player lays shelves. So the
+    // backdrop is only what is UNDER the attic: the dark of the space below,
+    // and a plain end wall along the top. Painting beams into the picture would
+    // put a second, fixed set of them behind the real ones.
+    id: 'attic',
+    aspect: '16:9',
+    background: 'none',
+    size: '2K',
+    subject:
+      'A FLAT ORTHOGRAPHIC GAME BACKGROUND with NO PERSPECTIVE and NO VANISHING POINT. ' +
+      'The TOP ONE SIXTH of the image is the bare end wall of a loft: rough pale timber boards ' +
+      'running horizontally, with a small round window of warm dusty light in it. The REMAINING ' +
+      'FIVE SIXTHS below it is plain, even, slightly textured dark brown-grey, flat and uniform, ' +
+      'filling the whole width — the shadowed space under a roof, like loft insulation seen in ' +
+      'dim light. ' +
+      'The lower five sixths has NO BEAMS, NO JOISTS, NO PLANKS, NO BOARDS, NO GRID, NO LINES and ' +
+      'NO PATTERN of any kind — it is one continuous dark surface. Do not draw any beams. ' +
+      'THE PICTURE IS COMPLETELY EMPTY except for the wall band and that dark surface. ' +
+      'ABSOLUTELY NO PEOPLE: no child, no girl, no boy, no adult, no figure, no character of any ' +
+      'kind anywhere in the image. It is an empty loft with nobody in it. ' +
+      'Also no ceiling, no side walls, no corners, no horizon, no boxes, no crates, no suitcases, ' +
+      'no furniture, no objects, no cobwebs and no decorations. ' +
+      'Dusty warm light from the window, soft and even, no hotspots and no cast shadows. ' +
+      'Dark enough that pale characters placed on top of it stand out clearly.',
+  },
+  {
+    // Not a cut-out sprite in the usual sense — it is drawn cell by cell over
+    // the board, taller than its cell, so the stack visibly rises above the row
+    // it is in. That overhang is the only thing that says "your shots will not
+    // get over this", so the prompt asks for height rather than bulk.
+    id: 'boxes',
+    aspect: '1:1',
+    subject:
+      'a stack of three cardboard packing boxes piled one on top of another, the biggest at the ' +
+      'bottom and the smallest on top, slightly offset so the stack leans a little. Warm brown ' +
+      'corrugated cardboard with pale parcel tape down the middle of each box. TALL: the stack is ' +
+      'clearly taller than it is wide. No labels, no writing, no faces, no characters. ' +
+      'Silhouette: a tall wobbly tower of three rectangles.',
+  },
+  {
+    id: 'shelf',
+    aspect: '1:1',
+    // Must not read as the Duck Ring. They do the same job in two worlds and
+    // are the only two things in the game that go UNDER another toy, so if a
+    // child confuses them she will try to float a plank in the paddling pool.
+    subject:
+      'a short plain wooden shelf board seen from a low three-quarter angle, lying FLAT and ' +
+      'horizontal with two small brackets underneath it, as if laid across a gap. Warm honey-brown ' +
+      'timber with a visible wood grain and a slightly darker front edge. It must read as a solid ' +
+      'flat surface you could stand a toy on top of. Wide and low. ' +
+      'NOT a ring, NOT a hoop, NOT inflatable, no hole in the middle, no duck, no face. ' +
+      'Silhouette: a wide flat rectangle with two little legs under it.',
+  },
+  {
+    id: 'lobber',
+    aspect: '1:1',
+    subject:
+      'a small toy catapult made from a bucket of bath toys: a stout wooden bucket full of rubber ' +
+      'bath toys, with a slim throwing arm rising out of it that is cocked back and leaning to the ' +
+      'LEFT, a little yellow rubber duck sitting in the cup at the top of the arm ready to be ' +
+      'flung. One or two more bath toys peeking over the rim of the bucket. ' +
+      'Silhouette: a bucket with a raised arm leaning back over it.',
+  },
+  {
     // The only piece with no green screen: it IS the background.
     id: 'room',
     aspect: '16:9',

@@ -31,7 +31,7 @@ import type { ToyId } from './toys';
  * v1 ships one world. This type exists now, with the fields the sketched worlds
  * would need, because retrofitting it later means touching every level.
  */
-export type WorldId = 'bedroom' | 'backyard' | 'bathroom';
+export type WorldId = 'bedroom' | 'backyard' | 'bathroom' | 'attic';
 
 export interface World {
   id: WorldId;
@@ -55,8 +55,12 @@ export interface World {
    * `steam` is the bathroom: the far half of the board is fogged, so a kid
    * walking in it cannot be SEEN — everything about her is unchanged, the
    * player simply does not know she is there.
+   * `joists` is the attic: there is no floor at all, so EVERY cell needs a
+   * Shelf before it holds anything. Deliberately the pool's rule turned all
+   * the way up rather than a fourth idea — the pool taught it on three lanes,
+   * and the attic is what that lesson looks like applied to the whole board.
    */
-  terrain: 'dry' | 'pool' | 'steam';
+  terrain: 'dry' | 'pool' | 'steam' | 'joists';
   /**
    * The generated backdrop for this world's board, by sprite id.
    *
@@ -77,10 +81,16 @@ export const WORLDS: Record<WorldId, World> = {
   // you can only use half of it with any confidence. The trickle is back to
   // normal — the pool's extra was paying for Duck Rings, and there are none here.
   bathroom: { id: 'bathroom', name: 'Bath Time', lanes: LANE_COUNT, trickleScale: 1, terrain: 'steam', background: 'bath' },
+  // The attic. No floor, so every single cell costs a Shelf before it costs
+  // anything else — which means half as many toys for the same sparkles. The
+  // trickle is a fifth higher to pay for exactly that and no more: the point of
+  // the world is that toys are expensive in CELLS and in taps, and handing back
+  // enough money to ignore it would turn the rule into set dressing.
+  attic: { id: 'attic', name: 'The Attic', lanes: LANE_COUNT, trickleScale: 1.2, terrain: 'joists', background: 'attic' },
 };
 
 /** Worlds in the order they are played. Also the order of the level-select tabs. */
-export const WORLD_ORDER: readonly WorldId[] = ['bedroom', 'backyard', 'bathroom'];
+export const WORLD_ORDER: readonly WorldId[] = ['bedroom', 'backyard', 'bathroom', 'attic'];
 
 // --- Waves ------------------------------------------------------------------
 
@@ -176,6 +186,23 @@ export interface Level {
    * obstacle for the player without needing a second set of swimming kids.
    */
   water?: readonly number[];
+  /**
+   * Stacks of boxes, as `lane * COL_COUNT + col`.
+   *
+   * Two things at once, and both are what a stack of boxes obviously does: you
+   * cannot build there, and a shot fired FLAT down that row thuds into it. A
+   * lobbed shot goes over.
+   *
+   * Kids walk past them, which is the one part that is a game rule rather than
+   * common sense — they are squeezing between the boxes and the eaves. Making
+   * boxes stop kids as well would just be a free Sand Castle in every level
+   * that has one.
+   *
+   * This is the attic's second idea and it is what the Bath Toy Lobber is for.
+   * Nothing outside the attic uses it, but it is on `Level` rather than on
+   * `World` because which cells have boxes is a layout, exactly like `blocked`.
+   */
+  clutter?: readonly number[];
   startSparkles: number;
   waves: readonly Wave[];
 }
@@ -864,7 +891,11 @@ export const LEVELS: readonly Level[] = [
     world: 'bathroom',
     name: 'The Big Kid In The Bath',
     teaches: 'The exam, in the steam.',
-    unlocks: [],
+    // Same reasoning as the Duck Ring and the Little Fan before it: the attic
+    // has no floor, so a player who arrives without a Shelf cannot put a single
+    // toy down. A world that opens with its own prerequisite still locked does
+    // not read as hard, it reads as broken.
+    unlocks: ['shelf'],
     recommended: ['jar', 'fan', 'machine', 'watergun', 'sprinkler', 'wand', 'castle'],
     blocked: rect(2, 2, 7, 8),
     startSparkles: 375,
@@ -884,6 +915,258 @@ export const LEVELS: readonly Level[] = [
           o(k('balloon', 1, 3)),
         ],
         36,
+      ),
+    ],
+  },
+
+  // --- World 4: The Attic -----------------------------------------------------
+  //
+  // The terrain rule is that there is no floor. Bare joists, and EVERY cell
+  // needs a Shelf before it holds anything.
+  //
+  // Deliberately the paddling pool's rule turned all the way up rather than a
+  // fourth idea. The pool asked which three lanes were worth opening; the attic
+  // asks that about all forty-five cells. Nothing she learned stops working —
+  // she can simply afford half as many toys at a time, and every placement is
+  // two taps and two prices. That is enough to invalidate every build in the
+  // game without invalidating a single lesson.
+  //
+  // The second idea is stacks of boxes. You cannot build on one and a shot
+  // fired flat thuds into it, so a row with boxes can only be held from in
+  // front of them — unless you throw something over the top, which is the whole
+  // job of the Bath Toy Lobber. Boxes sit in the middle columns, never at the
+  // very back: a stack at column eight would cost nothing at all.
+  {
+    id: 31,
+    world: 'attic',
+    name: 'Mind the Gap',
+    teaches: 'There is no floor up here. Lay a shelf down first.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'wand', 'fort', 'watergun', 'sprinkler'],
+    // A clear board and slow kids. The lesson is one extra tap before every
+    // toy, and stacking a layout puzzle on top of a new economy is how you get
+    // a level that teaches neither.
+    blocked: [],
+    // Enough for a shelf and a jar, then a shelf and a wand, with change. The
+    // opening hand has to survive the fact that everything here costs 25 more
+    // than it says on the card.
+    startSparkles: 275,
+    // Kids arrive two to a row on purpose from wave three on. A Guard Bear
+    // clears a whole row, so a level that spreads its kids one per lane is a
+    // level five bears win on their own — level one learned that the hard way
+    // and this is the same shape of level.
+    waves: [
+      w([k('crawler', 2)], 26),
+      w([k('toddler', 1), k('crawler', 3, 3)], 26),
+      w([k('toddler', 2), k('toddler', 2, 3), k('crawler', 2, 3), o(k('toddler', 1, 3))]),
+      wBig(
+        [k('toddler', 0), k('toddler', 0, 2), k('toddler', 4, 1), k('toddler', 4, 2), k('crawler', 2, 3), o(k('runner', 3, 3))],
+        28,
+      ),
+      wBig(
+        [
+          k('toddler', 1),
+          k('toddler', 1, 2),
+          k('toddler', 3, 1),
+          k('toddler', 3, 2),
+          k('toddler', 2, 3),
+          k('crawler', 0, 3),
+          o(k('runner', 4, 3)),
+        ],
+        30,
+      ),
+    ],
+  },
+  {
+    id: 32,
+    world: 'attic',
+    name: 'Boxes In The Way',
+    teaches: 'Water guns thud into the boxes. Throw something over instead.',
+    unlocks: ['lobber'],
+    recommended: ['jar', 'shelf', 'lobber', 'wand', 'watergun', 'fort', 'sprinkler'],
+    blocked: [],
+    // One stack, in the middle three rows, halfway along. Shallow enough that
+    // the outer two rows still play normally, so the difference between a row
+    // with boxes and a row without is visible side by side on one screen.
+    clutter: cells([1, 5], [2, 5], [3, 5]),
+    startSparkles: 300,
+    waves: [
+      w([k('toddler', 2), k('crawler', 0, 3)], 26),
+      w([k('toddler', 1), k('toddler', 3, 2), o(k('runner', 2, 3))]),
+      w([k('runner', 2), k('toddler', 0, 2), k('toddler', 4, 2), o(k('crawler', 1, 3))]),
+      wBig([k('toddler', 1), k('runner', 2, 2), k('toddler', 3, 2), k('runner', 0, 3), o(k('toddler', 4, 3))], 28),
+    ],
+  },
+  {
+    id: 33,
+    world: 'attic',
+    name: 'Between The Rafters',
+    teaches: 'Raincoats up here too, and boxes in the way of your bubbles.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'lobber', 'wand', 'machine', 'watergun', 'fort', 'sprinkler'],
+    // The chimney: a solid block you cannot build round.
+    blocked: rect(1, 2, 6, 7),
+    clutter: cells([0, 4], [3, 5], [4, 4]),
+    startSparkles: 325,
+    waves: [
+      w([k('raincoat', 2), k('toddler', 0, 3)]),
+      w([k('raincoat', 1), k('runner', 3, 2), o(k('raincoat', 4, 3))]),
+      w([k('raincoat', 0), k('raincoat', 2, 2), k('runner', 4, 2), o(k('toddler', 3, 3))]),
+      wBig([k('raincoat', 1), k('raincoat', 2, 1), k('raincoat', 3, 1), k('runner', 0, 3), o(k('runner', 4, 3))], 30),
+    ],
+  },
+  {
+    id: 34,
+    world: 'attic',
+    name: 'Up In The Eaves',
+    teaches: 'Balloons float over the boxes. Your spray does not.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'sprinkler', 'machine', 'lobber', 'wand', 'powder', 'fort'],
+    blocked: [],
+    // Right at the back, and only in the two rows the balloons do NOT use.
+    // Nothing that reaches a floating kid arcs, so boxes near the unicorn in a
+    // balloon row would be a rule with no answer rather than a decision.
+    clutter: cells([0, 6], [4, 6]),
+    startSparkles: 350,
+    waves: [
+      w([k('balloon', 2), k('toddler', 0, 3)]),
+      w([k('balloon', 1), k('balloon', 3, 2), k('runner', 2, 3)]),
+      w([k('balloon', 2), k('runner', 0, 2), k('balloon', 3, 2), o(k('toddler', 4, 3))]),
+      wBig([k('balloon', 1), k('balloon', 2, 1), k('balloon', 3, 1), k('runner', 4, 3), o(k('raincoat', 0, 3))], 30),
+    ],
+  },
+  {
+    id: 35,
+    world: 'attic',
+    name: 'Under The Dust Sheets',
+    teaches: 'A shelf costs a cell. So does seeing what is under the sheet.',
+    unlocks: [],
+    // The Nightlight is the obvious card for a level about things you cannot
+    // see and it is not here: at a 45-second recharge it comes up twice in a
+    // 126-second level, and a panic button you can press twice is a cutscene.
+    // The Powder Puff does the same job three times over.
+    recommended: ['jar', 'shelf', 'sprinkler', 'machine', 'powder', 'lobber', 'watergun', 'wand'],
+    blocked: [],
+    clutter: cells([1, 5], [2, 6], [3, 5]),
+    startSparkles: 350,
+    waves: [
+      w([k('blanket', 2), k('toddler', 0, 3)]),
+      w([k('blanket', 1), k('blanket', 3, 2), o(k('runner', 2, 3))]),
+      w([k('blanket', 0), k('blanket', 2, 2), k('runner', 4, 2), o(k('blanket', 1, 3))]),
+      wBig([k('blanket', 1), k('blanket', 2, 1), k('blanket', 3, 1), k('puffy', 0, 3), o(k('balloon', 4, 3))], 30),
+    ],
+  },
+  {
+    id: 36,
+    world: 'attic',
+    name: 'Heavy Boxes',
+    teaches: 'Tanks, behind a wall of boxes. Only the lobber reaches them.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'lobber', 'watergun', 'castle', 'powder', 'machine', 'sprinkler'],
+    blocked: [],
+    // The deepest boxes in the world, in four rows out of five. A flat gun
+    // holds a third of the board here, and the one clear row is the reward for
+    // noticing there is one.
+    clutter: merge(cells([0, 6], [1, 6], [3, 6], [4, 6]), cells([0, 5], [4, 5])),
+    startSparkles: 400,
+    waves: [
+      w([k('puffy', 2), k('toddler', 0, 3)]),
+      w([k('puffy', 1), k('puffy', 3, 2), o(k('runner', 2, 3))]),
+      w([k('puffy', 0), k('puffy', 4, 2), k('runner', 2, 3), o(k('raincoat', 1, 3))]),
+      wBig([k('puffy', 1), k('puffy', 2, 1), k('puffy', 3, 1), k('toddler', 0, 3), o(k('puffy', 4, 4))], 32),
+    ],
+  },
+  {
+    id: 37,
+    world: 'attic',
+    name: 'Sliding On Boards',
+    teaches: 'She is fast, and the boxes give you less room to stop her.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'slushie', 'watergun', 'lobber', 'castle', 'machine', 'squeak'],
+    blocked: [],
+    clutter: cells([0, 5], [2, 5], [4, 5]),
+    startSparkles: 400,
+    waves: [
+      w([k('slider', 2), k('toddler', 0, 3)]),
+      w([k('slider', 1), k('slider', 3, 2), o(k('runner', 2, 3))]),
+      w([k('slider', 0), k('slider', 2, 1), k('slider', 4, 1), o(k('puffy', 3, 4))]),
+      wBig([k('slider', 1), k('slider', 2, 1), k('slider', 3, 1), k('puffy', 0, 3), k('runner', 4, 2)], 30),
+    ],
+  },
+  {
+    id: 38,
+    world: 'attic',
+    name: 'Wagons Upstairs',
+    teaches: 'A magnet works through boxes. It does not care what is in the way.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'magnet', 'lobber', 'watergun', 'machine', 'castle', 'sprinkler'],
+    // No furniture. The boxes already take five cells out of the middle three
+    // rows, and in a world where every cell needs a shelf under it, adding a
+    // chest of drawers on top of that was just removing the level.
+    blocked: [],
+    clutter: cells([1, 5], [2, 6], [3, 5]),
+    startSparkles: 575,
+    // Wagons cost 240 points of health each before anything else, and in the
+    // attic every gun aimed at one is standing on a shelf. Three a wave routed
+    // a competent bot on HARD in 104 seconds; the lesson is the magnet, and
+    // teaching it does not need a queue.
+    waves: [
+      w([k('wagon', 2), k('runner', 0, 3)]),
+      w([k('wagon', 1), k('toddler', 3, 2), o(k('slider', 2, 3))]),
+      w([k('wagon', 0), k('runner', 2, 2), k('wagon', 4, 3), o(k('balloon', 1, 3))]),
+      wBig([k('wagon', 1), k('wagon', 3, 2), k('puffy', 2, 3), k('runner', 0, 3), o(k('slider', 4, 3))], 32),
+    ],
+  },
+  {
+    id: 39,
+    world: 'attic',
+    name: 'Everything Upstairs',
+    teaches: 'Every kid in the house, and a shelf under every toy.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'lobber', 'machine', 'sprinkler', 'watergun', 'powder', 'castle'],
+    blocked: merge(rect(0, 0, 7, 8), rect(4, 4, 7, 8)),
+    clutter: cells([1, 4], [2, 5], [3, 4]),
+    startSparkles: 450,
+    waves: [
+      w([k('runner', 1), k('runner', 3, 1), k('slider', 2, 3)]),
+      w([k('raincoat', 0), k('balloon', 2, 2), k('wagon', 4, 2), o(k('blanket', 1, 3))]),
+      wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 2, 3), o(k('balloon', 0, 3)), o(k('slider', 4, 3))], 30),
+      w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
+    ],
+  },
+  {
+    id: 40,
+    world: 'attic',
+    name: 'The Big Kid In The Attic',
+    teaches: 'The exam, with no floor under it.',
+    unlocks: [],
+    recommended: ['jar', 'shelf', 'lobber', 'machine', 'watergun', 'sprinkler', 'powder', 'castle'],
+    // His row is clear of boxes, so he cannot be held behind one — he has to be
+    // fought, and every shelf you lay to fight him is a shelf you did not lay
+    // somewhere else.
+    blocked: [],
+    clutter: cells([0, 5], [1, 5], [3, 5], [4, 5]),
+    // The largest opening hand in the game, and it has to be: this is the
+    // bathroom's boss wave in a world where every toy is standing on 25
+    // sparkles of shelf. 475 lost it on NORMAL and on HARD; 600 still lost HARD
+    // by a single kid at the very end of the boss wave.
+    startSparkles: 675,
+    waves: [
+      w([k('toddler', 1), k('runner', 3, 2), k('slider', 0, 3)]),
+      w([k('balloon', 2), k('blanket', 4, 2), k('raincoat', 1, 3), o(k('runner', 3, 3))]),
+      wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 0, 3), o(k('balloon', 2, 3)), o(k('slider', 4, 3))], 30),
+      w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
+      wBig(
+        [
+          k('bigkid', 2),
+          k('puffy', 1, 4),
+          k('puffy', 3, 4),
+          k('slider', 0, 3),
+          k('slider', 4, 2),
+          o(k('wagon', 2, 5)),
+          o(k('balloon', 1, 3)),
+        ],
+        40,
       ),
     ],
   },
