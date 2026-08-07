@@ -35,6 +35,16 @@ export interface Shot {
    */
   pierce: number;
   /**
+   * Already made bigger by a Bubble Bath.
+   *
+   * Once, ever — a shot that passed through two baths would make a wall of
+   * them the strongest build in the game and turn a placement puzzle into a
+   * multiplication. Held on the shot rather than on the bath because the rule
+   * is about this bubble's history, and a bath has no idea which bubbles it has
+   * already seen.
+   */
+  boosted: boolean;
+  /**
    * Travels left and damages TOYS instead of kids. Only the Big Kid's thrown
    * stuffie uses this.
    *
@@ -69,6 +79,7 @@ export class ShotPool {
         seesHidden: false,
         slowFor: 0,
         pierce: 0,
+        boosted: false,
         hostile: false,
         active: false,
       });
@@ -103,6 +114,7 @@ export class ShotPool {
     item.hostile = hostile;
     item.slowFor = extras.slowFor ?? 0;
     item.pierce = extras.pierce ?? 0;
+    item.boosted = false;
     item.active = true;
     return item;
   }

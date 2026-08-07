@@ -134,6 +134,15 @@ export function drawToyArt(
     case 'machine':
       drawMachine(ctx, body, def.accent, t);
       break;
+    case 'soap':
+      drawSoap(ctx, body, def.accent, t);
+      break;
+    case 'squeak':
+      drawSqueak(ctx, body, def.accent, t);
+      break;
+    case 'magnet':
+      drawMagnet(ctx, body, def.accent, t);
+      break;
     case 'sweeper':
       drawSweeper(ctx, body, def.accent);
       break;
@@ -298,6 +307,54 @@ function drawFlourish(ctx: CanvasRenderingContext2D, id: ToyId, t: number, fired
       ctx.beginPath();
       ctx.arc(2, -9 - phase * 6, 2 + phase * 4, 0, Math.PI * 2);
       ctx.fill();
+      break;
+    }
+
+    case 'soap': {
+      // Foam climbing and popping. Two sizes, because uniform circles read as
+      // a pattern rather than as lather.
+      for (let i = 0; i < 4; i++) {
+        const phase = (t * 0.6 + i * 0.28) % 1;
+        ctx.strokeStyle = alpha('#ffffff', (1 - phase) * 0.9);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(-8 + i * 5.5, -8 - phase * 10, 1.4 + (i % 2) * 1.4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      break;
+    }
+
+    case 'squeak': {
+      // Squeak lines, alternating sides, on a slow beat. It is the only toy
+      // whose effect is a NOISE, so the animation has to draw the noise.
+      const beat = (t * 1.3) % 1;
+      if (beat < 0.45) {
+        const fade = 1 - beat / 0.45;
+        ctx.strokeStyle = alpha(PALETTE.sparkle, fade * 0.9);
+        ctx.lineWidth = 1.2;
+        for (const dir of [-1, 1]) {
+          for (let ring = 1; ring <= 2; ring++) {
+            ctx.beginPath();
+            ctx.arc(dir * 11, -4, 3 + ring * 3 + beat * 4, dir > 0 ? -0.7 : Math.PI - 0.7, dir > 0 ? 0.7 : Math.PI + 0.7);
+            ctx.stroke();
+          }
+        }
+      }
+      break;
+    }
+
+    case 'magnet': {
+      // A pull, drawn as arcs sweeping IN toward the tips rather than out.
+      // Which direction they travel is the whole difference between a magnet
+      // and a sprinkler at this size.
+      for (let i = 0; i < 3; i++) {
+        const phase = 1 - ((t * 0.8 + i * 0.33) % 1);
+        ctx.strokeStyle = alpha(PALETTE.shotLight, (1 - phase) * 0.8);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(4, 0, 9 + phase * 12, -0.85, 0.85);
+        ctx.stroke();
+      }
       break;
     }
 
@@ -652,6 +709,136 @@ function drawMachine(ctx: CanvasRenderingContext2D, body: string, accent: string
     ctx.arc(17 + drift, -3 + i * 6, 2.2, 0, Math.PI * 2);
     ctx.stroke();
   }
+}
+
+/**
+ * A wide low tub heaped with foam.
+ *
+ * The width is doing the work. A Slushie Cup is also "a container with a dome
+ * on top", so the two are told apart by proportion: the slushie is tall and
+ * narrow, this is twice as wide as it is high and sits flat on the floor.
+ */
+function drawSoap(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {
+  ctx.fillStyle = alpha(PALETTE.water, 0.8);
+  roundRect(ctx, -15, 0, 30, 13, 5);
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  roundRect(ctx, -15, 0, 30, 13, 5);
+  ctx.stroke();
+
+  // Lather: overlapping circles of three sizes, which is what stops a mound of
+  // white reading as a single smooth blob of icing.
+  const foam: [number, number, number][] = [
+    [-11, -2, 5],
+    [-4, -6, 7],
+    [4, -4, 6],
+    [11, -1, 4.5],
+    [0, -11, 4.5],
+    [7, -9, 3.5],
+  ];
+  for (const [fx, fy, r] of foam) {
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.arc(fx, fy + Math.sin(t * 1.5 + fx) * 0.5, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = alpha(accent, 0.9);
+  ctx.beginPath();
+  ctx.arc(-5, -8, 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/**
+ * A rubber frog, sitting.
+ *
+ * A rubber duck is the obvious squeaky bath toy and it is exactly what this
+ * cannot be: the Duck Ring already owns a duck head, and at thirty pixels two
+ * ducks are one duck. A frog keeps the bath, loses the collision, and its two
+ * eye bumps give it a silhouette nothing else in the set has.
+ */
+function drawSqueak(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {
+  // A gentle squash on the same beat as the squeak lines, so the toy looks
+  // like the thing making the noise.
+  const squash = Math.max(0, Math.sin(t * 1.3 * Math.PI * 2)) * 0.08;
+  ctx.save();
+  ctx.scale(1 + squash, 1 - squash);
+
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.ellipse(0, 3, 13, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Back feet, so it sits rather than floats.
+  ctx.fillStyle = body;
+  for (const dir of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(dir * 10, 11, 5, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Two eye bumps on top: the whole silhouette.
+  for (const dir of [-1, 1]) {
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.arc(dir * 5, -7, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(dir * 5, -7, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = PALETTE.kidOutline;
+    ctx.beginPath();
+    ctx.arc(dir * 5 + 0.8, -7, 1.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // A wide grin, because the toy's job is being more fun than the unicorn.
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(0, 1, 7, 0.25, Math.PI - 0.25);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
+ * A horseshoe magnet, opening RIGHT — toward the door everything comes from.
+ *
+ * The only U-shape on the board, and the one silhouette in the set that a
+ * child has already seen in a picture book. The steel tips are drawn a
+ * different colour from the body for the same reason the water gun's barrel
+ * is: the business end should be obvious at a glance.
+ */
+function drawMagnet(ctx: CanvasRenderingContext2D, body: string, accent: string, t: number): void {
+  ctx.save();
+  // A slow tilt, as though it is being held out and swept.
+  ctx.rotate(Math.sin(t * 1.1) * 0.08);
+
+  ctx.strokeStyle = body;
+  ctx.lineWidth = 7;
+  ctx.lineCap = 'butt';
+  ctx.beginPath();
+  ctx.arc(-1, 0, 9, -Math.PI / 2, Math.PI / 2, true);
+  ctx.stroke();
+
+  // The two poles, sticking out to the right.
+  for (const dir of [-1, 1]) {
+    ctx.fillStyle = body;
+    ctx.fillRect(-1, dir * 9 - 3.5, 9, 7);
+    ctx.fillStyle = accent;
+    ctx.fillRect(6, dir * 9 - 3.5, 5, 7);
+    ctx.strokeStyle = PALETTE.kidOutline;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(6, dir * 9 - 3.5, 5, 7);
+  }
+
+  ctx.restore();
 }
 
 function drawSweeper(ctx: CanvasRenderingContext2D, body: string, accent: string): void {

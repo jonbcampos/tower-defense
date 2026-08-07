@@ -364,11 +364,18 @@ function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolatio
       continue;
     }
 
+    // A shot that has been through a Bubble Bath is drawn half again as big,
+    // with a wobble. It is the only feedback the bath gives — the toy itself
+    // just sits there — so a player has to be able to see, in the lane, that
+    // the thing she built is doing something.
+    const grown = shot.boosted ? 1.6 : 1;
+
     if (shot.kind === 'bubble') {
+      const wobble = shot.boosted ? Math.sin(clock * 9 + shot.y) * 0.6 : 0;
       ctx.strokeStyle = PALETTE.shotBubble;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(x, shot.y, 4, 0, Math.PI * 2);
+      ctx.ellipse(x, shot.y, 4 * grown + wobble, 4 * grown - wobble, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.fillStyle = alpha(PALETTE.shotBubble, 0.28);
       ctx.fill();
@@ -377,7 +384,7 @@ function drawShots(ctx: CanvasRenderingContext2D, state: GameState, interpolatio
 
     ctx.fillStyle = shot.kind === 'water' ? PALETTE.shotWater : PALETTE.shotLight;
     ctx.beginPath();
-    ctx.ellipse(x, shot.y, 5, 2.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, shot.y, 5 * grown, 2.6 * grown, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = PALETTE.shotCore;
     ctx.fillRect(x - 1, shot.y - 1, 2, 2);
@@ -465,7 +472,10 @@ function drawKidsInLane(
 
       const fan = STACK_FAN[Math.min(depth, STACK_FAN.length - 1)]! * STACK_STEP;
       const x = enemy.prevX + (enemy.x - enemy.prevX) * interpolation;
-      drawKid(ctx, enemy, x, centre + fan, clock, state.isFogged(lane, colAtX(enemy.x)));
+      // `laneShift` is what is left of a slide into this row after a Squeaky
+      // Toy. She is already IN this lane as far as everything else is
+      // concerned; this only finishes drawing her arrival.
+      drawKid(ctx, enemy, x, centre + fan + enemy.laneShift, clock, state.isFogged(lane, colAtX(enemy.x)));
       drawn++;
     }
     previous = cutoff - 1e-9;

@@ -714,9 +714,16 @@ export const LEVELS: readonly Level[] = [
     id: 22,
     world: 'bathroom',
     name: 'Who Is That?',
-    teaches: 'A raincoat and a toddler look the same in the fog.',
-    unlocks: [],
-    recommended: ['jar', 'fan', 'wand', 'machine', 'fort', 'sprinkler', 'watergun'],
+    // Two lessons in one level, which is usually a mistake and is not one here:
+    // the fog means you cannot tell a Raincoat Kid from a Toddler until she is
+    // close, and the answer to a Raincoat Kid is bubbles. A toy that makes your
+    // bubbles twice the size is therefore the answer to NOT KNOWING — build for
+    // the worst case and it is still efficient against the ordinary one.
+    teaches: 'Send your bubbles through the bath and they come out huge.',
+    unlocks: ['soap'],
+    // The Pillow Fort makes way. Its job here was buying a wand time, and the
+    // bath does the same job by making the wand need less of it.
+    recommended: ['jar', 'fan', 'wand', 'machine', 'soap', 'sprinkler', 'watergun'],
     blocked: [],
     startSparkles: 250,
     waves: [
@@ -730,9 +737,13 @@ export const LEVELS: readonly Level[] = [
     id: 23,
     world: 'bathroom',
     name: 'Slippery Tiles',
-    teaches: 'Sock Sliders, arriving out of the steam.',
-    unlocks: [],
-    recommended: ['jar', 'fan', 'watergun', 'slushie', 'castle', 'machine', 'fort'],
+    // The Sock Slider is the one kid you cannot slow down — she slides over
+    // slime and the Slushie's chill does nothing. So this level answers the
+    // question a different way: if you cannot make her take longer, make her
+    // arrive somewhere you were ready for.
+    teaches: 'You cannot slow her down. You can send her sideways.',
+    unlocks: ['squeak'],
+    recommended: ['jar', 'fan', 'watergun', 'slushie', 'castle', 'squeak', 'machine'],
     blocked: [],
     startSparkles: 250,
     waves: [
@@ -780,9 +791,13 @@ export const LEVELS: readonly Level[] = [
     id: 26,
     world: 'bathroom',
     name: 'Big Coats, No View',
-    teaches: 'Tanks you cannot see coming.',
-    unlocks: [],
-    recommended: ['jar', 'fan', 'watergun', 'castle', 'powder', 'machine', 'sprinkler'],
+    // The Wagon Kid's shield is 150 points that have to come off before any of
+    // her 90 do, and in the fog you find out she is coming with about two
+    // seconds to spare. The magnet turns that from a problem into a formality —
+    // and does nothing whatever about the Puffy Coats beside her.
+    teaches: 'The magnet pulls a shield right off, three rows around it.',
+    unlocks: ['magnet'],
+    recommended: ['jar', 'fan', 'watergun', 'magnet', 'powder', 'machine', 'sprinkler'],
     blocked: [],
     startSparkles: 300,
     waves: [

@@ -5,7 +5,7 @@ plants, 26 zombies and 50 levels across 5 areas**; this is the equivalent for a
 bedroom full of toys, with the engineering cost written next to each entry so
 the cheap content can be told apart from the expensive content.
 
-**Today: 15 toys, 10 kids, 30 levels, 3 worlds, endless mode.** Everything below is a plan,
+**Today: 18 toys, 10 kids, 30 levels, 3 worlds, endless mode.** Everything below is a plan,
 not a promise.
 
 ## First, what of PvZ is actually signal
@@ -104,9 +104,9 @@ last lesson.
 
 | Toy | PvZ | Cost | Why it earns its place |
 |---|---|---|---|
-| Bubble Bath | Torchwood | **system** | Shots passing through it get bigger. The first toy that makes *placement order* matter. |
-| Squeaky Toy | Garlic | **system** | A kid who reaches it changes lane. Turns five lanes into a funnel. |
-| Magnet Wand | Magnet-shroom | **system** | Strips the Wagon Kid's shield and the Bucket Kid's bucket at range. |
+| Bubble Bath | Torchwood | **system** | **Built** (level 22) — bubbles through it come out double. The first toy that makes *placement order* matter. |
+| Squeaky Toy | Garlic | **system** | **Built** (level 23) — a kid who reaches it changes row, four times, then it wears out. |
+| Magnet Wand | Magnet-shroom | **system** | **Built** (level 26) — strips a shield within three rows, every ten seconds. |
 | Chomper Puppet | Chomper | small | Eats one kid whole, then chews for eight seconds and is helpless. |
 
 ## Kids
@@ -142,9 +142,9 @@ player experiences.
 2. ~~Endless mode~~ — **done**. Waves survived is the score; a competent bot
    reaches about wave 50 on EASY and 31 on HARD.
 3. ~~World 3, Bath Time~~ — **done**, levels 21–30.
-4. **The verb toys.** Bubble Bath, Squeaky Toy, Magnet Wand. These are the ones
-   that make the loadout a real decision, and they are worth more than another
-   ten levels of the same choices.
+4. ~~The verb toys~~ — **done**. Bubble Bath, Squeaky Toy and Magnet Wand, taught
+   on levels 22, 23 and 26 respectively. Those three levels unlocked nothing
+   before, which made the bathroom ten levels long with one new card in it.
 5. **World 4, The Attic**, which needs the Shelf and the Lobber.
 6. **World 5, The Treehouse**, and the Big Sister.
 

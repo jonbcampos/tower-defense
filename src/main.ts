@@ -442,6 +442,21 @@ function presentEvent(event: GameEvent): void {
       audio.play('sweeper');
       particles.laneSweep(event.y, 0, 640, '#7ee6a8', random);
       break;
+    case 'boost':
+      // Quiet and only sometimes, exactly like 'shoot'. A bath in front of a
+      // Bubble Machine boosts three bubbles a second, and three of anything a
+      // second is a drone rather than a signal.
+      if (random() < 0.35) audio.play('boost');
+      particles.bubblePop(event.x, event.y, random);
+      break;
+    case 'divert':
+      audio.play('squeak');
+      particles.place(event.x, event.y, random);
+      break;
+    case 'magnet':
+      audio.play('magnet');
+      particles.toyLost(event.x, event.y, '#a06a44', random);
+      break;
     case 'throw':
       audio.play('shield');
       break;

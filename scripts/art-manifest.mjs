@@ -228,6 +228,39 @@ const BASE_PIECES = [
       'glossy highlight on the upper left, resting on the ground. ' +
       'Silhouette: a plain circle — the only perfectly round object in the set.',
   },
+  // The verb toys. These three do nothing on their own, so each one's picture
+  // has to say what it acts ON — the bath is full of bubbles, the magnet is
+  // obviously metal, the frog is obviously squeezable.
+  {
+    id: 'soap',
+    aspect: '1:1',
+    subject:
+      'a small wide oval bath tub heaped with a mound of white soap foam, with three or four ' +
+      'iridescent soap bubbles drifting up off the top of the lather. Low and WIDE — twice as ' +
+      'wide as it is tall — and sitting flat on the ground. ' +
+      'Silhouette: a low flat tub with a cloud of bubbles on top. No duck, no character, no face.',
+  },
+  {
+    id: 'squeak',
+    aspect: '1:1',
+    // Explicitly not a duck: the Duck Ring already owns that outline, and at
+    // thirty pixels two yellow bath birds are one yellow bath bird.
+    subject:
+      'a squeaky rubber bath toy shaped like a cheerful mint-green FROG, sitting, seen from the ' +
+      'front: a round soft body, two big round eye bumps rising from the top of its head with ' +
+      'black dot pupils, a wide friendly grin, and two little back feet. It is a moulded rubber ' +
+      'toy, glossy, with a highlight. NOT a duck and NOT a bird. ' +
+      'Silhouette: a round blob with two bumps on top.',
+  },
+  {
+    id: 'magnet',
+    aspect: '1:1',
+    subject:
+      'a classic toy horseshoe magnet, painted bright red, lying with its two poles pointing to ' +
+      'the RIGHT, the tips of both poles bare polished silver steel. A few small curved motion ' +
+      'lines in front of the tips suggesting a pull. ' +
+      'Silhouette: a bold letter U lying on its side, opening to the right. No face, no character.',
+  },
   {
     // Faces RIGHT with the toys, not left with the kids: he is on your side.
     id: 'bear',

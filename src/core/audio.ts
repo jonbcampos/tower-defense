@@ -40,6 +40,9 @@ export type Sfx =
   | 'light'
   | 'powder'
   | 'sweeper'
+  | 'boost'
+  | 'squeak'
+  | 'magnet'
   | 'squeeze'
   | 'win'
   | 'lose';
@@ -169,6 +172,25 @@ export class Audio {
       case 'sweeper':
         this.noise(t, 0.35, 0.18, 2600, 500);
         this.tone('triangle', 760, 1200, t, 0.2, 0.16);
+        break;
+      case 'boost':
+        // A bubble going through the bath and coming out big: the bubble sound
+        // an octave down and twice as long. Deliberately the SAME sound family
+        // as an ordinary bubble, because that is the point being made.
+        this.noise(t, 0.07, 0.05, 700, 1400);
+        this.tone('sine', 310, 470, t, 0.09, 0.09);
+        break;
+      case 'squeak':
+        // Two rubber squeaks, up then down. The only comedy sound in the game,
+        // and it should be — a kid has just been completely distracted.
+        this.tone('square', 1100, 1500, t, 0.06, 0.13);
+        this.tone('square', 1400, 900, t + 0.07, 0.08, 0.11);
+        break;
+      case 'magnet':
+        // A metallic snatch: a short rasp with a bright ping on top, so it is
+        // audibly something being TAKEN rather than something breaking.
+        this.noise(t, 0.09, 0.1, 3000, 1200);
+        this.tone('square', 380, 1300, t, 0.1, 0.12);
         break;
       case 'squeeze':
         // A cuddle that went too far: a squeak, then a descending sigh.

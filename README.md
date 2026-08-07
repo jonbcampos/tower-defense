@@ -22,7 +22,7 @@ enough that whatever your toys are doing is more interesting than you are.
 | **Wagon Kid** | A cardboard shield comes off first | Sustained damage |
 | **The Big Kid** | Throws a stuffie that destroys a toy; half damage from bubbles | Everything you know |
 
-Fifteen levels across two worlds, a new toy every level or two, and a **Guard Bear** sitting at the end of every lane —
+Thirty levels across three worlds, a new toy every level or two, and a **Guard Bear** sitting at the end of every lane —
 the first kid to reach the cushion in a lane gets swept into an enormous hug by the bear instead
 of squeezing you, and the two of them wander off together. One bear per lane, once each.
 
@@ -267,8 +267,8 @@ that kid keeps its still image and the procedural gait. Nothing has to be true f
 
 ## Status
 
-Playable end to end: **thirty levels across three worlds**, an **endless mode**, fifteen toys, ten kids, three
+Playable end to end: **thirty levels across three worlds**, an **endless mode**, eighteen toys, ten kids, three
 difficulties, saved progress and stars, an in-game guide, and the screen stays awake while you
-play. All 214 trials and every design contract pass.
+play. All 217 trials and every design contract pass.
 
 Every toy and kid has painted art.

@@ -381,6 +381,18 @@ export interface Enemy {
   lastHit: DamageKind;
   /** Set while standing still to grab the toy in front. */
   grabbing: boolean;
+  /**
+   * Pixels a kid is drawn ABOVE or BELOW her row while she finishes changing
+   * rows, decaying to zero. Presentation, but it lives here for the same reason
+   * `hurt` does: the renderer is not allowed to hold per-kid state.
+   *
+   * A Squeaky Toy changes `lane` in one frame, and without this she teleports a
+   * whole row. A five-year-old tracking one child across a board cannot follow
+   * a jump — she reads it as "a different kid appeared", which is exactly the
+   * wrong lesson from a toy whose whole job is redirecting the one she was
+   * watching.
+   */
+  laneShift: number;
   /** Furthest-left column reached, for the two-star rule. */
   deepestCol: number;
   active: boolean;
@@ -411,6 +423,7 @@ export class EnemyField {
     item.hurt = 0;
     item.lastHit = 'none';
     item.grabbing = false;
+    item.laneShift = 0;
     item.deepestCol = COL_BEYOND_BOARD;
     item.active = true;
     return item;
@@ -460,6 +473,7 @@ function blankEnemy(): Enemy {
     hurt: 0,
     lastHit: 'none',
     grabbing: false,
+    laneShift: 0,
     deepestCol: COL_BEYOND_BOARD,
     active: false,
   };

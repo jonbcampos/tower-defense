@@ -28,6 +28,9 @@ export type ToyId =
   | 'slushie'
   | 'beachball'
   | 'fan'
+  | 'soap'
+  | 'squeak'
+  | 'magnet'
   | 'sweeper';
 
 /**
@@ -42,6 +45,17 @@ export type ToyId =
  */
 export type DamageKind = 'water' | 'bubble' | 'powder' | 'light' | 'none';
 
+/**
+ * What a toy is FOR, at a glance.
+ *
+ * `wall` has quietly become "a placed toy that is none of the other four" —
+ * the Duck Ring, the Little Fan and now all three verb toys are `wall` and not
+ * one of them is a wall. That is deliberate rather than sloppy: the role is
+ * read in exactly two places (instants skip the occupancy check, and the good
+ * bot fills spare cells with `walls[0]`), and both of those want "a thing you
+ * put down and leave alone". A sixth role would need a rule in both, and the
+ * rule would be identical.
+ */
 export type ToyRole = 'producer' | 'shooter' | 'wall' | 'floor' | 'instant';
 
 /**
@@ -107,6 +121,39 @@ export interface ToyDef {
 
   /** Floor tiles: what they multiply a kid's speed by while it stands on them. */
   slow?: { factor: number };
+
+  /**
+   * Shots of `kind` that fly THROUGH this cell come out `multiply` times
+   * bigger. The Bubble Bath, and the first toy in the game whose value depends
+   * on where the OTHER toys are.
+   *
+   * Keyed on a damage kind rather than applying to everything, for the same
+   * reason immunity is: "the bath makes bubbles bigger" is a rule a child can
+   * hold, and it means the bath is a reason to build a Bubble Wand rather than
+   * a flat multiplier on whatever you already had. A shot is boosted at most
+   * once — see `Shot.boosted` — so a row of baths is a row of wasted cells.
+   */
+  boost?: { kind: DamageKind; multiply: number };
+
+  /**
+   * A kid who reaches this cell is sent to a neighbouring row instead of
+   * stopping to pull the toy apart, and takes `bite` off it on the way past.
+   *
+   * The Squeaky Toy. It is the only thing in the game that moves a kid sideways,
+   * which is what makes five separate lanes into one board: you can decide
+   * which row the fight happens in rather than defending all five.
+   */
+  divert?: { bite: number };
+
+  /**
+   * Rips the armour off anything armoured within reach, every `interval`
+   * seconds. The Magnet Wand.
+   *
+   * `lanes: 3` and a column `range` rather than "down its own row forever",
+   * because a magnet that only reached in a straight line would be a worse
+   * shooter. What it is buying is a shape no shooter has.
+   */
+  magnet?: { interval: number; lanes: number; range: number };
 
   /**
    * Blows the bathroom's steam out of its own lane, permanently.
@@ -429,6 +476,82 @@ export const TOYS: Record<ToyId, ToyDef> = {
     accent: '#fff3c4',
   },
 
+  /**
+   * The verb toys.
+   *
+   * Everything above this line answers the question "what kills that kid".
+   * These three answer "what makes the toys I already own better", which is a
+   * different kind of card and the reason the tray grew to seven slots. None of
+   * them deals a point of damage, so none of them counts as an ANSWER to
+   * anything — a level that recommends one still has to be winnable by the toy
+   * next to it, and the contracts enforce exactly that.
+   */
+  soap: {
+    id: 'soap',
+    name: 'Bubble Bath',
+    // Says where to put it, because that is the entire toy. "In front" means
+    // nearer the door, which is the direction everything shoots.
+    // Under 65 characters, like every other blurb. The two long ones ran to the
+    // edge of the guide card, which reads as a layout bug rather than as a
+    // longer sentence — and this one still has to say WHERE to put it, which is
+    // the whole toy, so the rest had to give.
+    blurb: 'Bubbles that fly through it come out huge. Put it in front.',
+    role: 'wall',
+    layer: 'ground',
+    // The price of a Water Gun, and it shoots nothing. What you are buying is a
+    // second Bubble Wand for fifty sparkles less than a Bubble Wand — but only
+    // if you already own one, and only if it is in the right cell.
+    cost: 100,
+    recharge: 0,
+    // Tougher than a Pillow Fort, because it stands in FRONT of the shooter it
+    // is helping and therefore meets every kid first. A boost toy that died
+    // before the toy it boosts would be a trap rather than a decision.
+    hp: 450,
+    boost: { kind: 'bubble', multiply: 2 },
+    hitsAir: false,
+    color: '#cfe8ff',
+    accent: '#ffffff',
+  },
+
+  squeak: {
+    id: 'squeak',
+    name: 'Squeaky Toy',
+    blurb: 'Too interesting to walk past. Whoever finds it changes row.',
+    role: 'wall',
+    layer: 'ground',
+    cost: 75,
+    recharge: 0,
+    // 200 health and a 50-point bite: four kids, then it has been squeaked to
+    // death. A number rather than a counter so it is chewable like everything
+    // else — a kid who stops in the row BEHIND it can still eat it normally.
+    hp: 200,
+    divert: { bite: 50 },
+    hitsAir: false,
+    color: '#66d9a0',
+    accent: '#ff8f5e',
+  },
+
+  magnet: {
+    id: 'magnet',
+    name: 'Magnet Wand',
+    blurb: 'Yanks a wagon shield clean off, up to three rows around it.',
+    role: 'wall',
+    layer: 'ground',
+    cost: 125,
+    // Eight seconds, so you cannot answer a wave of Wagon Kids by carpeting the
+    // board the moment they appear.
+    recharge: 8,
+    hp: 180,
+    // Ten seconds between pulls against a shield that takes a Water Gun seven
+    // and a half to chew through. It is a shortcut, not a replacement — and it
+    // does nothing at all in a level with no armour in it, which is why a
+    // contract refuses to let one be recommended in a level without any.
+    magnet: { interval: 10, lanes: 3, range: 4 },
+    hitsAir: false,
+    color: '#e0554a',
+    accent: '#dfe6ee',
+  },
+
   sweeper: {
     id: 'sweeper',
     name: 'Guard Bear',
@@ -468,6 +591,9 @@ export const TOY_ORDER: readonly ToyId[] = [
   'beachball',
   // Bathroom.
   'fan',
+  'soap',
+  'squeak',
+  'magnet',
 ];
 
 /** Damage per second a shooter lands on a single kid standing in front of it. */

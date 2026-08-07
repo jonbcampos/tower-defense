@@ -1055,3 +1055,85 @@ played for a week, which is the worst time to find it.
 **Revisit if:** worlds four and five want an eighth and ninth. Seven cards reach
 x=374 on the narrowest 480px frame, so there is room for one more and then the
 purse readout has to move.
+
+## 47. Three toys that do nothing on their own
+
+The bathroom shipped ten levels and unlocked one card, and that card was the
+Little Fan on the way in. Ten levels with nothing new in them is the longest
+flat stretch in the game, and it happened because the roster had run out of the
+easy kind of content: another shooter is another number, and the board already
+had five of them.
+
+The three toys added here are the other kind. A **Bubble Bath** makes bubbles
+that fly through it twice the size. A **Squeaky Toy** sends the kid who finds it
+into a neighbouring row. A **Magnet Wand** pulls the armour off anything
+armoured within three rows. None of them deals a point of damage, and that is
+the point: they are the first cards whose value depends on what is *next to*
+them, so the tray that grew to seven slots in decision 46 finally has seven
+things worth arguing about.
+
+They cost more to build than a shooter would have, in exactly one place each —
+a boost flag on the shot, a lane change on the kid, a timer on the toy — and
+nothing else in the engine moved.
+
+### Why they are all `role: 'wall'`
+
+Because `wall` had already stopped meaning wall. The Duck Ring is a `wall`, the
+Little Fan is a `wall`, and neither is one. The role is read in two places
+(instants skip the occupancy check; the good bot fills spare cells with
+`walls[0]`) and both of them want "a thing you put down and leave alone". A
+sixth role would need an identical rule in both.
+
+### The contracts that came with them
+
+Every existing contract is blind to a toy that deals no damage, so all three
+could have shipped doing nothing at all and the suite would have stayed green.
+Four new ones close that:
+
+- a boost has to name a damage kind something in the game actually fires;
+- a level that deals a Bubble Bath has to deal something that fires bubbles;
+- a level that deals a Magnet Wand has to contain something armoured;
+- a divert toy's health has to survive at least two kids, or it is an instant
+  wearing a wall's clothes.
+
+The middle two are the ones that will actually fire. A dead card is worse than
+a missing one — it costs a slot *and* teaches that the toy is useless.
+
+### And a trial each
+
+For the same reason. The campaign never *requires* one of these, so every
+"is this level winnable" trial passes whether they work or not. The three new
+trials are the only thing standing between a broken verb and a silent ship.
+
+One of them was wrong first, and instructively: it held references to six
+pooled `Enemy` objects and counted their lanes at the end. It under-counted by
+half, because the level's own waves keep running and a kid who walks off frees
+her slot for a spawn that lands back in the lane being measured. A pooled object
+is not an identity. It counts `divert` events now.
+
+**Revisit if:** a fourth verb toy needs a field on `ToyDef` that is really a
+function. Three optional record fields is the limit of what a data table can
+carry before it is a class hierarchy in disguise — see decision 18.
+
+## 48. A kid who changes row has to be seen to move
+
+The Squeaky Toy changes `enemy.lane` in one frame, and the renderer draws kids
+at their lane's centre, so the first version teleported her a whole row.
+
+A five-year-old tracking one child across five rows cannot follow a jump. She
+reads it as *a different kid appeared* — which is precisely the wrong lesson
+from a toy whose entire job is redirecting the one she was watching.
+
+`Enemy.laneShift` holds what is left of the slide, in pixels, and decays to zero
+over `LANE_SHIFT_SECONDS`. It lives on the simulation object rather than in the
+renderer for the same reason `hurt` does: the renderer is not allowed to hold
+per-kid state, and a decay driven by the simulation clock stays in step through
+hitstop and pauses.
+
+A third of a second, and not more. Any longer and she is drawn between two rows
+while a toy in the new one is already shooting at her, which reads as the shot
+missing.
+
+**Revisit if:** something else moves a kid sideways — the Treehouse's trapdoor
+would. Two things setting one offset field is fine; three means it wants to be
+a small tween helper.

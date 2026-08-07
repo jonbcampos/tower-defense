@@ -331,6 +331,17 @@ export const STEAM_FROM_COL = 5;
 
 export const SLUSH_FACTOR = 0.62;
 
+/**
+ * How long a kid takes to visibly slide across after a Squeaky Toy has sent
+ * her into the next row.
+ *
+ * Long enough to be a movement and not a teleport; short enough that she is
+ * back on her row before she meets anything in it. Anything over about half a
+ * second and she is drawn between two rows while a toy in the new one is
+ * already shooting at her, which reads as the shot missing.
+ */
+export const LANE_SHIFT_SECONDS = 0.32;
+
 export const KILL_SAFETY = 0.65;
 export const KILL_MARGIN = 1.25;
 

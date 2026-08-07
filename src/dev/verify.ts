@@ -763,6 +763,163 @@ function damageOverBoss(toy: ToyId, level: Level): number {
   return before - boss.hp;
 }
 
+// --- The verb toys ----------------------------------------------------------
+//
+// Each of these three changes what a DIFFERENT toy does, which means none of
+// them is covered by "is this level winnable" — a level stays winnable whether
+// the verb toy works or not, because the campaign never requires one. Without a
+// trial apiece, all three could silently do nothing.
+
+/**
+ * A bubble that flies through a Bubble Bath hits twice as hard.
+ *
+ * Measured as a ratio between two otherwise identical runs rather than against
+ * an absolute number, so retuning the Bubble Wand cannot break this.
+ */
+function trialBathBoostsBubbles(): TrialResult {
+  const level = levelById(22);
+  const plain = damageWithHelper(level, null);
+  const boosted = damageWithHelper(level, 'soap');
+  const ratio = plain > 0 ? boosted / plain : 0;
+  const want = TOYS.soap.boost!.multiply;
+  return {
+    trial: 'a Bubble Bath doubles the bubbles that pass through it',
+    level: '22 Who Is That?',
+    difficulty: 'normal',
+    detail: `8s of one Bubble Wand landed ${plain.toFixed(0)} alone and ${boosted.toFixed(
+      0,
+    )} through a bath — ${ratio.toFixed(2)}x, want about ${want}x`,
+    // A band rather than an equality: the two runs can differ by one in-flight
+    // bubble at the moment the clock stops, and a trial that fails on that is a
+    // trial that gets deleted rather than read.
+    pass: plain > 0 && ratio > want * 0.8 && ratio <= want * 1.15,
+  };
+}
+
+/** One shooter in lane 2 column 0, optionally with a helper in column 1. */
+function damageWithHelper(level: Level, helper: ToyId | null): number {
+  const state = new GameState();
+  state.start(level, 'normal', level.recommended, 21);
+  const enemy = state.enemies.spawn('puffy', 2, 4)!;
+  // Parked at the far end, so it never reaches the toys and the only variable
+  // is what happens to the bubbles on the way.
+  enemy.x = cellCentreX(COL_COUNT - 1);
+  const before = enemy.hp;
+  state.toys.place('wand', 2, 0, 0);
+  if (helper) state.toys.place(helper, 2, 1, 0);
+  let t = 0;
+  while (t < 8) {
+    enemy.x = cellCentreX(COL_COUNT - 1);
+    state.update(FIXED_DT);
+    state.drainEvents(() => {});
+    t += FIXED_DT;
+  }
+  return before - enemy.hp;
+}
+
+/**
+ * A Squeaky Toy moves kids into another row, and wears out doing it.
+ *
+ * Both halves matter. A toy that redirects forever is a wall that never breaks,
+ * and this is the one toy in the game a kid does not stop to chew — so its
+ * health has to come off somewhere or a single squeaky toy holds a lane for the
+ * rest of the level.
+ */
+function trialSqueakRedirectsThenWearsOut(): TrialResult {
+  const level = levelById(23);
+  const state = new GameState();
+  state.start(level, 'normal', level.recommended, 22);
+  state.toys.place('squeak', 2, 4, 0);
+
+  for (let i = 0; i < 6; i++) {
+    const kid = state.enemies.spawn('toddler', 2, 1);
+    if (kid) kid.x = cellCentreX(COL_COUNT - 1) + i * 30;
+  }
+
+  // Counted from the EVENTS, not by looking at the kids afterwards.
+  //
+  // The first version of this held references to the six pooled `Enemy`
+  // objects and checked their lanes at the end, and it under-counted by half:
+  // the level's own waves are running the whole time, and a kid who has walked
+  // off the board frees her slot for a spawn that lands back in lane 2. A
+  // pooled object is not an identity, and a trial that treats it as one is
+  // measuring the pool rather than the game.
+  let diverted = 0;
+  let intoLaneTwo = 0;
+  let t = 0;
+  while (t < 40 && state.phase === 'playing') {
+    state.update(FIXED_DT);
+    state.drainEvents((event) => {
+      if (event.type !== 'divert') return;
+      diverted += 1;
+      if (event.lane === 2) intoLaneTwo += 1;
+    });
+    t += FIXED_DT;
+  }
+
+  const gone = state.toys.at(2, 4) === null;
+  const capacity = Math.floor(TOYS.squeak.hp / TOYS.squeak.divert!.bite);
+  return {
+    trial: 'a Squeaky Toy redirects a few kids and then is squeaked to bits',
+    level: '23 Slippery Tiles',
+    difficulty: 'normal',
+    detail: `sent ${diverted} kids out of lane 2 (${intoLaneTwo} wrongly back into it), and the toy ${
+      gone ? 'wore out' : 'is still there'
+    } after ${t.toFixed(0)}s — it should hold exactly ${capacity}`,
+    pass: diverted === capacity && intoLaneTwo === 0 && gone,
+  };
+}
+
+/**
+ * The magnet takes the shield and leaves the kid, from a neighbouring row.
+ *
+ * Deliberately placed one lane over. Reaching across rows is the whole reason
+ * it is worth a cell rather than being a worse Water Gun.
+ */
+function trialMagnetStripsArmour(): TrialResult {
+  const level = levelById(26);
+  const state = new GameState();
+  state.start(level, 'normal', level.recommended, 23);
+  const wagon = state.enemies.spawn('wagon', 2, 1)!;
+  wagon.x = cellCentreX(4);
+  const shieldBefore = wagon.shield;
+  const hpBefore = wagon.hp;
+  state.toys.place('magnet', 1, 2, 0);
+
+  let t = 0;
+  while (t < 2 && wagon.shield > 0) {
+    wagon.x = cellCentreX(4);
+    state.update(FIXED_DT);
+    state.drainEvents(() => {});
+    t += FIXED_DT;
+  }
+
+  // And it does NOT reach four rows away, which is what stops it being a
+  // board-wide "no armour in this level" button.
+  const far = new GameState();
+  far.start(level, 'normal', level.recommended, 24);
+  const distant = far.enemies.spawn('wagon', 4, 1)!;
+  distant.x = cellCentreX(4);
+  far.toys.place('magnet', 0, 2, 0);
+  let ft = 0;
+  while (ft < 2) {
+    distant.x = cellCentreX(4);
+    far.update(FIXED_DT);
+    far.drainEvents(() => {});
+    ft += FIXED_DT;
+  }
+
+  return {
+    trial: 'a Magnet Wand takes the shield, leaves the kid, and cannot reach four rows',
+    level: '26 Big Coats, No View',
+    difficulty: 'normal',
+    detail: `one row over: shield ${shieldBefore} -> ${wagon.shield} in ${t.toFixed(
+      2,
+    )}s, health ${hpBefore} -> ${wagon.hp}; four rows over: shield still ${distant.shield}`,
+    pass: wagon.shield === 0 && wagon.hp === hpBefore && distant.shield === shieldBefore,
+  };
+}
+
 // --- Runner -----------------------------------------------------------------
 
 /**
@@ -828,6 +985,9 @@ export function verify(): TrialResult[] {
   results.push(trialStarsAreMonotone());
   results.push(trialSaveSurvivesHostility());
   results.push(trialBossResistsBubbles());
+  results.push(trialBathBoostsBubbles());
+  results.push(trialSqueakRedirectsThenWearsOut());
+  results.push(trialMagnetStripsArmour());
   for (const id of DIFFICULTY_ORDER) results.push(trialEndlessEnds(id));
 
   const failed = results.filter((r) => !r.pass);

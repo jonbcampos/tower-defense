@@ -25,6 +25,7 @@ import {
   JUICE,
   KILL_MARGIN,
   KILL_SAFETY,
+  LANE_SHIFT_SECONDS,
   loadoutSlotsFor,
   SLUSH_FACTOR,
   STEAM_FROM_COL,
@@ -42,7 +43,7 @@ import {
   type Difficulty,
   type DifficultyId,
 } from './config';
-import { applyDamage, isTargetable, ShotPool, enemyHalfWidth } from './combat';
+import { applyDamage, isTargetable, ShotPool, enemyHalfWidth, type Shot } from './combat';
 import { SparkleField } from './economy';
 import {
   COL_BEYOND_BOARD,
@@ -86,6 +87,9 @@ export type GameEventType =
   | 'nightlight'
   | 'powder'
   | 'sweeper'
+  | 'boost'
+  | 'divert'
+  | 'magnet'
   | 'throw'
   | 'squeeze'
   | 'win'
@@ -550,6 +554,17 @@ export class GameState {
         if (toy.timer > 0) toy.timer -= dt;
         if (toy.timer > 0) continue;
         if (this.fireAt(toy, def.shoot.lanes)) toy.timer = def.shoot.interval;
+        continue;
+      }
+
+      // The magnet holds its charge exactly like a shooter holds its reload:
+      // the timer only restarts when there was something to pull, so a wand
+      // sitting in an empty lane is fully charged the instant armour arrives
+      // rather than a random fraction of ten seconds away from being useful.
+      if (def.magnet) {
+        if (toy.timer > 0) toy.timer -= dt;
+        if (toy.timer > 0) continue;
+        if (this.pullArmour(toy, def.magnet)) toy.timer = def.magnet.interval;
       }
     }
 
@@ -593,6 +608,37 @@ export class GameState {
 
     if (fired) this.emit('shoot', cellCentreX(toy.col), laneCentreY(toy.lane), 0, toy.lane);
     return fired;
+  }
+
+  /**
+   * The Magnet Wand's pull. Returns true if it found something to take.
+   *
+   * It strips the armour and leaves the kid — a Wagon Kid with her shield
+   * yanked off is still a Wagon Kid walking at you, which is the difference
+   * between a support toy and a delete button. Nearest first, so a magnet
+   * behind a queue helps with the queue's front rather than its back.
+   *
+   * Hiding does not protect you. A magnet does not need to see a bucket to
+   * pull it, and the alternative — a Blanket Kid whose armour is safe until
+   * she peeks — is a rule with no way of being noticed.
+   */
+  private pullArmour(toy: Toy, magnet: { lanes: number; range: number }): boolean {
+    const fromX = cellCentreX(toy.col);
+    const span = magnet.lanes > 1 ? (magnet.lanes - 1) / 2 : 0;
+    const reach = magnet.range * CELL_W;
+    let target: Enemy | null = null;
+    for (const enemy of this.enemies.items) {
+      if (!enemy.active || enemy.shield <= 0) continue;
+      if (Math.abs(enemy.lane - toy.lane) > span) continue;
+      const away = enemy.x - fromX;
+      if (away < 0 || away > reach) continue;
+      if (!target || enemy.x < target.x) target = enemy;
+    }
+    if (!target) return false;
+    target.shield = 0;
+    target.hurt = 0.14;
+    this.emit('magnet', target.x, laneCentreY(target.lane), 0, target.lane);
+    return true;
   }
 
   private hasTargetIn(lane: number, fromX: number, _kind: string, seesHidden: boolean): boolean {
@@ -641,6 +687,12 @@ export class GameState {
         continue;
       }
 
+      // A Bubble Bath the shot is passing over. Checked BEFORE the hit test, so
+      // a bubble that arrives at the bath and the kid on the same frame lands
+      // at its boosted size — the alternative loses the boost precisely when a
+      // kid is standing right on top of the toy you built it for.
+      if (!shot.boosted) this.boostThrough(shot);
+
       let target: Enemy | null = null;
       for (const enemy of this.enemies.items) {
         if (!isTargetable(enemy, shot)) continue;
@@ -675,6 +727,62 @@ export class GameState {
     }
   }
 
+  /**
+   * Make a shot bigger if it is flying over a Bubble Bath that likes its kind.
+   *
+   * The cell is found from where the shot IS rather than from the cells it has
+   * crossed since last frame, which is safe only because the fastest shot in
+   * the game moves 1.5px in a 1/120s step and a cell is 44px wide. If a shot
+   * ever gets fast enough to skip a cell this has to become a sweep — a boost
+   * that silently stops working for one toy is far worse than one that never
+   * worked at all.
+   */
+  private boostThrough(shot: Shot): void {
+    const col = colAtX(shot.x);
+    if (col < 0 || col >= COL_COUNT) return;
+    const toy = this.toys.at(shot.lane, col);
+    if (!toy) return;
+    const boost = TOYS[toy.id].boost;
+    if (!boost || boost.kind !== shot.kind) return;
+    shot.damage *= boost.multiply;
+    shot.boosted = true;
+    this.emit('boost', shot.x, laneCentreY(shot.lane), 0, shot.lane);
+  }
+
+  /**
+   * Send a kid into a neighbouring row, and take a bite out of the toy that
+   * did it.
+   *
+   * The destination excludes any row whose cell at this column ALSO holds a
+   * squeaky toy, which is what stops two of them in adjacent rows batting a
+   * kid back and forth forever. With nowhere to send her the toy does nothing
+   * at all and she eats it like any other wall, which is the correct outcome:
+   * the player built two toys that cancel, and the game should show her that
+   * rather than hide it behind a special case.
+   */
+  private divert(enemy: Enemy, toy: Toy, bite: number): boolean {
+    const options: number[] = [];
+    for (const lane of [toy.lane - 1, toy.lane + 1]) {
+      if (lane < 0 || lane >= LANE_COUNT) continue;
+      const neighbour = this.toys.at(lane, toy.col);
+      if (neighbour && TOYS[neighbour.id].divert) continue;
+      options.push(lane);
+    }
+    if (options.length === 0) return false;
+
+    const to = options[Math.floor(this.rng.next() * options.length)]!;
+    // The offset is measured from the OLD row, so she slides across from where
+    // she was rather than appearing part-way and drifting.
+    enemy.laneShift = (enemy.lane - to) * CELL_H;
+    enemy.lane = to;
+    this.emit('divert', enemy.x, laneCentreY(to), 0, to);
+
+    toy.hp -= bite;
+    toy.hurt = 0.2;
+    if (toy.hp <= 0) this.destroyToy(toy);
+    return true;
+  }
+
   private updateEnemies(dt: number): void {
     for (const enemy of this.enemies.items) {
       if (!enemy.active) continue;
@@ -684,6 +792,17 @@ export class GameState {
 
       if (def.behaviour === 'throws') this.updateThrower(enemy, dt);
 
+      // The slide across after being sent into another row. Purely visual, and
+      // decayed here rather than in the renderer so it keeps step with the
+      // simulation clock through hitstop and pauses.
+      if (enemy.laneShift !== 0) {
+        const step = (CELL_H / LANE_SHIFT_SECONDS) * dt;
+        enemy.laneShift =
+          enemy.laneShift > 0
+            ? Math.max(0, enemy.laneShift - step)
+            : Math.min(0, enemy.laneShift + step);
+      }
+
       // Grab the toy directly in front, if there is one. Floaters never do.
       enemy.grabbing = false;
       if (!def.aerial) {
@@ -692,7 +811,11 @@ export class GameState {
           // The ring counts as something to pull at, so a lone Duck Ring is not
           // an invisible wall a kid walks straight through.
           const toy = this.toys.at(enemy.lane, frontCol) ?? this.toys.floatAt(enemy.lane, frontCol);
-          if (toy) {
+          const bite = toy ? TOYS[toy.id].divert?.bite : undefined;
+          if (toy && bite !== undefined && this.divert(enemy, toy, bite)) {
+            // Diverted: she does not stop, and she does not chew. She has found
+            // something better to do and is already on her way to the next row.
+          } else if (toy) {
             enemy.grabbing = true;
             toy.hp -= def.grabDps * dt;
             toy.hurt = 0.12;
@@ -957,8 +1080,68 @@ export function validateDesignContracts(): string[] {
     );
   }
 
+  // --- The verb toys, which are only worth a slot next to something else ---
+  //
+  // None of these three deals damage, so every existing contract is blind to
+  // them: a level could deal a Bubble Bath and no bubbles, or a Magnet Wand in
+  // a level with nothing armoured in it, and every other check would pass while
+  // the card sat in the tray doing nothing. A dead card is worse than a missing
+  // one — it costs a slot AND teaches that the toy is useless.
+  for (const toy of Object.values(TOYS)) {
+    if (toy.boost) {
+      const kind = toy.boost.kind;
+      check(
+        Object.values(TOYS).some((other) => other.shoot?.kind === kind),
+        `${toy.name} makes ${kind} shots bigger and nothing in the game fires ${kind}`,
+      );
+      check(
+        toy.boost.multiply > 1,
+        `${toy.name} multiplies ${kind} by ${toy.boost.multiply} — that is not a boost`,
+      );
+    }
+    if (toy.divert) {
+      // Two kids minimum, or it is a 75-sparkle way of moving one child one row.
+      check(
+        toy.hp / toy.divert.bite >= 2,
+        `${toy.name} has ${toy.hp} health and loses ${toy.divert.bite} per kid, so it redirects ${Math.floor(
+          toy.hp / toy.divert.bite,
+        )} — a one-use toy needs to be an instant`,
+      );
+    }
+    if (toy.magnet) {
+      check(
+        Object.values(ENEMIES).some((enemy) => enemy.shield !== undefined),
+        `${toy.name} strips armour and no kid in the game wears any`,
+      );
+    }
+  }
+
   // --- Level by level, difficulty by difficulty ---
   for (const level of LEVELS) {
+    // A verb toy is only a card if the thing it acts on is in the same hand.
+    for (const id of level.recommended) {
+      const boost = TOYS[id].boost;
+      if (boost) {
+        check(
+          level.recommended.some((other) => TOYS[other].shoot?.kind === boost.kind),
+          `level ${level.id} deals a ${TOYS[id].name} and nothing that fires ${boost.kind} — the card cannot do anything`,
+        );
+      }
+      if (TOYS[id].magnet) {
+        check(
+          enemiesIn(level).some((kind) => ENEMIES[kind].shield !== undefined),
+          `level ${level.id} deals a ${TOYS[id].name} and no kid in it wears armour — the card cannot do anything`,
+        );
+      }
+      if (TOYS[id].divert) {
+        // Somewhere to send them. One open lane is a squeaky toy that squeaks.
+        check(
+          LANE_COUNT >= 2,
+          `level ${level.id} deals a ${TOYS[id].name} on a ${LANE_COUNT}-lane board`,
+        );
+      }
+    }
+
     // A level cannot deal more cards than the tray holds at that point in the
     // campaign. The slot count grows at world boundaries, so this is the one
     // contract that would otherwise only fail for a player far enough in to
