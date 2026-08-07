@@ -993,3 +993,38 @@ into the backdrop would have stood on the board forever.
 **Revisit if:** a world genuinely needs a patterned floor. The answer then is to
 draw the pattern in code as a tiling function, the way `drawWater` does, not to
 ask for it in a picture.
+
+## 45. Three bugs from one wrong belief about `source-atop`
+
+A kid in the steam is drawn as a flat silhouette, and the first version did it
+in place on the board:
+
+    ctx.globalCompositeOperation = 'source-atop';
+    ctx.fillRect(-box, -box, box * 2, box * 2);
+
+with a comment claiming source-atop paints only where the sprite already is. It
+does not. It paints wherever the DESTINATION is opaque, and the destination is
+the whole board — so every fogged kid dragged a solid square around with her.
+Reported as "big squares just sort of moving around", which is precisely what it
+was.
+
+The silhouette is now built on a scratch canvas where the destination really is
+just the sprite, and blitted. One canvas, reused for the session.
+
+Two more from the same session, both about cells:
+
+**Grid lines.** One sheet drew dividers between its cells despite the prompt
+forbidding them, in a green just off the key colour, so they survived the
+cut-out and framed every frame in a faint square. Cells are now sampled six
+pixels inside their borders, which is margin in every well-drawn sheet and
+salvation in a bad one.
+
+**Props crossing a boundary.** The same sheet gave the kid a pull-along car that
+ran off the left of each cell, so it was sliced through the middle. The sheet
+rules now demand that a figure and everything it holds fit entirely inside its
+own cell with background on all four sides — a thing the loader cannot rescue,
+because half a car IS the content of that cell as far as any measurement goes.
+
+**Revisit if:** a future sheet needs a figure to fill its cell edge to edge.
+`CELL_INSET` would eat it, and the honest fix then is a per-sheet inset rather
+than dropping the defence.

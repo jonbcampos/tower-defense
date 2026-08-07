@@ -209,6 +209,14 @@ export function loadSprites(baseUrl: string): void {
 const FRAME_SCALE_PULL = 0.75;
 /** Never rescale a frame by more than this. A frame that far out is a bad draw. */
 const FRAME_SCALE_LIMIT = 0.2;
+/**
+ * Pixels trimmed from every edge of a cell before it is measured or drawn.
+ *
+ * A defence against grid lines the model drew despite being told not to. See
+ * the note in `sliceSheet`.
+ */
+const CELL_INSET = 6;
+
 /** Alpha above which a pixel counts as the subject rather than a keyed fringe. */
 const FRAME_ALPHA_FLOOR = 24;
 
@@ -243,7 +251,7 @@ function sliceSheet(sheet: HTMLCanvasElement, spec: SheetSpec): HTMLCanvasElemen
   const rows = Math.max(1, Math.floor(spec.rows));
   const cellW = Math.floor(sheet.width / cols);
   const cellH = Math.floor(sheet.height / rows);
-  if (cellW < 8 || cellH < 8) return null;
+  if (cellW < CELL_INSET * 4 || cellH < CELL_INSET * 4) return null;
 
   const source = sheet.getContext('2d');
   if (!source) return null;
@@ -252,7 +260,23 @@ function sliceSheet(sheet: HTMLCanvasElement, spec: SheetSpec): HTMLCanvasElemen
   const boxes: ContentBox[] = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      const data = source.getImageData(col * cellW, row * cellH, cellW, cellH);
+      // Sampled a few pixels INSIDE the cell, on every edge.
+      //
+      // The prompt forbids grid lines and one sheet drew them anyway — in a
+      // green just different enough from the key to survive the cut-out. Every
+      // frame then had a hairline at its border, the content box grew to the
+      // full cell, and the kid ended up shrunk inside a faint square. Reported
+      // as "a very light square around the kid in the big coat".
+      //
+      // Trimming the edge costs nothing real: the figures are centred with
+      // margins, so CELL_INSET pixels of border is margin in every sheet that
+      // does NOT have lines, and salvation in one that does.
+      const data = source.getImageData(
+        col * cellW + CELL_INSET,
+        row * cellH + CELL_INSET,
+        cellW - CELL_INSET * 2,
+        cellH - CELL_INSET * 2,
+      );
       const box = contentBox(data);
       // A near-empty quadrant means the model ignored the grid — it drew three
       // frames, or one big figure straddling the middle. Either way there is no
@@ -304,8 +328,8 @@ function sliceSheet(sheet: HTMLCanvasElement, spec: SheetSpec): HTMLCanvasElemen
   for (let i = 0; i < cells.length; i++) {
     const box = boxes[i]!;
     const scratch = document.createElement('canvas');
-    scratch.width = cellW;
-    scratch.height = cellH;
+    scratch.width = cellW - CELL_INSET * 2;
+    scratch.height = cellH - CELL_INSET * 2;
     const scratchCtx = scratch.getContext('2d');
     if (!scratchCtx) return null;
     scratchCtx.putImageData(cells[i]!, 0, 0);

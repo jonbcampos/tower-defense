@@ -898,7 +898,9 @@ function drawGuideTab(
   if (rect.id === 'tab:toys') drawToyArt(ctx, 'wand', cx, cy, 0.5, time, 0, 0);
   else drawGuideKid(ctx, 'toddler', cx, cy, 22);
 
-  drawText(ctx, rect.label, rect.x + rect.w / 2 + 10, cy - 5, {
+  // On the centre line, like the art beside it. It sat 5px high, which at 11px
+  // type is half a line and reads as a mistake rather than as a style.
+  drawText(ctx, rect.label, rect.x + rect.w / 2 + 10, cy, {
     size: 11,
     align: 'center',
     color: selected ? PALETTE.tray : PALETTE.hudText,

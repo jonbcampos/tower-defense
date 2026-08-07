@@ -26,6 +26,40 @@ import { drawSprite, sprite, spriteFrames } from './sprites';
  */
 const GRAB_FPS = 6;
 
+/**
+ * A sprite flattened to one dark tone, for a kid in the steam.
+ *
+ * On its own scratch canvas, and that is the entire point. The first version
+ * did this in place on the board with `source-atop` and a `fillRect`, on the
+ * theory that source-atop paints only where the sprite already is. It does not:
+ * it paints wherever the DESTINATION is opaque, and the destination is the whole
+ * board. Every fogged kid was therefore dragging a solid square around with her,
+ * which is exactly what it looked like.
+ *
+ * One canvas, reused and grown as needed, so a board full of fogged kids is
+ * still one allocation for the whole session.
+ */
+let shapeCanvas: HTMLCanvasElement | null = null;
+
+function silhouette(image: HTMLCanvasElement): HTMLCanvasElement {
+  if (!shapeCanvas) shapeCanvas = document.createElement('canvas');
+  const canvas = shapeCanvas;
+  if (canvas.width < image.width || canvas.height < image.height) {
+    canvas.width = image.width;
+    canvas.height = image.height;
+  }
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return image;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0);
+  // Now the destination IS just the sprite, so source-atop means what it says.
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.fillStyle = alpha(PALETTE.fogShape, 0.92);
+  ctx.fillRect(0, 0, image.width, image.height);
+  ctx.globalCompositeOperation = 'source-over';
+  return canvas;
+}
+
 /** How faded a kid under an unrevealed blanket is. Visible, but not readable. */
 const CONCEALED_ALPHA = 0.75;
 
@@ -133,16 +167,7 @@ export function drawKid(
     if (cycle) settleFrame(ctx, enemy, def, walkPx, grabbing !== null);
     else applyGait(ctx, enemy, def, walkPx);
     const box = def.height * KID_ART_SCALE;
-    drawSprite(ctx, image, 0, 0, box, box);
-    if (fogged) {
-      // Flatten whatever was drawn to a single tone, in place. `source-atop`
-      // paints only where the sprite already is, so this is the sprite's own
-      // outline rather than a rectangle over it.
-      ctx.globalCompositeOperation = 'source-atop';
-      ctx.fillStyle = alpha(PALETTE.fogShape, 0.92);
-      ctx.fillRect(-box, -box, box * 2, box * 2);
-      ctx.globalCompositeOperation = 'source-over';
-    }
+    drawSprite(ctx, fogged ? silhouette(image) : image, 0, 0, box, box);
     ctx.restore();
     // No status markers while concealed: a shield or a soaked drip floating over
     // the mound would say more about who is under there than the blanket should.

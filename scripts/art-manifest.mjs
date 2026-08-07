@@ -618,6 +618,14 @@ const MOTION_RULES = (grid, rowCount) =>
 
 const SHEET_COMMON = [
   'Centre each figure in its own cell, with its feet at the same height in every cell of a row.',
+  // Two rules the loader cannot rescue you from. A line at a cell edge survives
+  // the chroma-key cut and frames every frame in a square; anything crossing a
+  // boundary is sliced through the middle and animates as a severed object.
+  'EVERY figure, and EVERYTHING it is holding or pulling, must fit ENTIRELY INSIDE its own cell',
+  'with a clear band of plain background on all four sides. Nothing may touch or cross the',
+  'boundary between one cell and the next, and nothing may run off the edge of the picture.',
+  'Draw NO lines, borders, boxes or dividers between the cells: the background between them is',
+  'the same unbroken flat colour as everywhere else.',
   'All four poses must be DIFFERENT from each other. In particular frame 3 must not repeat frame 1',
   'and frame 4 must not repeat frame 2: where a pose leads with one limb, its opposite frame leads',
   'with the other. A walking figure must use BOTH legs across the cycle, not the same leg twice.',

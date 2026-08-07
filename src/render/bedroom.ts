@@ -256,38 +256,55 @@ export function drawSteam(
   time: number,
 ): void {
   const from = cellX(STEAM_FROM_COL);
-  const width = SCREEN.w - from;
+  const right = SCREEN.w;
 
   for (let lane = 0; lane < LANE_COUNT; lane++) {
     if (clearLane(lane)) continue;
-    const y = laneY(lane);
+    const top = laneY(lane);
 
-    // The body of the fog, fading in from the left over one cell.
-    const fade = ctx.createLinearGradient(from, 0, from + CELL_W, 0);
+    // The body of the fog, fading in over TWO cells rather than one. A short
+    // fade still reads as an edge, and an edge reads as a wall — which is the
+    // one thing steam must not look like.
+    const fade = ctx.createLinearGradient(from - CELL_W * 0.5, 0, from + CELL_W * 1.5, 0);
     fade.addColorStop(0, alpha(PALETTE.steam, 0));
     fade.addColorStop(1, alpha(PALETTE.steam, PALETTE.steamAlpha));
     ctx.fillStyle = fade;
-    ctx.fillRect(from, y, CELL_W, CELL_H);
+    ctx.fillRect(from - CELL_W * 0.5, top, CELL_W * 2, CELL_H);
     ctx.fillStyle = alpha(PALETTE.steam, PALETTE.steamAlpha);
-    ctx.fillRect(from + CELL_W, y, width - CELL_W, CELL_H);
+    ctx.fillRect(from + CELL_W * 1.5, top, right - from - CELL_W * 1.5, CELL_H);
+  }
 
-    // Curls drifting leftwards out of the fog. Slow and few: this sits on top
-    // of everything, so anything busy here makes the whole board feel dirty.
-    ctx.save();
-    ctx.globalAlpha = 0.16;
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 3; i++) {
-      const span = width + 40;
-      const drift = span - ((time * 9 + i * 71 + lane * 37) % span);
-      const cx = from + drift;
-      if (cx < from) continue;
-      const cy = y + 10 + ((i * 13 + lane * 7) % (CELL_H - 20));
+  // Curls, drawn in ONE pass over the whole fogged region rather than per lane.
+  //
+  // Per lane they were clipped to their row, so every blob was a rounded
+  // rectangle the height of a lane and the fog read as a grid of moving boxes.
+  // Steam does not respect lane boundaries; only the game does.
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.fillStyle = '#ffffff';
+  for (let i = 0; i < 22; i++) {
+    // A deterministic scatter. Math.random would boil the whole field every
+    // frame, which reads as static rather than as drifting.
+    const seedY = ((i * 2654435761) % 1000) / 1000;
+    const lane = Math.floor(seedY * LANE_COUNT);
+    if (clearLane(lane)) continue;
+    const span = right - from + 140;
+    const drift = span - ((time * (7 + (i % 5) * 2) + i * 137) % span);
+    const cx = from + drift - 70;
+    if (cx < from - 20) continue;
+    const cy = laneY(lane) + 6 + (((i * 97) % 100) / 100) * (CELL_H - 12);
+    const r = 10 + ((i * 31) % 13);
+    // Three overlapping blobs per curl, so the outline is lumpy rather than
+    // an ellipse — a field of identical ellipses is its own kind of grid.
+    for (let b = 0; b < 3; b++) {
+      const bx = cx + (b - 1) * r * 0.7;
+      const by = cy + Math.sin(time * 0.6 + i + b) * 2.5;
       ctx.beginPath();
-      ctx.ellipse(cx, cy, 13, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(bx, by, r * (0.7 + b * 0.15), r * 0.45, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    ctx.restore();
   }
+  ctx.restore();
 }
 
 /**
