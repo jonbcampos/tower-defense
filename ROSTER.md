@@ -299,44 +299,9 @@ a rest, which children like.
 - **Rotate the Gemini API key.** It was leaked into a transcript once. The
   generate-art script has no `--key=` flag and refuses to run unless
   `.env.local` is gitignored, but the key itself is still the old one.
-- **Regenerate `bigkid.motion`.** Reported as "the big kid's clothes change as
-  the walk cycle continues", and they do: walk frames 1 and 3 wear a closed purple
-  top with the green bunny on his chest, frames 2 and 4 an open purple jacket over
-  a cream tee with no bunny at all. At walking speed his jacket does itself up and
-  undoes itself twice a second and the bunny blinks.
-
-  He is the only child in the cast whose outfit layers one garment over another,
-  and the shared consistency rules could not catch it: they forbid *changing* a
-  colour or adding a panel, and nothing changed colour — the ambiguity is in "a
-  top OVER a t-shirt", which describes two consistent garments and never says how
-  much of the lower one shows. The manifest now states the layering as a visible
-  fact about the picture ("the jacket is ALWAYS open, a wide panel of cream is
-  visible in every frame"), in both the outfit line and the cycle line, and keeps
-  the open jacket because that is what the model drew in six of the eight frames.
-
-  The prompt is fixed; the file on disk is not, and cannot be until someone with
-  a key runs `npm run art -- --only=bigkid.motion --force` — one billed call. The
-  still `bigkid.jpg` is worth doing in the same run for the same reason, though
-  nothing sees it while the sheet exists. Check the result with
-  `__game.checkArt()` and by eye before committing.
-- **Regenerate `balloon.motion`, and then clear `deadRows`.** Half that sheet is
-  unusable: the top row's balloons are cut in half by the top edge of the
-  picture, and the bottom row's are drawn high enough to cross the row boundary,
-  so each top-row cell also carries a slice of the balloon belonging to the cell
-  below. The game now discards that row and plays the four good frames, which is
-  the same number every other kid has — see decision 65 — so this is a quality
-  debt rather than a bug.
-
-  Worth knowing before trying: the square sheet was ALREADY the fix for this, on
-  a 16:9 one, and the same fault came back. A third attempt should probably
-  change the shape of the ASK rather than the wording — a 4x1 strip was tried
-  once and the model drew 4x2 anyway, so the honest options are two separate
-  4-cell rows, or accepting that her cells need a lot more headroom than the
-  subject seems to need. Whatever comes back, look at the sliced frames with
-  `__game.sprites.frames('balloon.walk')` rather than at the sheet: the clipping
-  is much easier to see there. Then delete `deadRows` from her manifest entry and
-  run `node scripts/generate-art.mjs --reindex`, or she will keep playing on four
-  frames forever.
+- ~~Regenerate `bigkid.motion` and `balloon.motion`~~ — **done**, six billed
+  calls, both sheets and both stills. See decision 66 for what changed and why
+  two of the three fixes were to the SUBJECT rather than to the wording.
 - ~~Back-port the `viewport.ts` NaN fix~~ — **done**. Both siblings floor the
   window at one pixel, and `src/core/viewport.ts` is byte-identical across all
   three games again.

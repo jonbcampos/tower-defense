@@ -1930,3 +1930,74 @@ no number: someone will tune it.
 slicer being asked to do something the model cannot reliably supply, and the
 answer then is to cut rows on the CONTENT BANDS `checkArt` already finds rather
 than on an even division of the image.
+
+**Superseded in part by decision 66.** `deadRows` lasted one session: the sheet
+was regenerated and both rows came back whole, so the flag is gone from her entry
+and she is back to eight frames. The mechanism stays in `registerSheet`, and the
+gait fix below it was right and is untouched.
+
+## 66. Three prop-and-framing bugs, and the two that were fixed by changing the subject
+
+"The balloon girl's balloon is still going out of frame" — after decision 65 had
+already thrown away the row where it was clipped. That is the sentence that
+matters, because it means the sheet was never the whole problem.
+
+Six billed calls: both motion sheets and both stills, twice for the Big Kid.
+
+### The balloon was leaving the frame in two different places
+
+**In the sheet**, which decision 65 dealt with by discarding the bad row.
+
+**And on the board**, which no sheet can fix. Kids are drawn at twice their
+collision height and overflow their lane on purpose; above the TOP lane that
+overflow runs into the tray, which is opaque interface painted after the board.
+For everyone on their feet it costs a few pixels of air over a head. For her it
+cost the balloon — she is the one character whose art is mostly the thing above
+her. `tuckUnderTray` pushes floaters down by however much would have been eaten,
+which is 10px in row one and exactly zero everywhere else.
+
+Floaters only, and that is a rule rather than a special case: a child who is
+walking is standing on her lane and may not be moved off it, while a child who is
+floating is at whatever height she is drawn at.
+
+### The subject was the bug, twice
+
+Her long string is what made every problem she has ever had. A balloon, then
+string, then a child is a subject twice as tall as it is wide — so a 16:9 sheet
+clipped the balloons, a square sheet clipped them again, and the square sheet's
+1:2 cells then squeezed her to half the width of the rest of the cast, because
+`drawSprite` fits a frame by its limiting dimension and hers was always height.
+Three attempts at shaping a picture around a subject. **The string is now short**
+and the balloon rides just above her hands: a compact shape, the standard 16:9
+sheet, drawn the same size as everybody else, all eight frames whole.
+
+The Big Kid's bunny went the same way. It appeared in walk frames 1 and 3 and
+vanished from 2 and 4 across three generations — including two after the shared
+prop rule ("appears in ALL FOUR frames, on the SAME side, never swaps sides,
+moves or disappears") was written in capitals for this exact failure. Look at
+what the pose asks for and it stops being mysterious: his walk is both arms flung
+wide open for a hug, which is the entire reason he reads as a hug and not a
+threat, and a toy clamped under one of those arms fights the pose in every frame.
+The model resolved the fight by dropping the toy, just not consistently. So the
+bunny left the walk and stayed in the GRAB, where all four frames have always had
+it — because there it is the thing his hands are ON, and the arms are doing one
+job instead of two.
+
+His clothes, which is what was actually reported, were fixed by the wording alone
+and came back identical in all eight frames.
+
+### The lesson, which this file keeps paying for
+
+When the model will not draw something, the rule that works is not a firmer
+instruction. It is to stop asking. FACING_RIGHT, the Puffy Coat's rotation, the
+Slider's third row, and now a short string and an empty pair of hands: five times
+the fix has been to change what is asked for rather than how loudly.
+
+A useful tell, in hindsight: every one of these was a case where the SUBJECT and
+the POSE wanted different things — a prop needing an arm the hug was using, a
+tall subject in a wide cell. When those two fight, the model picks a winner per
+frame, and per-frame is exactly what an animation cannot survive.
+
+**Revisit if:** a fourth character grows a carried prop. The rule that now holds
+is that a prop lives in the cycle where the hands are already on it, and nowhere
+else.

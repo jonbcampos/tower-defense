@@ -13,6 +13,7 @@
  * would use and the framing is the only thing that isn't.
  */
 
+import { BOARD_TOP } from '../game/config';
 import { ENEMIES, type Enemy, type EnemyDef, type EnemyKind } from '../game/enemies';
 import { PALETTE, alpha, mix } from './palette';
 import { roundRect } from './bedroom';
@@ -84,6 +85,33 @@ const CONCEALED_ALPHA = 0.75;
 const KID_ART_SCALE = 2;
 
 /**
+ * Push a kid down far enough that the tray does not eat the top of her.
+ *
+ * Kids are drawn about twice their collision height and overflow their lane on
+ * purpose — see `KID_ART_SCALE`. Between lanes that is the whole point. Above
+ * the TOP lane it runs into the tray, which is opaque interface drawn after the
+ * board, and whatever pokes up there is simply gone.
+ *
+ * For everyone on their feet that costs a few pixels of empty air over a head
+ * and nobody has ever noticed. For the Balloon Kid it cost the BALLOON: she is
+ * the one character whose art is mostly the thing above her, and in row one it
+ * was cut off by the tray's bottom edge. Reported twice, and the second time
+ * with the sheet already fixed — which is how it became clear this was never
+ * the art's fault.
+ *
+ * So it applies to floaters only, and that is a rule rather than a special
+ * case: a kid who is walking is standing on her lane and may not be moved off
+ * it, while a kid who is floating is at whatever height she is drawn at. Moving
+ * her down a few pixels is not a lie about where she is. It costs nothing in
+ * any other row, because the clamp is zero everywhere the tray isn't.
+ */
+function tuckUnderTray(def: (typeof ENEMIES)[EnemyKind], y: number): number {
+  if (def.aerial !== true) return 0;
+  const half = (def.height * KID_ART_SCALE) / 2;
+  return Math.max(0, BOARD_TOP - (y - half));
+}
+
+/**
  * Draw one kid at (x, y), where y is the lane centre.
  *
  * `walk` is a free-running phase so the legs move; it is derived from the kid's
@@ -143,7 +171,7 @@ export function drawKid(
       : def.color;
 
   ctx.save();
-  ctx.translate(x, y);
+  ctx.translate(x, y + tuckUnderTray(def, y));
 
   // Wading: everything below the surface is hidden and the whole body rides a
   // slow bob. Aerial kids are exempt — a balloon carries you OVER a puddle.
@@ -336,6 +364,12 @@ const GAITS: Partial<Record<EnemyKind, Gait>> = {
    * came out at well over four frames a second against the three the cycle is
    * written for. Reported as "she is fast, so it looks erratic", alongside the
    * clipped balloon that was the other half of it.
+   *
+   * 0.16 puts a full cycle at about 1.8 seconds, a shade slower than the
+   * toddler's 1.5. Note that it is the CYCLE this sets, not the frame rate:
+   * `frameFor` divides `2 * PI / cycle.length`, so her eight frames spend the
+   * same distance the toddler's four do and simply render it more smoothly.
+   * Restoring her second row of art therefore did not make her fast again.
    *
    * Every other field is dead weight for her and is zeroed to say so: both
    * `applyGait` and `settleFrame` return early for anything `aerial`, and give
