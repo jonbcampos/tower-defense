@@ -616,20 +616,44 @@ const BASE_PIECES = [
       'clearly taller than it is wide. No labels, no writing, no faces, no characters. ' +
       'Silhouette: a tall wobbly tower of three rectangles.',
   },
-  {
-    id: 'shelf',
-    aspect: '1:1',
-    // Must not read as the Duck Ring. They do the same job in two worlds and
-    // are the only two things in the game that go UNDER another toy, so if a
-    // child confuses them she will try to float a plank in the paddling pool.
-    subject:
-      'a short plain wooden shelf board seen from a low three-quarter angle, lying FLAT and ' +
-      'horizontal with two small brackets underneath it, as if laid across a gap. Warm honey-brown ' +
-      'timber with a visible wood grain and a slightly darker front edge. It must read as a solid ' +
-      'flat surface you could stand a toy on top of. Wide and low. ' +
-      'NOT a ring, NOT a hoop, NOT inflatable, no hole in the middle, no duck, no face. ' +
-      'Silhouette: a wide flat rectangle with two little legs under it.',
-  },
+  // NOT GENERATED. The one piece deliberately left to the painter — see the
+  // note in `drawShelf`. A Shelf has to butt exactly against joists that are
+  // drawn in code at exact pixel offsets, in exactly their timber, or laying
+  // one does not read as the hole closing. Two goes at generating it produced a
+  // bench on legs and then four planks in four different colours with
+  // chroma-key gaps between them, and both looked like an object dropped into
+  // the hole rather than the hole being filled.
+  //
+  // The entry is kept, commented out, so the next person does not "fix" the
+  // omission. If it is ever restored, the prompt below is the better of the two
+  // attempts and the failure mode to watch for is furniture.
+  //
+  // {
+  //   id: 'shelf',
+  //   aspect: '1:1',
+  //   subject:
+  //     'Loose floorboards laid over a gap, seen from DIRECTLY ABOVE, perfectly flat and ' +
+  //     'top-down. Four short wooden planks side by side, butted tightly together with only a ' +
+  //     'thin dark seam between them and NO gaps, all the same honey-brown, running from the ' +
+  //     'very top edge of the frame to the very bottom edge and filling the square completely. ' +
+  //     'It is a patch of floor viewed from above, not a piece of furniture.',
+  // },
+  // The Shelf is NOT generated, and that is deliberate.
+  //
+  // It is the one piece left to its painter, because it has to butt exactly
+  // against joists that are drawn in code at exact pixel offsets, in exactly
+  // their timber. If the patch is not the same wood as the boarding around it,
+  // laying one does not read as the hole closing — it reads as an object
+  // dropped into the hole. See `drawShelf` in src/render/toys.ts.
+  //
+  // Two attempts at generating it: the first asked for "a shelf board with two
+  // small brackets underneath, seen from a low three-quarter angle" and got
+  // exactly that — a little bench floating in its cell, casting a shadow into
+  // the void, reported as "the shelf isn't the right angle for the attic". The
+  // second asked for flat top-down boarding and got four planks in four
+  // different colours with chroma-key gaps between them.
+  //
+  // The failure mode to watch for, if anyone tries again, is FURNITURE.
   {
     id: 'lobber',
     aspect: '1:1',

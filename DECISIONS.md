@@ -1399,3 +1399,60 @@ in two files. The next one should not be waved through the same way.
 **Revisit if:** a fourth copy is made, or a second bug crosses the same way. A
 cheap intermediate step, if it comes up before anyone wants a monorepo: a script
 that hashes the six shared files across the three repos and complains.
+
+## 56. The attic's edges are boarded, and the Shelf is not generated art
+
+Two reports about the attic, one cause between them: the floor was being drawn
+as though the whole room were open joists, when only the part you play on is.
+
+**Ellie was behind the floorboards**, and she was. The beams ran the full width
+of the frame — straight across her, across the unicorn's cushion and across
+every Guard Bear — and they were drawn after the nook, so they were on top of
+her too. Two fixes, and the second is the interesting one:
+
+- The joists now go down BEFORE anything that stands on them.
+- They are clipped to the play area, and the strips either side get solid
+  boarding: the ledge the unicorn sits on, and the one the kids walk in across.
+
+That second change was suggested as "maybe we need some floor on the left" and
+turns out to be much better than a fix. A loft where the edges are boarded and
+the middle is not is a real thing, and it states the world's rule without a
+word: the part with no floor is exactly the part you have to lay shelves on.
+
+The boarding ran the wrong way first. Horizontal seams with staggered
+butt-joints is BRICKWORK in every reference anyone has ever seen, and Ellie
+appeared to be sitting against a garden wall. Planks run top to bottom now,
+across the joists beneath them, which is both how boards are actually laid and
+the same direction a Shelf runs — so a laid shelf reads as this floor
+continuing.
+
+### The Shelf is the one piece drawn in code
+
+Reported as "the shelf isn't the right angle", which was the polite version of
+"it is a small bench". The generated sprite was a plank on two brackets at a
+three-quarter angle, floating in the middle of its cell with a shadow falling
+into the void underneath — an object dropped in the hole rather than the hole
+being filled. A second attempt at flat top-down boarding came back as four
+planks in four different colours with chroma-key gaps between them.
+
+So it is painted in code, and that is not a retreat. A Shelf has to butt exactly
+against beams drawn at exact pixel offsets, in exactly their timber. Its colours
+are literally `PALETTE.plank` and `PALETTE.plankSeam`, and it is sized to the
+void `drawJoists` cuts — so it plugs the gap and stops at the beams rather than
+lying over them, leaving the joist lines unbroken either side. No generated
+image can be relied on to line up with any of that. It is terrain, and the rest
+of the terrain is drawn in code too.
+
+The manifest keeps the entry as a comment with the better of the two prompts and
+a note that the failure mode is furniture, so nobody "fixes" the omission.
+
+### Two small things that fell out
+
+Neither the `floor` nor the `float` layer gets a contact shadow any more — a
+Shelf with a shadow under it is a shelf hovering over the hole it is covering —
+and neither breathes. A breathing shelf drifts out of step with the jar standing
+on it, because the jar has its own offset, and the whole cell looks loose.
+
+**Revisit if:** a world wants a floor that is neither solid nor absent. The
+boarding, the void and the Shelf are three states of one surface and they only
+work because there are exactly three.

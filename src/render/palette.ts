@@ -74,9 +74,11 @@ export interface Palette {
   water: string;
   waterShine: string;
   waterRim: string;
-  /** The attic: the beams, and the cardboard stacked between them. */
+  /** The attic: the beams, the boarding over them, and the stacked cardboard. */
   joist: string;
   joistShade: string;
+  plank: string;
+  plankSeam: string;
   box: string;
   boxEdge: string;
   boxTape: string;
@@ -202,6 +204,8 @@ export const BEDROOM_PALETTE: Palette = {
   water: '#5fb6d9',
   joist: '#a37c4e',
   joistShade: '#6f5230',
+  plank: '#b98c5c',
+  plankSeam: '#8a6740',
   box: '#c9a06a',
   boxEdge: '#8a6136',
   boxTape: '#e8dcc0',

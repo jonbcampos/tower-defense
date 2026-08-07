@@ -144,17 +144,19 @@ export const sceneRenderer: Renderer = {
     const inPlay = state.phase === 'playing' || state.phase === 'won' || state.phase === 'lost';
 
     drawRoom(ctx, inPlay, WORLDS[state.level.world].background);
+    // The attic's floor — boarded at the edges, open joists across the play
+    // area — goes down FIRST, before anything that stands on it. It used to be
+    // drawn after the nook, which put a beam straight across Ellie's chest and
+    // sliced the unicorn's cushion in half.
+    if (inPlay && WORLDS[state.level.world].terrain === 'joists') {
+      drawJoists(ctx, (lane, col) => state.toys.floatAt(lane, col) !== null);
+    }
     // The door goes down before the kids, so a kid at the doorway is walking
     // OUT of it rather than standing on top of it.
     if (inPlay) drawNook(ctx, ellieMood(state.lives, state.phase === 'won'));
     // Water under the furniture: a level could in principle put a rug at the
     // pool's edge, and a rug half-submerged is a mistake either way round.
     if (inPlay) drawWater(ctx, state.level.water ?? [], clock);
-    // The attic's missing floor, under everything and over the backdrop. Cells
-    // with a Shelf are skipped, so laying one visibly closes the hole.
-    if (inPlay && WORLDS[state.level.world].terrain === 'joists') {
-      drawJoists(ctx, (lane, col) => state.toys.floatAt(lane, col) !== null);
-    }
     if (inPlay) drawBlocked(ctx, state.level.blocked);
     if (inPlay) drawClutter(ctx, state.level.clutter ?? []);
     drawLaneFlashes(ctx, state);

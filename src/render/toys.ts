@@ -50,7 +50,11 @@ export function drawToyArt(
     // A slow breath. Every toy on the board shares one clock but is offset by
     // its own cell in the caller, so five jars don't pulse in unison like a
     // heartbeat — which looks far more artificial than not moving at all.
-    const breath = Math.sin(t * 1.6);
+    // Floors do not breathe. A Shelf is a patch of boarding flush with the
+    // joists either side, and a jar standing on one has its own offset — so a
+    // breathing shelf drifts out of step with the thing it is holding up and
+    // the whole cell looks loose.
+    const breath = def.layer === 'float' || def.layer === 'floor' ? 0 : Math.sin(t * 1.6);
     ctx.translate(0, breath * 0.7);
     ctx.scale(1 - breath * 0.012, 1 + breath * 0.018);
     // Recoil: a shooter that has just fired kicks back and squashes. `fired`
@@ -80,8 +84,10 @@ export function drawToyArt(
   ctx.scale(scale, scale);
 
   // A soft contact shadow under everything, so a toy sits ON the floor rather
-  // than floating over it. Skipped for the floor layer, which IS the floor.
-  if (def.layer !== 'floor') {
+  // than floating over it. Skipped for the two layers that ARE the floor — a
+  // Shelf with a shadow under it is a shelf hovering over the hole it is
+  // supposed to be covering.
+  if (def.layer !== 'floor' && def.layer !== 'float') {
     ctx.fillStyle = alpha(PALETTE.toyShadow, 0.3);
     ctx.beginPath();
     ctx.ellipse(0, 13, 13, 4, 0, 0, Math.PI * 2);
@@ -848,35 +854,64 @@ function drawMagnet(ctx: CanvasRenderingContext2D, body: string, accent: string,
 }
 
 /**
- * A plank laid across the joists.
+ * Boards laid over a gap in the joists — a patch of floor, not a piece of
+ * furniture.
  *
- * The Duck Ring's opposite number in every way that matters at this size: the
- * ring is a soft yellow oval with a hole in it, this is a hard brown rectangle
- * with a wood grain. They do the same job in two different worlds and must
- * never be confused for one another, so they share nothing but their layer.
+ * Fills the cell edge to edge, on purpose. The first version drew a small
+ * plank on two brackets, centred, and it read as a bench floating in a hole
+ * with a shadow underneath. What actually goes over a gap between joists is
+ * boarding: planks across, flush with the beams either side, closing the hole.
+ * The picture has to be of the hole being CLOSED, or the toy looks like it is
+ * about to fall through the thing it is meant to be bridging.
  *
- * Flat and wide, with the near edge picked out, because everything else in the
- * cell will be standing on top of it.
+ * It is also what keeps it distinct from the Duck Ring at thirty pixels. The
+ * ring is a soft yellow oval with a hole through the middle; this is a solid
+ * square of brown planks. They do the same job in two different worlds and a
+ * child who confuses them will try to float a plank in the paddling pool.
  */
 function drawShelf(ctx: CanvasRenderingContext2D, body: string, accent: string): void {
-  ctx.fillStyle = accent;
-  ctx.fillRect(-19, 6, 38, 5);
+  const w = CELL_W - 2;
+  // Exactly the height of the void `drawJoists` cuts, so the boards plug the
+  // hole and stop at the beams instead of lying over them. Covering the beam
+  // would be truer to how boarding is actually laid and looks worse: the joist
+  // line breaks wherever a shelf is, and the bottom row's shelf bleeds into the
+  // footer. An unbroken beam either side is what makes the patch read as
+  // filling a gap rather than sitting on one.
+  const h = CELL_H - 10;
   ctx.fillStyle = body;
-  ctx.fillRect(-19, -2, 38, 9);
-  ctx.strokeStyle = PALETTE.kidOutline;
+  ctx.fillRect(-w / 2, -h / 2, w, h);
+
+  // Four planks running across the gap, which is the direction real boarding
+  // goes: perpendicular to the joists, and the joists here run along the rows.
+  ctx.strokeStyle = alpha(PALETTE.plankSeam, 0.8);
   ctx.lineWidth = 1;
-  ctx.strokeRect(-18.5, -1.5, 37, 8);
-  // Grain, so it is a plank rather than a bar of chocolate.
-  ctx.strokeStyle = alpha(accent, 0.7);
-  for (const gy of [1, 4]) {
+  for (let i = 1; i < 4; i++) {
+    const x = -w / 2 + (w / 4) * i;
     ctx.beginPath();
-    ctx.moveTo(-15, gy);
-    ctx.bezierCurveTo(-5, gy - 1.2, 5, gy + 1.2, 15, gy);
+    ctx.moveTo(x, -h / 2);
+    ctx.lineTo(x, h / 2);
     ctx.stroke();
   }
-  // Two brackets underneath. They are what say "this was PUT here".
-  ctx.fillStyle = accent;
-  for (const bx of [-13, 8]) ctx.fillRect(bx, 11, 5, 4);
+  // Grain along each plank, and a nail head at each end of two of them.
+  ctx.strokeStyle = alpha(accent, 0.45);
+  for (let i = 0; i < 4; i++) {
+    const x = -w / 2 + (w / 4) * (i + 0.5);
+    ctx.beginPath();
+    ctx.moveTo(x - 2, -h / 2 + 4);
+    ctx.lineTo(x - 2, h / 2 - 4);
+    ctx.stroke();
+  }
+  ctx.fillStyle = alpha(PALETTE.plankSeam, 0.9);
+  for (const nx of [-w / 4, w / 4]) {
+    for (const ny of [-h / 2 + 3, h / 2 - 3]) {
+      ctx.beginPath();
+      ctx.arc(nx, ny, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  // A hairline at the ends where the boards meet the beams.
+  ctx.strokeStyle = alpha(PALETTE.scrim, 0.35);
+  ctx.strokeRect(-w / 2 + 0.5, -h / 2 + 0.5, w - 1, h - 1);
 }
 
 /**

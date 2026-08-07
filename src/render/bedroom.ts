@@ -181,6 +181,20 @@ export function drawJoists(
   ctx: CanvasRenderingContext2D,
   supported: (lane: number, col: number) => boolean,
 ): void {
+  // The boarded edges first: the strip the unicorn sits on and the strip the
+  // kids walk in across. Only the PLAY AREA is open joists.
+  //
+  // Reported as "Ellie is behind the floorboards", and she was — the beams ran
+  // the full width of the frame, straight across her, the cushion and the
+  // Guard Bears. Clipping them to the board fixes that, and it turns out to be
+  // the better picture anyway: a loft where the edges are boarded and the
+  // middle is not is a real thing, and it states the rule without a word. The
+  // bit you have to lay shelves on is exactly the bit that has no floor.
+  const left = boardLeft();
+  const right = left + BOARD_W;
+  drawBoarding(ctx, 0, left, 1);
+  drawBoarding(ctx, right, SCREEN.w, -1);
+
   for (let lane = 0; lane < LANE_COUNT; lane++) {
     const y = laneY(lane);
     for (let col = 0; col < COL_COUNT; col++) {
@@ -190,29 +204,96 @@ export function drawJoists(
       // and the board carries a scrim over the top of it, so a heavy gradient
       // here turned all forty-five cells into one dark smear with no cells in
       // it. What has to be visible is the BEAMS, not the dark.
+      // Deep enough to read as a hole over the PALE end wall at the top of the
+      // backdrop as well as over the dark of the loft. The top row sits on that
+      // wall, and at a lighter setting it looked like a lit strip rather than
+      // the one row with no floor in it.
       const gap = ctx.createLinearGradient(0, y, 0, y + CELL_H);
-      gap.addColorStop(0, alpha(PALETTE.scrim, 0.1));
-      gap.addColorStop(0.5, alpha(PALETTE.scrim, 0.3));
-      gap.addColorStop(1, alpha(PALETTE.scrim, 0.1));
+      gap.addColorStop(0, alpha(PALETTE.scrim, 0.18));
+      gap.addColorStop(0.5, alpha(PALETTE.scrim, 0.46));
+      gap.addColorStop(1, alpha(PALETTE.scrim, 0.18));
       ctx.fillStyle = gap;
       ctx.fillRect(x + 1, y + 5, CELL_W - 2, CELL_H - 10);
     }
 
     // The joists themselves, along the row boundaries and unbroken across the
-    // whole board — a beam that stopped at every cell edge would read as a grid
-    // of planks rather than as long timbers with nothing between them. Drawn
-    // opaque, because they are the one thing in the room that is solid.
+    // board — a beam that stopped at every cell edge would read as a grid of
+    // planks rather than as long timbers with nothing between them. Drawn
+    // opaque, because they are the one thing here that is solid.
     ctx.fillStyle = PALETTE.joist;
-    ctx.fillRect(0, y + 1, SCREEN.w, 4);
+    ctx.fillRect(left, y + 1, BOARD_W, 4);
     ctx.fillStyle = PALETTE.joistShade;
-    ctx.fillRect(0, y + 5, SCREEN.w, 2);
+    ctx.fillRect(left, y + 5, BOARD_W, 2);
     if (lane === LANE_COUNT - 1) {
       ctx.fillStyle = PALETTE.joist;
-      ctx.fillRect(0, y + CELL_H - 5, SCREEN.w, 4);
+      ctx.fillRect(left, y + CELL_H - 5, BOARD_W, 4);
       ctx.fillStyle = PALETTE.joistShade;
-      ctx.fillRect(0, y + CELL_H - 1, SCREEN.w, 2);
+      ctx.fillRect(left, y + CELL_H - 1, BOARD_W, 2);
     }
   }
+}
+
+/**
+ * A boarded strip of loft floor, running the height of the board area.
+ *
+ * `inward` is the direction the play area lies in, so the cut edge — where the
+ * boarding stops and the joists start — gets its shadow on the correct side.
+ * Without it the strip reads as a wall rather than as a floor that ends.
+ */
+function drawBoarding(
+  ctx: CanvasRenderingContext2D,
+  x0: number,
+  x1: number,
+  inward: 1 | -1,
+): void {
+  const w = x1 - x0;
+  if (w <= 0) return;
+
+  const top = BOARD_TOP;
+  const h = BOARD_BOTTOM - BOARD_TOP;
+  ctx.fillStyle = PALETTE.plank;
+  ctx.fillRect(x0, top, w, h);
+
+  // Planks run TOP TO BOTTOM, across the joists underneath — which is the way
+  // boards are actually laid, and the same way a Shelf runs, so a laid shelf
+  // reads as this floor continuing rather than as a patch stuck over the hole.
+  //
+  // The first version ran them along the strip with staggered butt-joints and
+  // came out as unmistakable BRICKWORK: Ellie and the unicorn appeared to be
+  // sitting against a garden wall. Horizontal seams plus offset verticals is
+  // masonry in every reference anyone has; it is only floorboards if the seams
+  // all run one way.
+  const planks = Math.max(2, Math.round(w / 11));
+  const step = w / planks;
+  ctx.strokeStyle = alpha(PALETTE.plankSeam, 0.7);
+  ctx.lineWidth = 1;
+  for (let i = 1; i < planks; i++) {
+    const x = Math.round(x0 + step * i) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, BOARD_BOTTOM);
+    ctx.stroke();
+  }
+  // One grain streak down the middle of each plank, faint.
+  ctx.strokeStyle = alpha(PALETTE.plankSeam, 0.22);
+  for (let i = 0; i < planks; i++) {
+    const x = Math.round(x0 + step * (i + 0.5)) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, top + 6);
+    ctx.lineTo(x, BOARD_BOTTOM - 6);
+    ctx.stroke();
+  }
+
+  // The cut edge: a bright lip on the boarding and shadow falling into the gap
+  // beyond it. This is the only line in the picture that says the floor STOPS.
+  const edge = inward > 0 ? x1 : x0;
+  ctx.fillStyle = alpha('#ffffff', 0.16);
+  ctx.fillRect(edge - (inward > 0 ? 2 : 0), top, 2, h);
+  const fall = ctx.createLinearGradient(edge, 0, edge + inward * 7, 0);
+  fall.addColorStop(0, alpha(PALETTE.scrim, 0.5));
+  fall.addColorStop(1, alpha(PALETTE.scrim, 0));
+  ctx.fillStyle = fall;
+  ctx.fillRect(inward > 0 ? edge : edge - 7, top, 7, h);
 }
 
 /**

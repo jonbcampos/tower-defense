@@ -587,8 +587,12 @@ export const TOYS: Record<ToyId, ToyDef> = {
     // three lanes; here it would happen everywhere.
     hp: 400,
     hitsAir: false,
-    color: '#c89f6a',
-    accent: '#8a6a44',
+    // Exactly `PALETTE.plank` and `PALETTE.plankSeam`, the timber the attic's
+    // boarded edges are drawn in. Not a coincidence and not to be "tidied": a
+    // Shelf is a patch of that same floor, and if it is a different brown then
+    // laying one reads as putting an object in the hole rather than closing it.
+    color: '#b98c5c',
+    accent: '#8a6740',
   },
 
   lobber: {

@@ -26,7 +26,7 @@
  * Actions outage, and any worker that installed in that window cached the
  * failures.
  */
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = `tower-defense-${VERSION}`;
 
 // The shell has stable, known names, so it can be cached up front.
