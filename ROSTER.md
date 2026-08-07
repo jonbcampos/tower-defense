@@ -46,7 +46,7 @@ does and invalidated the build that had been working.
 World 4 is deliberately the "roof" of this game: it makes every previous build
 cost double and forces the lobbed-shot toys to matter. World 5 breaks the
 one-directional assumption the whole game has been teaching, which is the right
-last lesson.
+last lesson — see **Expansions, parked** at the bottom for what it needs.
 
 ## Toys
 
@@ -147,7 +147,11 @@ player experiences.
    before, which made the bathroom ten levels long with one new card in it.
 5. ~~World 4, The Attic~~ — **done**, levels 31–40 with the Shelf, the Bath Toy
    Lobber and box stacks that stop a flat shot.
-6. **World 5, The Treehouse**, and the Big Sister.
+6. **Stopped here, deliberately.** Forty levels, four worlds and twenty toys is
+   more game than has actually been played. Everything past this point waits on
+   watching a five-year-old play what exists — every good decision in this
+   project so far came from that and not from the plan. See **Expansions,
+   parked** at the bottom for what is queued and why.
 
 ## The loadout squeeze
 
@@ -162,14 +166,125 @@ and 27–30 all had to drop their raincoats. That is a real design cost, and it
 compounds: the Attic wants a Shelf and the Treehouse will want something too.
 
 **Fixed**, the way PvZ did it: the tray now grows. Five cards in the bedroom,
-six in the backyard, seven in the bathroom — one more per world entered, which
-gives back exactly the slot each world's prerequisite takes. The raincoats that
-levels 19, 20 and 27–30 had lost are back.
+six in the backyard, seven in the bathroom, eight in the attic — one more per
+world entered, which gives back exactly the slot each world's prerequisite
+takes. The raincoats that levels 19, 20 and 27–30 had lost are back.
 
 A contract checks a level never deals more cards than the tray holds at that
 point in the campaign, and the tray's overflow check now runs against the
 maximum rather than against five — a tray that fits today and overflows at
 level 21 is a bug nobody meets until a child has played for a week.
+
+### Eight is the ceiling, and it constrains World 5
+
+Seven cards reach x=374 on the narrowest 480px frame and eight reach x=419,
+with the broom parked at x=442. There is no ninth without moving the purse
+readout, which means **World 5 cannot have a prerequisite toy.** Whatever the
+treehouse's terrain rule turns out to be, it has to be something the existing
+roster already answers — or the ninth slot has to be bought by redesigning the
+tray, which is a bigger job than the world.
+
+This is the single most important constraint on anything below.
+
+## Expansions, parked
+
+Everything here is designed enough to start and none of it is started. Kept in
+one place so that picking the project up again is reading a page rather than
+reconstructing an argument.
+
+**Read the constraint above first.** The tray is full at eight cards, and that
+rules out a whole class of otherwise obvious ideas.
+
+### The one big thing: World 5, The Treehouse
+
+The last world, and the one that breaks the assumption every other world has
+been reinforcing: **kids come from the right.** In the treehouse they also climb
+up through a trapdoor somewhere in the middle of the board, which invalidates
+the habit of stacking everything at the back — the single strongest habit the
+game teaches.
+
+That is the right last lesson, and it is the only remaining terrain rule that
+does not need a prerequisite toy, which is what makes it the one that still
+fits. What it needs:
+
+- **A second spawn point** that is a CELL rather than the door. Kids appear at
+  the trapdoor already halfway across, so `spawnX()` grows a variant and the
+  wave format grows a way to say "this beat arrives at the trapdoor".
+- **The trapdoor drawn as a real thing on the board**, well before anyone comes
+  out of it. A kid appearing out of blank floor is a cheat; a kid appearing out
+  of a trapdoor you have been looking at for two minutes is a rule.
+- **The Two-Way Wand** (Split Pea) becomes worth building for the first time —
+  it fires left as well, which is worthless in every world so far and is the
+  answer to something arriving behind your guns.
+- **The Big Sister** (Dr Zomboss), the final boss, two phases.
+- **The Bunk-Bed Climber** (Bungee), who drops in from above and steals a toy.
+
+Rough cost: the biggest single item left. Two spawn points touch `waves.ts`,
+`levels.ts`, `enemies.ts` and the renderer, and the boss is a behaviour that
+does not exist yet.
+
+### Toys still on the list, cheapest first
+
+The cheap ones are genuinely cheap — one `ToyDef`, one painter, one line in a
+level's `unlocks` — and a level whose new toy is "the last one but stronger" is
+a rest, which children like.
+
+| Toy | Cost | Note |
+|---|---|---|
+| Super Soaker | data | The padding entry, and fine. A stronger Water Gun. |
+| Piggy Bank | data | Pays out on a timer, no defence at all. |
+| Bucket Head (kid) | data | Gives the Magnet Wand a second job. |
+| Night Lamp | small | Starts weak, doubles after 30s. Rewards building early. |
+| Jacks | small | Floor tile that HURTS rather than slows — Sticky Slime's twin. |
+| Ice Lolly | small | Freezes the whole board briefly. |
+| Toy Box | small | One kid, gone. Cheap, single use. |
+| Chomper Puppet | small | Eats one kid whole, then is helpless for eight seconds. |
+| Two-Way Wand | small | Fires left as well. **Waits for World 5** — pointless before it. |
+| Blanket Wrap | **system** | Armour placed *around* an existing toy. Needs a fourth layer, which is the only entry here that touches `ToyGrid`. |
+
+### Kids still on the list
+
+| Kid | Cost | Note |
+|---|---|---|
+| Pogo Kid | small | Hops the first wall it meets. |
+| Pillow Fighter | small | Gets *faster* when its pillow is destroyed. |
+| Stool Kid | small | Puts a stool on a wall and everyone behind walks over. |
+| Snorkel Kid | small | Untargetable under the bubbles. Belongs in world 3. |
+| Jack-in-the-Box Kid | small | Wanders in and startles, destroying nearby toys. |
+| Trike Kid | **system** | Flattens toys and leaves a slippery track. |
+| Hide-and-Seek Kid | **system** | Tunnels under the board and pops up behind you. |
+| Bunk-Bed Climber | **system** | Drops in from above and steals a toy. World 5. |
+| Big Sister | **system** | The final boss. Two phases. |
+
+### Small things noticed but not done
+
+- **The broom is not in the glossary.** That screen iterates the toy roster and
+  the broom is a tool, not a toy. Its armed state is fairly self-explanatory —
+  everything sweepable lights up — but the glossary exists precisely because
+  things get forgotten, and a tool with no entry is a gap in it.
+- **No cooldown on the broom.** A player could sweep a wall the instant before
+  it breaks so the kid has nothing to chew. No five-year-old will find that, and
+  a cooldown on a tidy-up tool is a confusing thing to explain, so it is
+  deliberately absent — but it is the obvious lever if it ever matters.
+- **The good bot fills spare cells with `walls[0]`,** which in the attic is the
+  Shelf. Harmless, and it means the bot lays bare shelves it never builds on.
+  Worth a smarter rule if a future world's fairness depends on it.
+- **`ARC_HEIGHT` is a fixed 26px.** A lob crossing two cells and one crossing
+  seven rise the same amount, because the arc is measured against the distance
+  left to run. Fine today; wrong-looking if a short-range lobber ever exists.
+
+### Not content: debts to pay
+
+- **Rotate the Gemini API key.** It was leaked into a transcript once. The
+  generate-art script has no `--key=` flag and refuses to run unless
+  `.env.local` is gitignored, but the key itself is still the old one.
+- **Back-port the `viewport.ts` NaN fix** to `flappy-unicorn` and `runner` — see
+  decision 3. Three copies of one core file, and this is the bug that proves the
+  copy was a real cost.
+- **The core is now copied three times.** Decision 2 named the third copy as the
+  trigger to extract a shared package and then deferred it. The revisit
+  condition it set — "a bug fixed in one core file that has to be applied by
+  hand in three places" — is exactly the line above.
 
 ## What has to stay true
 

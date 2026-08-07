@@ -278,3 +278,14 @@ difficulties, saved progress and stars, an in-game guide, and the screen stays a
 play. All 280 trials and every design contract pass.
 
 Every toy and kid has painted art.
+
+**Paused here on purpose.** Forty levels is more game than has actually been
+played, and every good decision in this project came from watching a
+five-year-old play rather than from the plan. Nothing new goes in until the
+existing four worlds have been through her hands.
+
+What is designed and waiting — World 5, the remaining toys and kids, the small
+things noticed but not fixed, and the debts owed to the two sibling games — is
+written down under **Expansions, parked** in [ROSTER.md](ROSTER.md). It is kept
+in one place so that starting again is reading a page rather than reconstructing
+an argument.
