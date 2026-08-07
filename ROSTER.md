@@ -288,14 +288,11 @@ a rest, which children like.
   is the cheap one, which is the wrong way round if the recharge is doing any
   work at all. Left alone because nothing is currently broken by it and the
   campaign is tuned around the number as it is.
-- **`hasTargetIn` runs its aerial pass for every shooter,** not just the ones with
-  `hitsAir`. A Water Gun in a lane holding nothing but a Balloon Kid therefore
-  fires a bubble that cannot hit her and restarts its own reload — the second
-  loop's comment says "an air-capable toy also fires at floaters" but nothing
-  checks air capability. Wasted shots only, never a wrong hit, and the reload it
-  burns is one it would have spent on an empty lane anyway. Spotted while
-  answering a question about the Bubble Machine; parked rather than fixed because
-  changing it changes shooter timing in every level the trials are tuned against.
+- ~~`hasTargetIn` runs its aerial pass for every shooter~~ — **fixed**, see
+  decision 64. It was parked as a wasted-shots problem, which undersold it: a
+  Water Gun firing under a Balloon Kid reads as a broken toy rather than as the
+  wrong toy, and "go and get a different one" is the whole lesson level six
+  exists to teach.
 
 ### Not content: debts to pay
 

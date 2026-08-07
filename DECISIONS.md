@@ -1814,3 +1814,57 @@ a bonus rather than the pitch, and it costs 100 rather than 250.
 **Revisit if:** a fourth or fifth lane-spanning shooter arrives. At that point
 "fire every covered lane" is probably the right default for all of them, and the
 flag should invert.
+
+## 64. A toy that cannot reach her does not shoot at her
+
+Parked one commit ago as a small inefficiency — `hasTargetIn` ran its aerial
+pass for every shooter, not just the ones with `hitsAir`, so a Bubble Wand in a
+lane holding nothing but a Balloon Kid fired a bubble under her every 1.4
+seconds. Wasted shots, never a wrong hit; not worth the risk of retuning.
+
+That was the wrong reading, and the note undersold it by measuring the wrong
+thing. The cost is not the shot. **The cost is what the screen says.**
+
+A wand that fires at a balloon and cannot hurt her looks BROKEN. The child can
+see it trying and see it failing, and the two lessons available from that are
+"this toy doesn't work" and "you have to shoot her more" — one of which sends her
+to the tray to buy another wand. A wand that will not fire at all, sitting there
+fully charged while the balloon drifts past, says the one thing that is both true
+and useful: *this is the wrong toy for her, go and get a different one.* Level six
+is called "Balloons float over your bubbles". This is the frame in which you can
+watch that happen.
+
+So the aerial pass is gated on `hitsAir`. It stays a second pass rather than a
+flag in the first loop for the reason it always was: the common case, a lane full
+of walking children, stays a straight scan.
+
+While in there, the unused `_kind` parameter became `hitsAir`. Damage kind
+belongs to the SHOT, which is where immunity is resolved; what a target scan
+needs to know is only what the shooter can reach.
+
+### The trial found a bug in itself first
+
+`trialBalloonNeedsAir` now counts SHOTS as well as damage, because landing zero
+is only half the claim and the visible half is the other one. Adding the same
+assertion to `trialBlanketHides` — a hidden kid should not draw fire either —
+failed immediately, and the failure was in the measurement, not the game.
+
+`damageOver` runs a real level, so **the level's own wave runner keeps spawning
+children into the lane underneath the test.** That never mattered while it
+measured damage to one named kid; it mattered completely the moment it counted
+shots, because a Water Gun firing at a toddler who wandered in is indistinguishable
+in a tally from one firing at the kid it cannot see. The lane is now swept back to
+one occupant every tick.
+
+That still left exactly one shot, and the last one is worth writing down: the
+sweep runs BEFORE `update` and a spawn happens INSIDE it, so on the tick a kid
+arrives the shooters can see an intruder the harness never had a chance to
+remove. Those ticks are discarded rather than counted. One frame in a few hundred,
+and it was worth a whole shot and an hour of believing the blanket was broken.
+
+Both now read zero, all 282 trials pass, and the blanket half was correct all
+along.
+
+**Revisit if:** a toy is ever added that can hurt something it cannot target —
+a splash, a chain, an area effect. The premise here is that "can this shooter
+reach it" is a property of the shooter alone.
