@@ -55,7 +55,7 @@ changing anything structural. The short version:
 - Nothing is allocated after startup. Every kid, projectile, sparkle and event lives in a fixed
   pool, and the toys are 45 pre-allocated objects indexed by cell.
 
-### Seven ideas worth knowing before you change anything
+### Eight ideas worth knowing before you change anything
 
 **1. The loop is fixed-timestep.** Physics advances in exact 1/120s increments regardless of
 refresh rate, and the renderer interpolates between steps. Every fairness rule in this project is
@@ -78,12 +78,16 @@ is a content problem rather than an engineering one.
 don't feel like ten repeated five times is that each area changed what the board itself does.
 v1 ships one world; the seam for the rest is already in `levels.ts`.
 
-**6. Difficulty is chores first, pressure second.** EASY→NORMAL adds two things to *consider* —
+**6. The tray grows with progress.** Five cards in the bedroom, six in the backyard, seven in the
+bathroom. Each world after the first spends a slot on its own prerequisite toy, so a fixed five
+left later worlds a card short — the growth gives it back rather than trimming the roster.
+
+**7. Difficulty is chores first, pressure second.** EASY→NORMAL adds two things to *consider* —
 you collect your own sparkles, you pick your own five cards — and speeds nothing up.
 NORMAL→HARD keeps the identical vocabulary and turns up hit points, speed and wave density.
 EASY never deletes an enemy type, so a child and a parent are watching the same game.
 
-**7. A mis-tap never costs a sparkle.** An illegal placement gets a red X and its own sound, and
+**8. A mis-tap never costs a sparkle.** An illegal placement gets a red X and its own sound, and
 the purse does not move. The sound matters as much as the refund: silence, to a five-year-old,
 means the game is broken, and she will keep tapping the same wrong cell rather than try another.
 

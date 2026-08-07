@@ -160,11 +160,15 @@ Three does not fit water-immunity plus a floater plus a tank, so levels 19, 20
 and 27–30 all had to drop their raincoats. That is a real design cost, and it
 compounds: the Attic wants a Shelf and the Treehouse will want something too.
 
-The fix, when it becomes intolerable, is the one PvZ used — **more card slots as
-you progress**. Six from world 3, seven from world 5. It touches `maxLoadout`,
-the tray layout and the tray's don't-cover-a-cell contract, so it is a morning's
-work rather than a line, and it is the right answer rather than trimming another
-roster.
+**Fixed**, the way PvZ did it: the tray now grows. Five cards in the bedroom,
+six in the backyard, seven in the bathroom — one more per world entered, which
+gives back exactly the slot each world's prerequisite takes. The raincoats that
+levels 19, 20 and 27–30 had lost are back.
+
+A contract checks a level never deals more cards than the tray holds at that
+point in the campaign, and the tray's overflow check now runs against the
+maximum rather than against five — a tray that fits today and overflows at
+level 21 is a bug nobody meets until a child has played for a week.
 
 ## What has to stay true
 

@@ -1028,3 +1028,30 @@ because half a car IS the content of that cell as far as any measurement goes.
 **Revisit if:** a future sheet needs a figure to fill its cell edge to edge.
 `CELL_INSET` would eat it, and the honest fix then is a per-sheet inset rather
 than dropping the defence.
+
+## 46. The tray grows with progress
+
+Five cards was right for the bedroom and wrong afterwards. Every world after
+the first spends a slot on its own prerequisite — the Duck Ring, then the
+Little Fan — so with the Glitter Jar taking another, worlds two and three had
+**three** defensive cards where the bedroom had four. Three does not fit
+water-immunity plus a floater plus a tank, and the contracts proved it twice by
+refusing levels until their raincoats were removed.
+
+Trimming a roster to fit the tray is fixing the wrong end. The tray now holds
+one more card per world entered — five, six, seven — which is what Plants vs
+Zombies does with seed slots and for the same reason. The raincoats are back in
+levels 19, 20 and 27-30.
+
+It changes at world boundaries only. A tray that grew mid-world would move the
+cards under a thumb that had already learned where they were.
+
+Two contracts came with it, and the second is the interesting one: a level may
+not deal more cards than the tray holds *at that level*, and the tray's overflow
+check now runs against `MAX_LOADOUT_SLOTS` rather than against five. A tray that
+fits today and overflows at level 21 is a bug nobody meets until a child has
+played for a week, which is the worst time to find it.
+
+**Revisit if:** worlds four and five want an eighth and ninth. Seven cards reach
+x=374 on the narrowest 480px frame, so there is room for one more and then the
+purse readout has to move.

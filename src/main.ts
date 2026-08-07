@@ -12,7 +12,7 @@ import {
   writeSave,
   type Save,
 } from './core/save';
-import { DIFFICULTIES, cellAt, type DifficultyId } from './game/config';
+import { DIFFICULTIES, cellAt, loadoutSlotsFor, type DifficultyId } from './game/config';
 import { LEVELS, levelById, unlockedBy, type WorldId } from './game/levels';
 import { buildEndless, ENDLESS_ID, type EndlessRun } from './game/endless';
 import { GameState, validateDesignContracts, type GameEvent } from './game/state';
@@ -248,7 +248,7 @@ function toggleMute(): void {
  * "PICK 5 TOYS" regardless, which reads as a requirement you cannot meet.
  */
 function maxLoadout(): number {
-  return Math.min(5, availableToys().length);
+  return Math.min(loadoutSlotsFor(currentLevelId), availableToys().length);
 }
 
 /** Everything unlocked by the time this level starts, in tray order. */

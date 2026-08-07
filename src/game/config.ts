@@ -302,6 +302,31 @@ export const STUCK_SECONDS = 35;
  * toy is being eaten, which is the one thing a player must always be able to
  * see.
  */
+/**
+ * How many toy cards the tray holds, given how far the player has got.
+ *
+ * Grows with progress, the way Plants vs Zombies sells seed slots, and for a
+ * concrete reason rather than as a reward: **every world after the first spends
+ * a slot on its own prerequisite toy** — the Duck Ring, the Little Fan — so a
+ * fixed five left later worlds with three defensive cards where the bedroom had
+ * four. Three does not fit water-immunity plus a floater plus a tank, and two
+ * worlds' worth of levels had to drop their raincoats to fit. Growing the tray
+ * gives the slot back instead of trimming the roster.
+ *
+ * One extra per world entered, so the count only ever changes at a world
+ * boundary — a tray that grew mid-world would move the cards under her thumb
+ * for no reason she could see.
+ */
+export function loadoutSlotsFor(highestLevel: number): number {
+  const world = Math.floor(Math.max(0, highestLevel - 1) / LEVELS_PER_WORLD);
+  return Math.min(BASE_LOADOUT_SLOTS + world, MAX_LOADOUT_SLOTS);
+}
+
+export const BASE_LOADOUT_SLOTS = 5;
+/** What the tray can physically hold. A contract checks this against the frame. */
+export const MAX_LOADOUT_SLOTS = 7;
+export const LEVELS_PER_WORLD = 10;
+
 export const STEAM_FROM_COL = 5;
 
 export const SLUSH_FACTOR = 0.62;

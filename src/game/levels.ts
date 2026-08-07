@@ -486,7 +486,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Splash Time',
     teaches: 'Put a ring on the water, then build on the ring.',
     unlocks: ['castle'],
-    recommended: ['jar', 'wand', 'ring', 'fort', 'watergun'],
+    recommended: ['jar', 'wand', 'ring', 'fort', 'watergun', 'sprinkler'],
     blocked: [],
     // One puddle, in the middle lane, well forward. Small enough to walk round
     // and obvious enough to experiment with: the lesson is the ring, and a
@@ -506,7 +506,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Two Puddles',
     teaches: 'Two wet rows. Rings cost cells, not just sparkles.',
     unlocks: ['slushie'],
-    recommended: ['jar', 'wand', 'ring', 'powder', 'sprinkler'],
+    recommended: ['jar', 'wand', 'ring', 'powder', 'sprinkler', 'watergun'],
     blocked: [],
     water: merge(rect(1, 1, 3, 7), rect(3, 3, 3, 7)),
     startSparkles: 200,
@@ -523,7 +523,7 @@ export const LEVELS: readonly Level[] = [
     name: 'The Deep End',
     teaches: 'Raincoats love the pool. Bubbles still work.',
     unlocks: [],
-    recommended: ['jar', 'wand', 'ring', 'machine', 'fort'],
+    recommended: ['jar', 'wand', 'ring', 'machine', 'fort', 'watergun'],
     blocked: [],
     // The right half of three lanes. You cannot meet these kids at the far end
     // without paying for rings first, so the fight happens closer to home.
@@ -542,7 +542,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Pool Party',
     teaches: 'Only the edges are dry.',
     unlocks: ['beachball'],
-    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'powder'],
+    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'powder', 'watergun'],
     blocked: [],
     // Three whole lanes of water. The two dry lanes are the outer ones, so the
     // cheap build is a wall of rings across the middle or a decision to give
@@ -563,7 +563,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Sock Soup',
     teaches: 'She slides over slime. She does not slide over a wall.',
     unlocks: [],
-    recommended: ['jar', 'ring', 'castle', 'watergun', 'machine'],
+    recommended: ['jar', 'ring', 'castle', 'watergun', 'machine', 'slushie'],
     // A patio table in the corner, and the pool wrapped round it.
     blocked: rect(0, 1, 6, 7),
     water: merge(rect(2, 4, 2, 5), rect(3, 3, 6, 8)),
@@ -582,7 +582,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Cold Feet',
     teaches: 'A slushie makes them slow, and slow is as good as far away.',
     unlocks: [],
-    recommended: ['jar', 'ring', 'slushie', 'wand', 'fort'],
+    recommended: ['jar', 'ring', 'slushie', 'wand', 'fort', 'watergun'],
     blocked: [],
     // Two narrow channels. The lanes are long, which is what makes a slow
     // worth more than damage here: a chilled kid spends the whole lane chilled.
@@ -601,7 +601,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Queue Here',
     teaches: 'One wall, one beach ball, and a line of kids behind it.',
     unlocks: [],
-    recommended: ['jar', 'ring', 'castle', 'beachball', 'watergun'],
+    recommended: ['jar', 'ring', 'castle', 'beachball', 'watergun', 'machine'],
     blocked: [],
     // Only one dry column to build a wall on in the middle lanes, which is what
     // forces the queue the Beach Ball exists to punish.
@@ -620,7 +620,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Sprinkler Season',
     teaches: 'Balloons, over a pool you cannot build in.',
     unlocks: [],
-    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'wand'],
+    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'wand', 'watergun'],
     blocked: rect(2, 2, 7, 8),
     water: merge(rect(0, 4, 4, 6)),
     startSparkles: 275,
@@ -637,7 +637,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Everything Is Wet',
     teaches: 'Rings everywhere. Choose which rows you can afford.',
     unlocks: [],
-    recommended: ['jar', 'ring', 'watergun', 'sprinkler', 'machine'],
+    recommended: ['jar', 'ring', 'watergun', 'sprinkler', 'machine', 'wand'],
     blocked: [],
     // Every column from 2 outward, in every lane. You cannot open the whole
     // board; the level is the question of which two rows you give up.
@@ -645,7 +645,7 @@ export const LEVELS: readonly Level[] = [
     startSparkles: 325,
     waves: [
       w([k('toddler', 0), k('toddler', 4, 2), k('runner', 2, 3)]),
-      w([k('slider', 1), k('slider', 3, 2), k('runner', 2, 3), o(k('runner', 0, 3))]),
+      w([k('raincoat', 1), k('raincoat', 3, 2), k('slider', 2, 3), o(k('runner', 0, 3))]),
       w([k('wagon', 2), k('puffy', 0, 2), k('puffy', 4, 2), k('balloon', 1, 3), o(k('blanket', 3, 3))]),
       wBig([k('wagon', 1), k('wagon', 3, 2), k('puffy', 2, 2), k('slider', 0, 3), k('slider', 4, 1), o(k('balloon', 2, 4))], 32),
     ],
@@ -659,7 +659,7 @@ export const LEVELS: readonly Level[] = [
     // is played half-blind without a Fan, and a world that opens with its own
     // answer still locked reads as broken rather than as hard.
     unlocks: ['fan'],
-    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'watergun'],
+    recommended: ['jar', 'ring', 'sprinkler', 'machine', 'watergun', 'wand'],
     // His lane is dry all the way, so he cannot be held at a ring — he has to
     // be fought, and the pool is what stops you reinforcing round him.
     blocked: [],
@@ -667,7 +667,7 @@ export const LEVELS: readonly Level[] = [
     startSparkles: 350,
     waves: [
       w([k('toddler', 2), k('runner', 0, 2), k('runner', 4, 2)]),
-      w([k('balloon', 1), k('balloon', 3, 2), k('slider', 2, 3), o(k('puffy', 0, 3))]),
+      w([k('raincoat', 1), k('balloon', 3, 2), k('slider', 2, 3), o(k('puffy', 0, 3))]),
       wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 2, 3), o(k('balloon', 0, 3)), o(k('slider', 4, 3))], 30),
       w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
       wBig(
@@ -700,7 +700,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Steamy',
     teaches: 'A fan blows the steam out of its own row.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'wand', 'watergun', 'fort'],
+    recommended: ['jar', 'fan', 'wand', 'watergun', 'fort', 'sprinkler', 'machine'],
     blocked: [],
     startSparkles: 225,
     waves: [
@@ -716,7 +716,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Who Is That?',
     teaches: 'A raincoat and a toddler look the same in the fog.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'wand', 'machine', 'fort'],
+    recommended: ['jar', 'fan', 'wand', 'machine', 'fort', 'sprinkler', 'watergun'],
     blocked: [],
     startSparkles: 250,
     waves: [
@@ -732,7 +732,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Slippery Tiles',
     teaches: 'Sock Sliders, arriving out of the steam.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'watergun', 'slushie', 'castle'],
+    recommended: ['jar', 'fan', 'watergun', 'slushie', 'castle', 'machine', 'fort'],
     blocked: [],
     startSparkles: 250,
     waves: [
@@ -748,7 +748,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Bubbles Everywhere',
     teaches: 'Fans cost cells too. Choose which rows you can see.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun'],
+    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun', 'wand'],
     // A bath mat down the middle of the board: fewer cells, so a Fan in every
     // lane is no longer affordable in space even when it is in sparkles.
     blocked: colOff(4),
@@ -766,7 +766,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Under the Towel',
     teaches: 'Hidden under a blanket AND hidden in the steam.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'sprinkler', 'machine', 'watergun'],
+    recommended: ['jar', 'fan', 'sprinkler', 'machine', 'watergun', 'wand', 'fort'],
     blocked: [],
     startSparkles: 275,
     waves: [
@@ -782,7 +782,7 @@ export const LEVELS: readonly Level[] = [
     name: 'Big Coats, No View',
     teaches: 'Tanks you cannot see coming.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'watergun', 'castle', 'powder'],
+    recommended: ['jar', 'fan', 'watergun', 'castle', 'powder', 'machine', 'sprinkler'],
     blocked: [],
     startSparkles: 300,
     waves: [
@@ -798,14 +798,14 @@ export const LEVELS: readonly Level[] = [
     name: 'Two Fans',
     teaches: 'Not every row is worth clearing.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun'],
+    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun', 'wand', 'castle'],
     // Both outer lanes lose their back half, so a Fan there costs a fighting
     // cell rather than a spare one.
     blocked: merge(rect(0, 0, 6, 8), rect(4, 4, 6, 8)),
     startSparkles: 300,
     waves: [
       w([k('runner', 0), k('runner', 4, 2), k('toddler', 2, 3)]),
-      w([k('runner', 1), k('slider', 3, 2), k('balloon', 2, 3), o(k('runner', 0, 3))]),
+      w([k('raincoat', 1), k('slider', 3, 2), k('balloon', 2, 3), o(k('runner', 0, 3))]),
       w([k('wagon', 2), k('puffy', 1, 2), k('slider', 4, 2), o(k('blanket', 3, 3))]),
       wBig([k('puffy', 0), k('puffy', 4, 1), k('wagon', 2, 2), k('slider', 1, 3), o(k('balloon', 3, 3))], 30),
     ],
@@ -816,12 +816,12 @@ export const LEVELS: readonly Level[] = [
     name: 'Rush Hour',
     teaches: 'Everything at once, and half of it invisible.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'machine', 'watergun', 'sprinkler'],
+    recommended: ['jar', 'fan', 'machine', 'watergun', 'sprinkler', 'wand', 'castle'],
     blocked: [],
-    startSparkles: 325,
+    startSparkles: 375,
     waves: [
       w([k('runner', 1), k('runner', 3, 1), k('slider', 2, 3)]),
-      w([k('balloon', 0), k('runner', 2, 2), k('slider', 4, 2), o(k('runner', 1, 3))]),
+      w([k('balloon', 0), k('raincoat', 2, 2), k('slider', 4, 2), o(k('runner', 1, 3))]),
       w([k('blanket', 1), k('puffy', 3, 2), k('balloon', 2, 2), k('wagon', 0, 3), o(k('slider', 4, 3))]),
       wBig([k('puffy', 1), k('wagon', 2, 2), k('puffy', 3, 2), k('balloon', 0, 3), k('slider', 4, 2)], 30),
     ],
@@ -832,14 +832,14 @@ export const LEVELS: readonly Level[] = [
     name: 'Fogged In',
     teaches: 'The steam reaches further than usual.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun'],
+    recommended: ['jar', 'fan', 'machine', 'sprinkler', 'watergun', 'wand'],
     // A shelf across the middle. With less room, a Fan in every lane is a real
     // sacrifice — which is the whole question this level asks.
     blocked: merge(rect(1, 3, 3, 3)),
-    startSparkles: 350,
+    startSparkles: 400,
     waves: [
       w([k('wagon', 2), k('runner', 0, 2), k('runner', 4, 2)]),
-      w([k('puffy', 1), k('balloon', 3, 2), k('slider', 2, 3), o(k('runner', 0, 3))]),
+      w([k('puffy', 1), k('balloon', 3, 2), k('slider', 2, 3), o(k('raincoat', 0, 3))]),
       wBig([k('wagon', 1), k('wagon', 3, 2), k('blanket', 2, 3), o(k('puffy', 0, 3)), o(k('balloon', 4, 3))], 30),
       w([k('slider', 0), k('slider', 4, 1), k('puffy', 2, 2), k('runner', 1, 2), o(k('wagon', 3, 4))]),
     ],
@@ -850,12 +850,12 @@ export const LEVELS: readonly Level[] = [
     name: 'The Big Kid In The Bath',
     teaches: 'The exam, in the steam.',
     unlocks: [],
-    recommended: ['jar', 'fan', 'machine', 'watergun', 'sprinkler'],
+    recommended: ['jar', 'fan', 'machine', 'watergun', 'sprinkler', 'wand', 'castle'],
     blocked: rect(2, 2, 7, 8),
     startSparkles: 375,
     waves: [
       w([k('toddler', 1), k('runner', 3, 2), k('slider', 0, 3)]),
-      w([k('balloon', 2), k('blanket', 4, 2), k('runner', 1, 3), o(k('runner', 3, 3))]),
+      w([k('balloon', 2), k('blanket', 4, 2), k('raincoat', 1, 3), o(k('runner', 3, 3))]),
       wBig([k('puffy', 1), k('puffy', 3, 1), k('wagon', 0, 3), o(k('balloon', 2, 3)), o(k('slider', 4, 3))], 30),
       w([k('slider', 0), k('slider', 4, 1), k('blanket', 2, 2), k('balloon', 1, 2), o(k('wagon', 3, 4))]),
       wBig(

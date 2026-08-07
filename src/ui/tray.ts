@@ -16,11 +16,12 @@ import {
   BOARD_TOP,
   FORGIVE,
   SCREEN,
+  MAX_LOADOUT_SLOTS,
   TRAY_H,
   cellCentreX,
 } from '../game/config';
 import type { GameState } from '../game/state';
-import { TOYS, type ToyId } from '../game/toys';
+import { TOYS, TOY_ORDER, type ToyId } from '../game/toys';
 import { PALETTE, alpha } from '../render/palette';
 import { drawToyArt } from '../render/toys';
 import { drawText } from './text';
@@ -178,12 +179,18 @@ export function validateTrayContracts(): string[] {
     `a tray card runs to y=${CARD_Y + CARD_H}, over the board that starts at y=${BOARD_TOP} — the top lane would be untappable`,
   );
 
-  // Five cards plus the purse have to fit the narrowest frame.
-  const cards = trayCards(['jar', 'wand', 'fort', 'sprinkler', 'watergun']);
+  // The MOST cards the tray can ever be asked to hold, plus the purse, have to
+  // fit the narrowest frame. Checked against the maximum rather than against
+  // five, because the count grows with progress — see `loadoutSlotsFor` — and a
+  // tray that fits today and overflows at level 21 is a bug nobody meets until
+  // a child has played for a week.
+  const most: ToyId[] = [];
+  for (let i = 0; i < MAX_LOADOUT_SLOTS; i++) most.push(TOY_ORDER[i % TOY_ORDER.length]!);
+  const cards = trayCards(most);
   const last = cards[cards.length - 1]!;
   check(
     last.x + last.w < SCREEN.w - 8,
-    `five cards reach x=${last.x + last.w} on a ${SCREEN.w}px frame — the tray overflows`,
+    `${MAX_LOADOUT_SLOTS} cards reach x=${last.x + last.w} on a ${SCREEN.w}px frame — the tray overflows`,
   );
 
   // A card has to be at least as big as the cells it competes with for thumbs.

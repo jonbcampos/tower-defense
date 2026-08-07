@@ -25,6 +25,7 @@ import {
   JUICE,
   KILL_MARGIN,
   KILL_SAFETY,
+  loadoutSlotsFor,
   SLUSH_FACTOR,
   STEAM_FROM_COL,
   LANE_COUNT,
@@ -958,12 +959,22 @@ export function validateDesignContracts(): string[] {
 
   // --- Level by level, difficulty by difficulty ---
   for (const level of LEVELS) {
+    // A level cannot deal more cards than the tray holds at that point in the
+    // campaign. The slot count grows at world boundaries, so this is the one
+    // contract that would otherwise only fail for a player far enough in to
+    // reach the level — which is to say, never during development.
+    const slots = loadoutSlotsFor(level.id);
+    check(
+      level.recommended.length <= slots,
+      `level ${level.id} deals ${level.recommended.length} cards but the tray holds ${slots} there`,
+    );
+
     const kinds = enemiesIn(level);
     const damageToys = level.recommended.filter(toyDealsDamage);
 
     check(
-      level.recommended.length > 0 && level.recommended.length <= 5,
-      `level ${level.id}: deals ${level.recommended.length} cards; the tray holds five`,
+      level.recommended.length > 0,
+      `level ${level.id}: deals no cards at all`,
     );
     check(
       damageToys.length >= 1,
