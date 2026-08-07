@@ -261,7 +261,14 @@ a rest, which children like.
 - **The broom is not in the glossary.** That screen iterates the toy roster and
   the broom is a tool, not a toy. Its armed state is fairly self-explanatory —
   everything sweepable lights up — but the glossary exists precisely because
-  things get forgotten, and a tool with no entry is a gap in it.
+  things get forgotten, and a tool with no entry is a gap in it. Slightly more
+  pointed now that it has generated art and looks exactly like a card.
+- **Endless is only ever trialled with one hand.** `endlessKit` draws eight
+  cards per run and `trialEndlessEnds` runs a single fixed seed, so "endless
+  eventually ends" is proven for one draw out of hundreds. The hand is
+  guaranteed openable and guaranteed to hold three useful cards, which is why
+  this is parked rather than urgent — but a hand of eight walls-and-slime is
+  not impossible, and nothing currently measures how the mode plays with one.
 - **No cooldown on the broom.** A player could sweep a wall the instant before
   it breaks so the kid has nothing to chew. No five-year-old will find that, and
   a cooldown on a tidy-up tool is a confusing thing to explain, so it is
