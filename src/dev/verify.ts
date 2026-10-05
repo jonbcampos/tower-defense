@@ -38,6 +38,8 @@ import {
 } from '../game/endless';
 import { broomRect, trayCards } from '../ui/tray';
 import { Rng } from '../core/rng';
+import { SHOOT_SFX } from '../core/audio';
+import { ambience, synth, SFX_KINDS, type AmbienceKind } from '../core/sfx';
 import { freshSave, loadSave, recordResult, starsFor, writeSave } from '../core/save';
 
 export interface TrialResult {
@@ -777,6 +779,7 @@ function trialSaveSurvivesHostility(): TrialResult {
     '{"v":1,"stars":{"3":9,"nope":2,"-1":3}}',
     '{"v":1,"stars":[3,3,3]}',
     '{"v":1,"difficulty":"impossible","muted":"yes"}',
+    '{"v":1,"musicOff":"no","muted":null}',
     `{"v":1,"junk":"${'x'.repeat(200000)}"}`,
     '{"v":99,"unlocked":7}',
   ];
@@ -791,6 +794,7 @@ function trialSaveSurvivesHostility(): TrialResult {
         save.unlocked <= LEVELS.length &&
         (DIFFICULTY_ORDER as readonly string[]).includes(save.difficulty) &&
         typeof save.muted === 'boolean' &&
+        typeof save.musicOff === 'boolean' &&
         Object.entries(save.stars).every(([key, value]) => {
           const id = Number(key);
           return Number.isInteger(id) && id >= 1 && id <= LEVELS.length && value >= 0 && value <= 3;
@@ -987,6 +991,56 @@ function trialBathBoostsBubbles(): TrialResult {
     // bubble at the moment the clock stops, and a trial that fails on that is a
     // trial that gets deleted rather than read.
     pass: plain > 0 && ratio > want * 0.8 && ratio <= want * 1.15,
+  };
+}
+
+/**
+ * Every toy that shoots has its own sound, and no two share one (DECISIONS
+ * 67). A new shooter without an entry in `SHOOT_SFX` would fire in silence,
+ * which is how a toy that "doesn't seem to do anything" gets reported.
+ */
+function trialEveryShooterHasAVoice(): TrialResult {
+  const shooters = TOY_ORDER.filter((id) => TOYS[id].shoot);
+  const missing = shooters.filter((id) => !SHOOT_SFX[id]);
+  const voices = shooters.map((id) => SHOOT_SFX[id]).filter(Boolean);
+  const shared = voices.length - new Set(voices).size;
+  return {
+    trial: 'every shooter has its own sound',
+    level: '-',
+    difficulty: 'normal',
+    detail: `${shooters.length} shooters; missing: ${missing.join(', ') || 'none'}; shared: ${shared}`,
+    pass: missing.length === 0 && shared === 0,
+  };
+}
+
+/**
+ * Every synthesised effect and room tone renders to something audible and
+ * finite. A NaN in one buffer is silent, and through the compressor it can
+ * silence everything else too.
+ */
+function trialEveryEffectRenders(): TrialResult {
+  const sr = 22050;
+  const bad: string[] = [];
+  const check = (name: string, data: Float32Array): void => {
+    let peak = 0;
+    for (let i = 0; i < data.length; i++) {
+      const v = data[i]!;
+      if (!Number.isFinite(v)) {
+        bad.push(`${name} NaN`);
+        return;
+      }
+      peak = Math.max(peak, Math.abs(v));
+    }
+    if (peak < 0.1 || peak > 1) bad.push(`${name} peak ${peak.toFixed(2)}`);
+  };
+  for (const kind of SFX_KINDS) check(kind, synth(kind, sr));
+  for (const room of ['bedroom', 'backyard', 'bathroom', 'attic'] as AmbienceKind[]) check(room, ambience(room, sr));
+  return {
+    trial: 'every sound effect renders',
+    level: '-',
+    difficulty: 'normal',
+    detail: `${SFX_KINDS.length} effects, 4 rooms; problems: ${bad.join(', ') || 'none'}`,
+    pass: bad.length === 0,
   };
 }
 
@@ -1366,6 +1420,8 @@ export function verify(): TrialResult[] {
   results.push(trialSqueakFunnelsInward());
   results.push(trialMagnetStripsArmour());
   results.push(trialEndlessFitsTheTray());
+  results.push(trialEveryShooterHasAVoice());
+  results.push(trialEveryEffectRenders());
   for (const id of DIFFICULTY_ORDER) results.push(trialEndlessEnds(id));
 
   const failed = results.filter((r) => !r.pass);

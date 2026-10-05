@@ -44,7 +44,14 @@ export interface Save {
    */
   stars: Record<string, number>;
   difficulty: DifficultyId;
+  /** Sound effects and voices off. */
   muted: boolean;
+  /**
+   * Music and room tone off. Added after v1 shipped, without a version bump:
+   * a save without it reads as `false`, which is what it meant before the
+   * game had music (DECISIONS 67).
+   */
+  musicOff: boolean;
   /** Best endless-mode score, once endless mode exists. */
   endlessBest: number;
 }
@@ -57,7 +64,7 @@ export interface LoadResult {
 }
 
 export function freshSave(): Save {
-  return { v: SAVE_VERSION, unlocked: 1, stars: {}, difficulty: 'kid', muted: false, endlessBest: 0 };
+  return { v: SAVE_VERSION, unlocked: 1, stars: {}, difficulty: 'kid', muted: false, musicOff: false, endlessBest: 0 };
 }
 
 /**
@@ -143,6 +150,7 @@ function sanitise(record: Record<string, unknown>): Save {
   }
 
   if (typeof record['muted'] === 'boolean') save.muted = record['muted'];
+  if (typeof record['musicOff'] === 'boolean') save.musicOff = record['musicOff'];
 
   const endless = record['endlessBest'];
   if (typeof endless === 'number' && Number.isFinite(endless)) {

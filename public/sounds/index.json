@@ -1,0 +1,58 @@
+{
+  "ext": "m4a",
+  "voices": [
+    "e.herethey",
+    "e.lots",
+    "e.yay",
+    "e.hooray",
+    "e.won",
+    "e.ohno",
+    "e.gentle",
+    "e.again",
+    "e.wow",
+    "k.wheee",
+    "k.bubbles",
+    "k.giggle",
+    "k.bye",
+    "k.splashy",
+    "k.squishy",
+    "k.unicorn",
+    "k.teddy",
+    "b.catch",
+    "b.mine"
+  ],
+  "music": [
+    "music.title",
+    "music.build",
+    "music.bedroom",
+    "music.backyard",
+    "music.bath",
+    "music.attic",
+    "music.busy"
+  ],
+  "stings": [
+    "sting.win",
+    "sting.lose"
+  ],
+  "rates": {
+    "e.herethey": 1,
+    "e.lots": 1,
+    "e.yay": 1,
+    "e.hooray": 1,
+    "e.won": 1,
+    "e.ohno": 1,
+    "e.gentle": 1,
+    "e.again": 1,
+    "e.wow": 1,
+    "k.wheee": 1.3,
+    "k.bubbles": 1.3,
+    "k.giggle": 1.3,
+    "k.bye": 1.3,
+    "k.splashy": 1.3,
+    "k.squishy": 1.3,
+    "k.unicorn": 1.3,
+    "k.teddy": 1.3,
+    "b.catch": 1.12,
+    "b.mine": 1.12
+  }
+}

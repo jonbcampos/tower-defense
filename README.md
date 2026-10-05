@@ -28,7 +28,8 @@ of squeezing you, and the two of them wander off together. One bear per lane, on
 
 Third in a set with [Flappy Unicorn](https://jonbcampos.github.io/flappy-unicorn/) and
 [Ellie's Rainbow Run](https://jonbcampos.github.io/runner-game/), built the same way: TypeScript,
-a 2D canvas, no engine, no runtime dependencies, no art or audio files.
+a 2D canvas, no engine, no runtime dependencies. Painted art, voices and music are optional
+files generated with Gemini; without them the game draws and synthesises everything itself.
 
 ## Running it
 
@@ -279,11 +280,44 @@ Two things about them are not obvious and are both deliberate:
 A sheet that fails to generate, or comes back as three figures and a gap, simply isn't registered:
 that kid keeps its still image and the procedural gait. Nothing has to be true for the game to run.
 
+## Sound and music
+
+Everything you hear works without any files: every effect and each room's background hum is
+synthesised in [`src/core/sfx.ts`](src/core/sfx.ts) (struck glockenspiel bars, bubbles, squirts,
+squeaks, a toy horn), mixed through a compressor and a short room reverb in
+[`src/core/audio.ts`](src/core/audio.ts). Each shooter has its own sound, so you can hear which
+toy is busy. `deny` (a placement refused) is the one low buzz in the game and must stay that way.
+
+On top of that, `public/sounds/` holds optional recordings made with Gemini, using the same
+`.env.local` key as the art:
+
+```bash
+npm run sound                          # everything missing
+npm run sound -- --dry-run             # print the prompts, call nothing
+npm run sound -- --only=e.yay --force  # redo one
+npm run sound -- --reindex             # rewrite public/sounds/index.json
+```
+
+- **Music** (Lyria): a title theme, a "getting ready" theme for the level picker, one theme per
+  room (bedroom, backyard, bath, attic), a busier theme that takes over during a big wave, and
+  win/lose stings. Clips are about 30 s; the game finds the steady part and crossfades it into a
+  loop.
+- **Voices** (Gemini TTS): Ellie (the same voice as in Ellie's Slingshot) calls the first wave and
+  big waves, and speaks at the end; the kids squeal happily as they wander off and say
+  "Squishyyy!" when they reach the unicorn; the Big Kid says "Catch!". Rarely: most events get no
+  voice at all ([`src/render/voices.ts`](src/render/voices.ts)).
+- Prompts and lines live in [`scripts/sound-manifest.mjs`](scripts/sound-manifest.mjs). Voice
+  direction must not be spoken, so the TTS prompt is director's notes with only the
+  `#### TRANSCRIPT` read out.
+
+Two toggles on the title screen (and on the pause panel): the speaker turns effects and voices
+off, the note turns music and room tone off. Both are saved.
+
 ## Status
 
 Playable end to end: **forty levels across four worlds**, an **endless mode**, twenty toys, ten kids, three
 difficulties, saved progress and stars, an in-game guide, and the screen stays awake while you
-play. All 280 trials and every design contract pass.
+play. All 284 trials and every design contract pass.
 
 Every toy and kid has painted art.
 

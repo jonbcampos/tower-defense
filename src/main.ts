@@ -1,4 +1,4 @@
-import { Audio } from './core/audio';
+import { Audio, SHOOT_SFX, type Sfx } from './core/audio';
 import { Input, type KeyAction, type Tap } from './core/input';
 import { startLoop } from './core/loop';
 import { Rng } from './core/rng';
@@ -12,12 +12,13 @@ import {
   writeSave,
   type Save,
 } from './core/save';
-import { DIFFICULTIES, cellAt, loadoutSlotsFor, type DifficultyId } from './game/config';
+import { DIFFICULTIES, cellAt, colAtX, loadoutSlotsFor, type DifficultyId } from './game/config';
 import { LEVELS, levelById, unlockedBy, type WorldId } from './game/levels';
 import { buildEndless, endlessKit, ENDLESS_ID, type EndlessRun } from './game/endless';
 import { GameState, validateDesignContracts, type GameEvent } from './game/state';
 import { TOYS, type ToyId } from './game/toys';
 import { Particles } from './render/particles';
+import { Voices } from './render/voices';
 import { loadSprites, sprite, spriteFrames } from './render/sprites';
 import {
   advanceScene,
@@ -38,6 +39,7 @@ import {
   levelMenu,
   loadoutMenu,
   muteButton,
+  musicButton,
   pauseMenu,
   resultMenu,
   setMutedDisplay,
@@ -54,12 +56,16 @@ const input = new Input(viewport);
 const state = new GameState();
 const particles = new Particles();
 const audio = new Audio();
+const voices = new Voices(audio);
 const wakeLock = new WakeLock();
 
 // Generated art, if any has been generated. Fire-and-forget: nothing waits for
 // it, nothing breaks without it, and every piece that arrives simply replaces
 // the hand-drawn version of that one thing. See scripts/generate-art.mjs.
 loadSprites(import.meta.env.BASE_URL);
+// Voices and music, the same way: optional, fetched now, decoded after the
+// first tap. Without them every effect is still there (DECISIONS 67).
+audio.loadRecorded(import.meta.env.BASE_URL);
 
 /**
  * Surface any broken design contract loudly, on every load.
@@ -83,8 +89,9 @@ if (load.outcome === 'corrupt') console.warn('[save] unreadable save discarded')
 if (load.outcome === 'future') console.warn('[save] newer save parked, starting fresh');
 setSaveForDisplay(save);
 
-audio.muted = save.muted;
-setMutedDisplay(audio.muted);
+audio.setMuted(save.muted);
+audio.setMusicOff(save.musicOff);
+setMutedDisplay(audio.muted, audio.musicOff);
 
 /** The level the player is setting up or replaying. */
 let currentLevelId = 1;
@@ -109,11 +116,19 @@ let squeezedThisStep = false;
  * ever going near a button.
  */
 function routeMenuTap(tap: Tap): void {
-  if (state.phase === 'title') {
-    if (hitTestMenu([muteButton()], tap.x, tap.y)) {
+  if (state.phase === 'title' || state.phase === 'paused') {
+    const place = state.phase === 'title' ? 'corner' : 'pause';
+    if (hitTestMenu([muteButton(place)], tap.x, tap.y)) {
       toggleMute();
       return;
     }
+    if (hitTestMenu([musicButton(place)], tap.x, tap.y)) {
+      toggleMusic();
+      return;
+    }
+  }
+
+  if (state.phase === 'title') {
     if (hitTestMenu([guideButton()], tap.x, tap.y)) {
       audio.play('select');
       guideTab = 'toys';
@@ -256,10 +271,19 @@ function routeMenuTap(tap: Tap): void {
 }
 
 function toggleMute(): void {
-  setMutedDisplay(audio.toggleMute());
+  audio.toggleMute();
+  setMutedDisplay(audio.muted, audio.musicOff);
   save.muted = audio.muted;
   writeSave(save);
   if (!audio.muted) audio.play('select');
+}
+
+function toggleMusic(): void {
+  audio.toggleMusic();
+  setMutedDisplay(audio.muted, audio.musicOff);
+  save.musicOff = audio.musicOff;
+  writeSave(save);
+  audio.play('select');
 }
 
 /**
@@ -310,6 +334,7 @@ function beginEndless(): void {
   resetHud();
   setUnlockBanner('');
   setEndlessScore(0, save.endlessBest);
+  voices.reset();
   // Same reason as startRun: drop the tap that pressed the button, or the
   // first frame opens by placing a toy wherever the thumb happened to be.
   input.clear();
@@ -343,6 +368,7 @@ function startRun(loadout: readonly ToyId[]): void {
   particles.reset();
   resetHud();
   setUnlockBanner('');
+  voices.reset();
   // Drop the tap that pressed PLAY, so the first frame of the level doesn't
   // open by placing a toy in whatever cell happened to be under it.
   input.clear();
@@ -493,6 +519,7 @@ function routeKey(action: KeyAction): void {
  */
 function presentEvent(event: GameEvent): void {
   const random = (): number => state.rng.next();
+  voices.event(event);
   switch (event.type) {
     case 'place':
       audio.play('place');
@@ -516,12 +543,19 @@ function presentEvent(event: GameEvent): void {
       particles.collect(event.x, event.y, random);
       addPopup(event.x, event.y, `+${event.value}`);
       break;
-    case 'shoot':
-      // Deliberately quiet and only sometimes. Every shooter firing every 1.4
-      // seconds becomes a machine gun the moment there are four of them.
-      if (random() < 0.4) audio.play('bubble');
+    case 'shoot': {
+      // Each shooter has its own voice (sfx.ts), so she can hear which toy is
+      // busy. Still quiet and only sometimes: every shooter firing every 1.4
+      // seconds becomes a machine gun the moment there are four of them. A gate
+      // per kind of toy, and one across all of them.
+      const toy = state.toys.at(event.lane, colAtX(event.x));
+      const kind = toy ? SHOOT_SFX[toy.id] : undefined;
+      if (kind && random() < 0.6) gated(kind, SHOT_GAP_PER_TOY, SHOT_GAP_ANY);
       break;
+    }
     case 'hit':
+      // A small splash, a third of the time at most: hits come in floods.
+      if (random() < 0.35) gated('hit', HIT_GAP, HIT_GAP);
       particles.splash(event.x, event.y, random);
       break;
     case 'shrug':
@@ -586,7 +620,7 @@ function presentEvent(event: GameEvent): void {
       particles.shrug(event.x, event.y, random);
       break;
     case 'throw':
-      audio.play('shield');
+      audio.play('throw');
       break;
     case 'squeeze':
       audio.play('squeeze');
@@ -594,11 +628,14 @@ function presentEvent(event: GameEvent): void {
       particles.kidLeaves(event.x, event.y, '#ff9ec7', random);
       break;
     case 'win':
-      audio.play('win');
+      // The Lyria fanfare if it's there and music is on; otherwise the synth one.
+      if (!audio.sting('sting.win')) audio.play('win');
+      endedAt = soundClock;
       finishRun(true, event.value);
       break;
     case 'lose':
-      audio.play('lose');
+      if (!audio.sting('sting.lose')) audio.play('lose');
+      endedAt = soundClock;
       finishRun(false, 0);
       break;
     // Drops and toy chip damage are continuous and constant; a sound on each
@@ -629,6 +666,70 @@ function finishRun(won: boolean, stars: number): void {
   }
 }
 
+// --- Music and rate limits -------------------------------------------------
+
+/** Seconds since startup, for the sound gates. Not the run clock: it keeps going in menus. */
+let soundClock = 0;
+/** When the last run ended, so the result screen can hold its silence for the sting. */
+let endedAt = -100;
+const lastPlayed = new Map<string, number>();
+let lastShot = -1;
+const SHOT_GAP_PER_TOY = 0.3;
+const SHOT_GAP_ANY = 0.09;
+const HIT_GAP = 0.12;
+/** How long the result screen waits after the sting before the build theme comes back. */
+const STING_HOLD = 5;
+
+/** Play `sfx` unless the same sound played within `gap`, or any gated sound within `anyGap`. */
+function gated(sfx: Sfx, gap: number, anyGap: number): void {
+  if (soundClock - (lastPlayed.get(sfx) ?? -100) < gap) return;
+  if (soundClock - lastShot < anyGap) return;
+  lastPlayed.set(sfx, soundClock);
+  lastShot = soundClock;
+  audio.play(sfx);
+}
+
+const WORLD_MUSIC: Record<WorldId, string> = {
+  bedroom: 'music.bedroom',
+  backyard: 'music.backyard',
+  bathroom: 'music.bath',
+  attic: 'music.attic',
+};
+
+/**
+ * What should be playing, decided fresh every tick from the phase, so it can
+ * never drift out of step with the screen.
+ *
+ *  - title and guide: the title theme. Picker and loadout: the build theme.
+ *  - in a level: the room's own theme, and room tone under it; a big wave
+ *    swaps to the busy theme for as long as it lasts.
+ *  - result screen: the sting, a few seconds of quiet, then the build theme.
+ *  - paused: the room's theme, held low.
+ */
+function updateMusic(): void {
+  const phase = state.phase;
+  const inRoom = phase === 'playing' || phase === 'paused' || phase === 'won' || phase === 'lost';
+  let track = '';
+  if (phase === 'title' || phase === 'guide') track = 'music.title';
+  else if (phase === 'select' || phase === 'loadout') track = 'music.build';
+  else if (phase === 'won' || phase === 'lost') track = soundClock - endedAt > STING_HOLD ? 'music.build' : '';
+  else {
+    const big = state.waves.big && (state.waves.phase === 'warning' || state.waves.phase === 'running');
+    track = big ? 'music.busy' : WORLD_MUSIC[state.level.world];
+  }
+  audio.setMusic(track);
+  audio.setAmbience(inRoom ? state.level.world : '');
+  if (phase === 'paused' && !heldForPause) {
+    audio.hold(0.4);
+    heldForPause = true;
+  } else if (phase !== 'paused' && heldForPause) {
+    audio.hold(1);
+    heldForPause = false;
+  }
+  audio.updateMusic();
+}
+let heldForPause = false;
+
 // --- The loop ---------------------------------------------------------------
 
 function step(dt: number): void {
@@ -642,6 +743,8 @@ function step(dt: number): void {
   }
 
   squeezedThisStep = false;
+  soundClock += dt;
+  voices.tick(dt);
 
   input.drainTaps((tap) => {
     if (state.phase === 'playing') routeGameTap(tap);
@@ -652,6 +755,7 @@ function step(dt: number): void {
   state.update(dt);
   state.drainEvents(presentEvent);
 
+  updateMusic();
   particles.update(dt);
   updateHud(dt);
   advanceScene(dt, squeezedThisStep);

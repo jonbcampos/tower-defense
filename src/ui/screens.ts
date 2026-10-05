@@ -58,11 +58,17 @@ export function hitTestMenu(rects: readonly MenuRect[], x: number, y: number): M
   return null;
 }
 
-export function muteButton(): MenuRect {
+/**
+ * Where the audio toggles sit: the title's corner strip, or under LEAVE on the
+ * pause panel. Not the corner during a level, because the broom lives there.
+ */
+export type AudioTogglePlace = 'corner' | 'pause';
+
+export function muteButton(place: AudioTogglePlace = 'corner'): MenuRect {
   return {
     id: 'mute',
-    x: SCREEN.w - 30,
-    y: 8,
+    x: place === 'corner' ? SCREEN.w - 30 : SCREEN.w / 2 + 4,
+    y: place === 'corner' ? 8 : 216,
     w: 22,
     h: 22,
     label: '',
@@ -80,10 +86,30 @@ export function muteButton(): MenuRect {
  * entry in it that does something else entirely would make every caller check
  * which kind of button it got back.
  */
+/**
+ * The music toggle, between the guide and the sounds toggle so the two audio
+ * buttons sit together. Separate from sounds because they answer different
+ * complaints: a parent who wants quiet music still wants the deny buzz, which
+ * is load-bearing (DECISIONS 7, 67).
+ */
+export function musicButton(place: AudioTogglePlace = 'corner'): MenuRect {
+  return {
+    id: 'music',
+    x: place === 'corner' ? SCREEN.w - 58 : SCREEN.w / 2 - 26,
+    y: place === 'corner' ? 8 : 216,
+    w: 22,
+    h: 22,
+    label: '',
+    sub: '',
+    enabled: true,
+    icon: 'none',
+  };
+}
+
 export function guideButton(): MenuRect {
   return {
     id: 'guide',
-    x: SCREEN.w - 58,
+    x: SCREEN.w - 86,
     y: 8,
     w: 22,
     h: 22,
@@ -457,6 +483,10 @@ export function drawPauseScreen(ctx: CanvasRenderingContext2D): void {
   });
 
   for (const rect of pauseMenu()) drawButton(ctx, rect, false);
+  // The audio toggles again, so a parent can turn the music down mid-level
+  // without leaving it.
+  drawMute(ctx, 'pause');
+  drawMusic(ctx, 'pause');
 }
 
 export function resultMenu(won: boolean, hasNext: boolean): MenuRect[] {
@@ -501,12 +531,14 @@ export function resultMenu(won: boolean, hasNext: boolean): MenuRect[] {
 // --- Drawing ----------------------------------------------------------------
 
 let mutedForDisplay = false;
+let musicOffForDisplay = false;
 /**
  * Mirrored here rather than read from storage in the draw path — this runs
  * sixty times a second and `localStorage` reads are synchronous.
  */
-export function setMutedDisplay(muted: boolean): void {
+export function setMutedDisplay(muted: boolean, musicOff = musicOffForDisplay): void {
   mutedForDisplay = muted;
+  musicOffForDisplay = musicOff;
 }
 
 export function drawScrim(ctx: CanvasRenderingContext2D, strength = 0.72): void {
@@ -547,6 +579,7 @@ export function drawTitle(ctx: CanvasRenderingContext2D, save: Save, time: numbe
   }
 
   drawMute(ctx);
+  drawMusic(ctx);
   drawCornerButton(ctx, guideButton());
   if (SCREEN.rotated) {
     drawText(ctx, 'TURN YOUR PHONE', SCREEN.w / 2, VIRTUAL_H - 18, {
@@ -806,8 +839,8 @@ function drawCornerButton(ctx: CanvasRenderingContext2D, rect: MenuRect): void {
   drawIcon(ctx, rect.icon, rect.x + rect.w / 2, rect.y + rect.h / 2, 14, PALETTE.tray);
 }
 
-function drawMute(ctx: CanvasRenderingContext2D): void {
-  const rect = muteButton();
+function drawMute(ctx: CanvasRenderingContext2D, place: AudioTogglePlace = 'corner'): void {
+  const rect = muteButton(place);
   ctx.fillStyle = alpha(PALETTE.card, 0.9);
   roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 5);
   ctx.fill();
@@ -819,14 +852,36 @@ function drawMute(ctx: CanvasRenderingContext2D): void {
   ctx.lineTo(rect.x + 15, rect.y + 16);
   ctx.closePath();
   ctx.fill();
-  if (mutedForDisplay) {
-    ctx.strokeStyle = PALETTE.hudWarn;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(rect.x + 4, rect.y + 18);
-    ctx.lineTo(rect.x + 18, rect.y + 4);
-    ctx.stroke();
-  }
+  if (mutedForDisplay) drawSlash(ctx, rect);
+}
+
+/** A quaver: the music toggle. */
+function drawMusic(ctx: CanvasRenderingContext2D, place: AudioTogglePlace = 'corner'): void {
+  const rect = musicButton(place);
+  ctx.fillStyle = alpha(PALETTE.card, 0.9);
+  roundedRect(ctx, rect.x, rect.y, rect.w, rect.h, 5);
+  ctx.fill();
+  ctx.fillStyle = PALETTE.tray;
+  ctx.strokeStyle = PALETTE.tray;
+  ctx.beginPath();
+  ctx.ellipse(rect.x + 9, rect.y + 15, 3.4, 2.6, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(rect.x + 12, rect.y + 15);
+  ctx.lineTo(rect.x + 12, rect.y + 5);
+  ctx.quadraticCurveTo(rect.x + 14, rect.y + 9, rect.x + 17, rect.y + 10);
+  ctx.stroke();
+  if (musicOffForDisplay) drawSlash(ctx, rect);
+}
+
+function drawSlash(ctx: CanvasRenderingContext2D, rect: MenuRect): void {
+  ctx.strokeStyle = PALETTE.hudWarn;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(rect.x + 4, rect.y + 18);
+  ctx.lineTo(rect.x + 18, rect.y + 4);
+  ctx.stroke();
 }
 
 function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string): void {
