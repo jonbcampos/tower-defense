@@ -30,6 +30,10 @@
 
 /** Ellie: the same voice and direction as slingshot, so she is one girl across the set. */
 const ELLIE = {
+  // Ellie recorded her own lines (2026-10-17): ../recordings/cut.py installs
+  // them, and generate-sound.mjs leaves them alone. The TTS voice below is
+  // what they replaced.
+  recorded: true,
   voice: 'Zephyr',
   rate: 1,
   profile:
